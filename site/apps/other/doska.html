@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Доска</title>
+<style>
+html, body {
+    margin:0;
+    padding:0;
+    overflow:hidden;
+    font-family:Arial;
+}
+canvas {
+    position:absolute;
+    top:0;
+    left:0;
+}
+#controls {
+    position:fixed;
+    top:10px;
+    left:10px;
+    background:rgba(0,0,0,0.85);
+    padding:10px;
+    border-radius:10px;
+    z-index:1000;
+    color:white;
+}
+button, select, input {
+    margin:3px 0;
+}
+#clothCursor, #highlighterCursor {
+    position:absolute;
+    pointer-events:none;
+    z-index:2000;
+    display:none;
+}
+#clothCursor {
+    background:#ccc;
+    border-radius:50%;
+    opacity:0.7;
+}
+#highlighterCursor {
+    background:rgba(255,255,0,0.4);
+    border-radius:4px;
+}
+</style>
+</head>
+<body>
+
+<div id="controls">
+    Цвет: <input type="color" id="color" value="#ffff00"><br>
+    Размер: <input type="range" id="size" min="10" max="100" value="40"><br>
+    Инструмент:
+    <select id="tool">
+        <option value="highlighter">Текстовыделитель</option>
+        <option value="pen">Ручка</option>
+        <option value="chalk">Мел</option>
+        <option value="cloth">Тряпка</option>
+    </select><br>
+    <button onclick="undo()">Отменить</button>
+    <button onclick="redo()">Повторить</button><br>
+    <button onclick="clearBoard()">Стереть всё</button>
+</div>
+
+<canvas id="drawCanvas"></canvas>
+<div id="clothCursor"></div>
+<div id="highlighterCursor"></div>
+
+<script>
+const canvas=document.getElementById("drawCanvas");
+const ctx=canvas.getContext("2d");
+
+const clothCursor=document.getElementById("clothCursor");
+const highlighterCursor=document.getElementById("highlighterCursor");
+
+let drawing=false;
+let lastX=0;
+let lastY=0;
+
+let undoStack=[];
+let redoStack=[];
+
+function resize(){
+    const image=ctx.getImageData(0,0,canvas.width,canvas.height);
+    canvas.width=window.innerWidth;
+    canvas.height=window.innerHeight;
+    ctx.putImageData(image,0,0);
+}
+resize();
+window.addEventListener("resize", resize);
+
+function saveState(){
+    undoStack.push(ctx.getImageData(0,0,canvas.width,canvas.height));
+    if(undoStack.length>50) undoStack.shift();
+}
+
+function undo(){
+    if(undoStack.length===0) return;
+    redoStack.push(ctx.getImageData(0,0,canvas.width,canvas.height));
+    const state=undoStack.pop();
+    ctx.putImageData(state,0,0);
+}
+
+function redo(){
+    if(redoStack.length===0) return;
+    undoStack.push(ctx.getImageData(0,0,canvas.width,canvas.height));
+    const state=redoStack.pop();
+    ctx.putImageData(state,0,0);
+}
+
+function clearBoard(){
+    saveState();
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+
+function getPos(e){
+    const rect=canvas.getBoundingClientRect();
+    if(e.touches){
+        return {x:e.touches[0].clientX-rect.left, y:e.touches[0].clientY-rect.top};
+    }
+    return {x:e.clientX-rect.left, y:e.clientY-rect.top};
+}
+
+function start(e){
+    e.preventDefault();
+    drawing=true;
+    redoStack=[];
+    saveState();
+    const pos=getPos(e);
+    lastX=pos.x;
+    lastY=pos.y;
+}
+
+function stop(){
+    drawing=false;
+    ctx.beginPath();
+}
+
+function draw(e){
+    if(!drawing) return;
+    e.preventDefault();
+
+    const tool=document.getElementById("tool").value;
+    const size=parseInt(document.getElementById("size").value);
+    const color=document.getElementById("color").value;
+    const pos=getPos(e);
+
+    if(tool==="highlighter"){
+        ctx.globalAlpha=0.3;
+        ctx.fillStyle=color;
+        ctx.save();
+        ctx.translate(pos.x,pos.y);
+        const dx=pos.x-lastX;
+        const dy=pos.y-lastY;
+        const angle=Math.atan2(dy,dx);
+        ctx.rotate(angle);
+        ctx.fillRect(-size/2,-size/4,size,size/2);
+        ctx.restore();
+        ctx.globalAlpha=1;
+    }
+
+    if(tool==="pen"){
+        ctx.globalAlpha=1;
+        ctx.strokeStyle=color;
+        ctx.lineWidth=size/6;
+        ctx.lineCap="round";
+        ctx.lineJoin="round";
+        ctx.lineTo(pos.x,pos.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(pos.x,pos.y);
+    }
+
+    if(tool==="chalk"){
+        ctx.globalAlpha=0.3;
+        ctx.strokeStyle=color;
+        ctx.lineWidth=size;
+        ctx.lineTo(pos.x,pos.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(pos.x,pos.y);
+        ctx.globalAlpha=1;
+    }
+
+    if(tool==="cloth"){
+        ctx.clearRect(pos.x-size/2,pos.y-size/2,size,size);
+    }
+
+    lastX=pos.x;
+    lastY=pos.y;
+}
+
+function moveCursor(e){
+    const tool=document.getElementById("tool").value;
+    const size=parseInt(document.getElementById("size").value);
+    const pos=getPos(e);
+
+    clothCursor.style.display="none";
+    highlighterCursor.style.display="none";
+    canvas.style.cursor="default";
+
+    if(tool==="cloth"){
+        clothCursor.style.display="block";
+        clothCursor.style.width=size+"px";
+        clothCursor.style.height=size+"px";
+        clothCursor.style.left=(pos.x-size/2)+"px";
+        clothCursor.style.top=(pos.y-size/2)+"px";
+        canvas.style.cursor="none";
+    }
+
+    if(tool==="highlighter"){
+        highlighterCursor.style.display="block";
+        highlighterCursor.style.width=size+"px";
+        highlighterCursor.style.height=(size/3)+"px";
+        highlighterCursor.style.left=(pos.x-size/2)+"px";
+        highlighterCursor.style.top=(pos.y-size/6)+"px";
+        canvas.style.cursor="none";
+    }
+}
+
+canvas.addEventListener("mousedown",start);
+canvas.addEventListener("mousemove",moveCursor);
+canvas.addEventListener("mousemove",draw);
+canvas.addEventListener("mouseup",stop);
+canvas.addEventListener("mouseleave",stop);
+
+canvas.addEventListener("touchstart",start,{passive:false});
+canvas.addEventListener("touchmove",moveCursor,{passive:false});
+canvas.addEventListener("touchmove",draw,{passive:false});
+canvas.addEventListener("touchend",stop);
+
+</script>
+</body>
+</html>

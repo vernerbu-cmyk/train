@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>СКОРОЧТЕНИЕ</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    margin:0;
+    background:#f2f2f2;
+}
+
+/* Верхняя панель */
+header{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    background:red;
+    color:white;
+    padding:10px 20px;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:10px;
+    z-index:1000;
+    box-sizing:border-box;
+}
+
+header h1{
+    margin:0 20px 0 0;
+    font-size:20px;
+    font-weight:bold;
+}
+
+/* Контейнер текста */
+#textContainer{
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    min-height:400px;
+    line-height:1.6;
+    position:relative;
+    overflow:hidden;
+    margin:140px 20px 20px 20px;
+}
+
+.hidden{
+    display:none;
+}
+
+/* Эффекты */
+.flip{
+    transform: rotate(180deg);
+}
+
+.shutter::after{
+    content:"";
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+    background: repeating-linear-gradient(
+        to right,
+        transparent 0px,
+        transparent var(--visible-width),
+        white var(--visible-width),
+        white calc(var(--visible-width) + var(--hide-width))
+    );
+}
+
+.mask-top span,
+.mask-bottom span{
+    position:relative;
+}
+
+.mask-top span::after{
+    content:"";
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:var(--mask-percent);
+    background:white;
+}
+
+.mask-bottom span::after{
+    content:"";
+    position:absolute;
+    bottom:0;
+    left:0;
+    width:100%;
+    height:var(--mask-percent);
+    background:white;
+}
+
+textarea{
+    width:220px;
+    height:60px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>СКОРОЧТЕНИЕ</h1>
+
+<textarea id="textInput">Жили-были дед да баба.
+И была у них курочка Ряба.</textarea>
+
+<input type="file" id="fileInput" accept=".txt">
+
+<label><input type="checkbox" id="hideInput"> Скрыть поле ввода</label>
+
+<label>Размер:
+<input type="range" id="fontSize" min="16" max="60" value="28">
+</label>
+
+<label>Помеха:
+<select id="noiseSelect">
+<option value="none">Без помех</option>
+<option value="tilt">Буквы наклонены</option>
+<option value="maskTop">Закрыт верх</option>
+<option value="maskBottom">Закрыт низ</option>
+<option value="flip">Переворот 180°</option>
+<option value="shutter">Вертикальная шторка</option>
+</select>
+</label>
+
+<div id="intensityBlock" class="hidden">
+Интенсивность:
+<input type="range" id="intensity" min="10" max="80" value="50">
+<span id="intensityValue">50%</span>
+</div>
+
+<div id="tiltBlock" class="hidden">
+Наклон:
+<input type="range" id="tiltStrength" min="0" max="45" value="15">
+<span id="tiltValue">15°</span>
+</div>
+
+<label>Сохранённые:
+<select id="savedTexts">
+<option value="">— выбрать —</option>
+</select>
+</label>
+
+<button id="clearSaved">Очистить</button>
+
+</header>
+
+<div id="textContainer"></div>
+
+<script>
+const textInput = document.getElementById("textInput");
+const container = document.getElementById("textContainer");
+const noiseSelect = document.getElementById("noiseSelect");
+const intensityBlock = document.getElementById("intensityBlock");
+const tiltBlock = document.getElementById("tiltBlock");
+const intensitySlider = document.getElementById("intensity");
+const intensityValue = document.getElementById("intensityValue");
+const tiltSlider = document.getElementById("tiltStrength");
+const tiltValue = document.getElementById("tiltValue");
+const hideInputCheckbox = document.getElementById("hideInput");
+const fileInput = document.getElementById("fileInput");
+const savedSelect = document.getElementById("savedTexts");
+const clearSavedBtn = document.getElementById("clearSaved");
+
+/* --- LocalStorage --- */
+let savedTexts = JSON.parse(localStorage.getItem("savedTexts") || "[]");
+
+function updateSavedSelect(){
+    savedSelect.innerHTML = '<option value="">— выбрать —</option>';
+    savedTexts.forEach((t,i)=>{
+        let opt = document.createElement("option");
+        opt.value = i;
+        opt.textContent = t.length > 30 ? t.substring(0,30)+"..." : t;
+        savedSelect.appendChild(opt);
+    });
+}
+
+updateSavedSelect();
+
+/* --- Отображение текста --- */
+function renderText(){
+    let text = textInput.value;
+    let effect = noiseSelect.value;
+    container.className="";
+    container.innerHTML=text;
+
+    if(effect==="none"){
+        container.innerText=text;
+        return;
+    }
+
+    if(effect==="tilt"){
+        container.innerHTML = wrapLetters(text);
+        container.querySelectorAll("span").forEach(span=>{
+            let angle = Math.random()*tiltSlider.value*2 - tiltSlider.value;
+            span.style.display="inline-block";
+            span.style.transform="rotate("+angle+"deg)";
+        });
+    }
+
+    if(effect==="maskTop"){
+        container.innerHTML=wrapLetters(text);
+        container.style.setProperty('--mask-percent', intensitySlider.value+"%");
+        container.classList.add("mask-top");
+    }
+
+    if(effect==="maskBottom"){
+        container.innerHTML=wrapLetters(text);
+        container.style.setProperty('--mask-percent', intensitySlider.value+"%");
+        container.classList.add("mask-bottom");
+    }
+
+    if(effect==="flip"){
+        container.innerText=text;
+        container.classList.add("flip");
+    }
+
+    if(effect==="shutter"){
+        container.innerText=text;
+        let hideWidth = 4 + (intensitySlider.value/5);
+        let visibleWidth = 40 - (intensitySlider.value/2);
+        container.style.setProperty('--visible-width', visibleWidth+"px");
+        container.style.setProperty('--hide-width', hideWidth+"px");
+        container.classList.add("shutter");
+    }
+}
+
+/* Оборачивание букв */
+function wrapLetters(text){
+    return text.split("").map(c => 
+        (c===" " || c==="\n") ? c : "<span>"+c+"</span>"
+    ).join("");
+}
+
+/* --- События --- */
+textInput.addEventListener("input", renderText);
+noiseSelect.addEventListener("change", ()=>{
+    intensityBlock.classList.add("hidden");
+    tiltBlock.classList.add("hidden");
+
+    if(noiseSelect.value==="tilt") tiltBlock.classList.remove("hidden");
+    if(["maskTop","maskBottom","shutter"].includes(noiseSelect.value))
+        intensityBlock.classList.remove("hidden");
+
+    renderText();
+});
+
+intensitySlider.addEventListener("input", ()=>{
+    intensityValue.textContent = intensitySlider.value + "%";
+    renderText();
+});
+
+tiltSlider.addEventListener("input", ()=>{
+    tiltValue.textContent = tiltSlider.value + "°";
+    renderText();
+});
+
+document.getElementById("fontSize").addEventListener("input", function(){
+    container.style.fontSize = this.value + "px";
+});
+
+hideInputCheckbox.addEventListener("change", function(){
+    textInput.classList.toggle("hidden");
+    fileInput.classList.toggle("hidden");
+});
+
+fileInput.addEventListener("change", function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(event){
+        textInput.value = event.target.result;
+        renderText();
+    };
+    reader.readAsText(file);
+});
+
+savedSelect.addEventListener("change", function(){
+    if(this.value==="") return;
+    textInput.value = savedTexts[this.value];
+    renderText();
+});
+
+clearSavedBtn.addEventListener("click", function(){
+    savedTexts=[];
+    localStorage.removeItem("savedTexts");
+    updateSavedSelect();
+});
+
+/* Автосохранение при изменении текста */
+textInput.addEventListener("blur", function(){
+    let text = textInput.value.trim();
+    if(text && !savedTexts.includes(text)){
+        savedTexts.push(text);
+        localStorage.setItem("savedTexts", JSON.stringify(savedTexts));
+        updateSavedSelect();
+    }
+});
+
+/* Инициализация */
+container.style.fontSize = "28px";
+renderText();
+
+</script>
+</body>
+</html>

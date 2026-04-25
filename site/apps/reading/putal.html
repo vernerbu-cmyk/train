@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Лидерген — анаграммы</title>
+<style>
+body { margin:0; font-family:Arial,sans-serif; background:#f4f4f4; }
+header { background:#f57c00; color:white; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; }
+.title { font-weight:bold; font-style:italic; font-size:20px; }
+.gear { cursor:pointer; font-size:20px; }
+#menu { background:#fff3e0; padding:14px; }
+.hidden { display:none; }
+textarea, select { width:100%; padding:8px; font-size:14px; margin-bottom:10px; }
+input[type="range"] { width:100%; }
+button { padding:10px 14px; background:#f57c00; border:none; color:white; font-size:14px; border-radius:4px; cursor:pointer; margin-bottom:6px; }
+#output { padding:16px; font-size:18px; line-height:1.6; word-wrap:break-word; white-space:pre-wrap; }
+.word-list div { margin-bottom:6px; display:block; }
+.controls { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+.controls label { flex:1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title">Лидерген</div>
+  <div class="gear" onclick="toggleMenu()">⚙</div>
+</header>
+
+<div id="menu">
+  <button onclick="toggleInput()">Показать/Скрыть поле ввода</button>
+
+  <div id="inputFields">
+    <div class="controls">
+      <label>Режим:
+        <select id="mode">
+          <option value="words">Слова</option>
+          <option value="text">Текст</option>
+        </select>
+      </label>
+      <label>Сложность: <span id="lvl">3</span>
+        <input type="range" min="1" max="5" value="3" id="level">
+      </label>
+      <label>Шрифт:
+        <select id="fontSelect">
+          <option value="Arial">Arial</option>
+          <option value="Courier New">Courier New</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Verdana">Verdana</option>
+        </select>
+      </label>
+      <label>Размер текста:
+        <select id="fontSizeSelect">
+          <option value="12">12px</option>
+          <option value="14">14px</option>
+          <option value="16">16px</option>
+          <option value="18" selected>18px</option>
+          <option value="20">20px</option>
+          <option value="24">24px</option>
+          <option value="28">28px</option>
+          <option value="32">32px</option>
+          <option value="36">36px</option>
+          <option value="40">40px</option>
+        </select>
+      </label>
+    </div>
+
+    <div id="wordsInput">
+      <label><b>Слова (до 50, по одному в строке):</b></label>
+      <textarea id="wordsArea"></textarea>
+    </div>
+    <div id="textInput" class="hidden">
+      <label><b>Текст:</b></label>
+      <textarea id="textArea"></textarea>
+    </div>
+  </div>
+
+  <button onclick="generate()">Сгенерировать</button>
+</div>
+
+<div id="output"></div>
+
+<script>
+const FORBIDDEN = ['ь','ъ'];
+
+function toggleMenu() {
+  document.getElementById("menu").classList.toggle("hidden");
+}
+
+function toggleInput() {
+  document.getElementById("inputFields").classList.toggle("hidden");
+}
+
+// применяем шрифт и размер текста
+function applyFontSettings() {
+  const font = document.getElementById("fontSelect").value;
+  const size = document.getElementById("fontSizeSelect").value;
+  document.getElementById("output").style.fontFamily = font;
+  document.getElementById("output").style.fontSize = size + "px";
+}
+document.getElementById("fontSelect").onchange = applyFontSettings;
+document.getElementById("fontSizeSelect").onchange = applyFontSettings;
+
+document.getElementById("level").oninput = e =>
+  document.getElementById("lvl").innerText = e.target.value;
+
+document.getElementById("mode").onchange = e => {
+  document.getElementById("wordsInput").classList.toggle("hidden", e.target.value !== "words");
+  document.getElementById("textInput").classList.toggle("hidden", e.target.value !== "text");
+};
+
+function shuffleArray(arr){
+  for(let i=arr.length-1;i>0;i--){
+    let j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+}
+
+function splitSyllables(word){
+  const vowels = 'аеёиоуыэюяАЕЁИОУЫЭЮЯ';
+  let result = [];
+  let syll = '';
+  for(let i=0;i<word.length;i++){
+    syll += word[i];
+    if(vowels.includes(word[i])) {
+      result.push(syll);
+      syll = '';
+    }
+  }
+  if(syll) result.push(syll);
+  return result.length ? result : [word];
+}
+
+function generateAnagram(word, level){
+  if(word.length<3) return word;
+  const n = word.length;
+  let result = word;
+
+  const attempt = () => {
+    const letters = word.split('');
+    const first = letters[0];
+    const last = letters[n-1];
+    const middleLetters = letters.slice(1,n-1);
+    let syllables = splitSyllables(middleLetters.join(''));
+
+    if(level<=2){
+      if(syllables.length===1){
+        if(n===3){
+          result = letters[2]+letters[1]+letters[0];
+        } else {
+          let i=0, j=middleLetters.length-1;
+          if(middleLetters.length>2){
+            i=Math.floor(Math.random()*middleLetters.length);
+            j=Math.floor(Math.random()*middleLetters.length);
+            while(i===j) j=Math.floor(Math.random()*middleLetters.length);
+          }
+          [middleLetters[i], middleLetters[j]]=[middleLetters[j], middleLetters[i]];
+          result = first+middleLetters.join('')+last;
+        }
+      } else {
+        if(level===1){ let [i,j]=[Math.floor(Math.random()*syllables.length),Math.floor(Math.random()*syllables.length)]; while(i===j) j=Math.floor(Math.random()*syllables.length); [syllables[i],syllables[j]]=[syllables[j],syllables[i]];}
+        if(level===2) shuffleArray(syllables);
+        result = first+syllables.join('')+last;
+      }
+    } else {
+      const indices = [];
+      for(let i=0;i<n;i++){
+        if(!FORBIDDEN.includes(letters[i])) indices.push(i);
+      }
+      if(indices.length<2) return word;
+
+      let locked = new Set();
+      let k;
+      let movable = [];
+
+      switch(level){
+        case 3: locked.add(0); locked.add(n-1); movable=indices.filter(i=>!locked.has(i)); k=movable.length; break;
+        case 4: locked.add(0); locked.add(n-1); movable=indices.filter(i=>!locked.has(i)); k=Math.min(Math.ceil(movable.length/2), movable.length); break;
+        case 5: locked.add(indices[Math.floor(Math.random()*indices.length)]); movable=indices.filter(i=>!locked.has(i)); k=movable.length; break;
+      }
+
+      if(movable.length<1) movable=indices.slice();
+      k=Math.min(k,movable.length);
+
+      if(n<=4 && middleLetters.length>0){
+        if(n===3) { [letters[0],letters[2]]=[letters[2],letters[0]]; }
+        else { [letters[1],letters[n-2]]=[letters[n-2],letters[1]]; }
+      } else {
+        shuffleArray(movable);
+        const selected=movable.slice(0,k);
+        const temp=selected.map(i=>letters[i]);
+        shuffleArray(temp);
+        selected.forEach((i,idx)=>letters[i]=temp[idx]);
+      }
+      result = letters.join('');
+    }
+  };
+
+  if(word.length>2){
+    let tries=0;
+    do {
+      attempt();
+      tries++;
+      if(tries>20) break;
+    } while(result===word);
+  } else attempt();
+
+  return result;
+}
+
+const wordsArea = document.getElementById("wordsArea");
+wordsArea.addEventListener("input", function() {
+  const lines = this.value.split("\n");
+  const newLines = lines.map((line, idx)=>{
+    if(line.trim().includes(" ")) {
+      alert(`Строка ${idx+1} содержит пробелы. Каждое слово должно быть на отдельной строке.`);
+      return line.replace(/\s+/g,'');
+    }
+    return line;
+  });
+  this.value = newLines.join("\n");
+});
+
+function generate(){
+  const mode=document.getElementById("mode").value;
+  const level=+document.getElementById("level").value;
+  const output=document.getElementById("output");
+  output.innerHTML="";
+  applyFontSettings();
+
+  if(mode==="words"){
+    const words=document.getElementById("wordsArea").value
+      .split('\n').map(w=>w.trim()).filter(Boolean).slice(0,50);
+
+    const box=document.createElement("div");
+    box.className="word-list";
+
+    words.forEach(w=>{
+      const d=document.createElement("div");
+      d.textContent=generateAnagram(w, level);
+      box.appendChild(d);
+    });
+
+    output.appendChild(box);
+  }
+
+  if(mode==="text"){
+    const text=document.getElementById("textArea").value;
+    const parts=text.split(/(\s+|[.,!?;:—])/);
+    const result=parts.map(p=>/^[А-Яа-яЁё]+$/.test(p)?generateAnagram(p,level):p).join("");
+    output.textContent=result;
+  }
+}
+</script>
+
+</body>
+</html>

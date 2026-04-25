@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ЛидерГен</title>
+
+<style>
+:root {
+  --bar-bg:#ff7a00;
+  --bar-fg:#ffffff;
+}
+
+html,body{
+  margin:0;
+  height:100%;
+  background:#f9f9f9;
+  font-family:'Times New Roman', Times, serif;
+  user-select:none;
+}
+
+.topbar{
+  position:fixed;
+  top:0; left:0; right:0;
+  height:72px;
+  background:var(--bar-bg);
+  color:var(--bar-fg);
+  display:flex;
+  align-items:center;
+  padding:0 12px;
+  z-index:10;
+  box-shadow:0 2px 6px rgba(0,0,0,.15);
+}
+
+.brand{
+  font-style:italic;
+  font-weight:800;
+  font-size:32px;
+  white-space:nowrap;
+}
+
+.controls{
+  margin-left:16px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  font-size:14px;
+}
+
+.controls-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+input[type=range]{
+  width:160px;
+}
+
+.btn{
+  padding:4px 10px;
+  border:none;
+  border-radius:4px;
+  font-weight:700;
+  background:#fff;
+  color:#ff7a00;
+  cursor:pointer;
+}
+
+.btn.active{
+  background:#ff7a00;
+  color:#fff;
+}
+
+#stage{
+  position:absolute;
+  top:72px; left:0; right:0; bottom:0;
+  overflow:hidden;
+}
+
+.word{
+  position:absolute;
+  font-weight:900;
+  font-size:100px;
+  text-transform:uppercase;
+  line-height:1;
+  opacity:0;
+  text-align:center;
+  text-shadow:2px 2px 4px rgba(0,0,0,.25);
+}
+
+.hand{
+  position:absolute;
+  font-weight:700;
+  font-size:100px;
+  line-height:1;
+  color:#000;
+  text-shadow:1.5px 1.5px 3px rgba(0,0,0,.2);
+}
+</style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="brand">ЛидерГен</div>
+
+  <div class="controls">
+    <div class="controls-row">
+      <label>Скорость</label>
+      <input id="speed" type="range" min="0" max="14" value="4">
+      <output id="speedOut">2.00s</output>
+      <label><input id="handsMode" type="checkbox" checked> Руки</label>
+    </div>
+
+    <div class="controls-row">
+      <label>Хлопки</label>
+      <input id="clapChance" type="range" min="0" max="100" step="5" value="20">
+      <output id="clapOut">20%</output>
+      <button id="startButton" class="btn">Старт</button>
+      <button id="stopButton" class="btn">Стоп</button>
+    </div>
+  </div>
+</header>
+
+<main id="stage"></main>
+
+<script>
+const COLOR_WORDS = [
+  {name:'КРАСНЫЙ',color:'red'},
+  {name:'ОРАНЖЕВЫЙ',color:'#FF7800'},
+  {name:'ЖЁЛТЫЙ',color:'#FDE910'},
+  {name:'ЗЕЛЁНЫЙ',color:'green'},
+  {name:'ГОЛУБОЙ',color:'#00BFFF'},
+  {name:'СИНИЙ',color:'blue'},
+  {name:'ФИОЛЕТОВЫЙ',color:'purple'}
+];
+
+const HAND_LETTERS = ['Л','П','О'];
+
+const SPEED_VALUES = [
+  4000,3500,3000,2500,2000,
+  1750,1500,1250,1000,750,
+  500,400,300,200,100
+];
+
+const stage = document.getElementById('stage');
+const speed = document.getElementById('speed');
+const speedOut = document.getElementById('speedOut');
+const clapChance = document.getElementById('clapChance');
+const clapOut = document.getElementById('clapOut');
+const handsMode = document.getElementById('handsMode');
+const startButton = document.getElementById('startButton');
+const stopButton = document.getElementById('stopButton');
+
+let timer = null;
+let running = false;
+
+const SIZE = 100;
+const MARGIN = 12;
+
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+
+function showRandomWord(){
+  stage.replaceChildren();
+
+  const word = document.createElement('div');
+  word.className = 'word';
+
+  const title = document.createElement('div');
+
+  if (Math.random() < clapChance.value / 100) {
+    title.textContent = 'ХЛОПОК';
+    title.style.color = pick(COLOR_WORDS).color;
+  } else {
+    const w = pick(COLOR_WORDS);
+    title.textContent = w.name;
+
+    if (Math.random() < 0.2) {
+      title.style.color = w.color;
+    } else {
+      title.style.color = pick(
+        COLOR_WORDS.filter(c => c.name !== w.name)
+      ).color;
+    }
+  }
+
+  word.appendChild(title);
+  stage.appendChild(word);
+
+  const totalHeight = SIZE + (handsMode.checked ? SIZE : 0);
+  const maxLeft = stage.clientWidth - word.offsetWidth - MARGIN;
+  const maxTop  = stage.clientHeight - totalHeight - MARGIN;
+
+  const left = rand(MARGIN, Math.max(MARGIN, maxLeft));
+  const top  = rand(MARGIN, Math.max(MARGIN, maxTop));
+
+  word.style.left = left + 'px';
+  word.style.top  = top + 'px';
+
+  requestAnimationFrame(() => word.style.opacity = '1');
+
+  if (handsMode.checked) {
+    const hand = document.createElement('div');
+    hand.className = 'hand';
+    hand.textContent = pick(HAND_LETTERS);
+    hand.style.left = (left + word.offsetWidth/2 - SIZE/2) + 'px';
+    hand.style.top  = (top + SIZE) + 'px';
+    stage.appendChild(hand);
+  }
+}
+
+function getDelay(){
+  return SPEED_VALUES[Number(speed.value)];
+}
+
+function start(){
+  if (running) return;
+  showRandomWord();
+  timer = setInterval(showRandomWord, getDelay());
+  running = true;
+  startButton.classList.add('active');
+}
+
+function stop(){
+  clearInterval(timer);
+  running = false;
+  startButton.classList.remove('active');
+}
+
+startButton.onclick = start;
+stopButton.onclick = stop;
+
+speed.oninput = () => {
+  speedOut.value = (SPEED_VALUES[speed.value]/1000).toFixed(2)+'s';
+  if (running) {
+    clearInterval(timer);
+    timer = setInterval(showRandomWord, getDelay());
+  }
+};
+
+clapChance.oninput = () => clapOut.value = clapChance.value + '%';
+
+window.onresize = showRandomWord;
+</script>
+
+</body>
+</html>
