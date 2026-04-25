@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Домик состава числа</title>
+<style>
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:#eef4ff;
+    text-align:center;
+    user-select:none;
+}
+
+h1{
+    font-size:40px;
+    font-weight:900;
+    color:#ff4d6d;
+}
+
+.controls{
+    margin-bottom:10px;
+}
+
+select,button{
+    font-size:18px;
+    padding:6px 12px;
+    margin:5px;
+}
+
+#instruction{
+    font-size:20px;
+    font-weight:700;
+    margin:10px 0;
+    color:#444;
+}
+
+#houseContainer{
+    position:relative;
+    display:flex;
+    justify-content:center;
+    margin-top:10px;
+}
+
+#board{
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    z-index:0;
+    background:none;
+}
+
+#house{
+    position:relative;
+    z-index:1;
+}
+
+.house{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+}
+
+.roof{
+    height:110px;
+    background:#ffb703;
+    clip-path:polygon(50% 0%,0% 100%,100% 100%);
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    font-size:40px;
+    font-weight:bold;
+    padding-bottom:12px;
+}
+
+.floors{
+    display:flex;
+    flex-direction:column-reverse;
+    gap:10px;
+}
+
+.floor{
+    display:flex;
+    justify-content:center;
+    align-items:flex-end;
+    min-height:110px;
+    transition:all 0.3s ease;
+}
+
+.part{
+    display:flex;
+    align-items:flex-end;
+    gap:6px;
+    min-height:110px;
+    padding:10px;
+    border:3px solid #333;
+    background:#ffffff;
+    box-sizing:border-box;
+    position:relative;
+}
+
+.part span{
+    position:absolute;
+    top:6px;
+    left:10px;
+    font-size:24px;
+    opacity:0.15;
+    font-weight:bold;
+}
+
+.left{ justify-content:flex-end; }
+.right{ justify-content:flex-start; }
+
+.token{
+    width:40px;
+    height:40px;
+    object-fit:contain;
+    touch-action:none;
+    cursor:grab;
+}
+
+.dragging{
+    position:fixed;
+    z-index:1000;
+    pointer-events:none;
+    cursor:grabbing;
+}
+
+#tokens{
+    margin-top:30px;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:6px;
+}
+
+#trash{
+    margin-top:20px;
+    min-height:80px;
+    border:2px dashed #888;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:6px;
+    padding:10px;
+    background:#f0f0f0;
+}
+
+#trash span{
+    color:#888;
+    font-weight:bold;
+}
+
+#boardControls{
+    margin-top:10px;
+    display:flex;
+    justify-content:center;
+    gap:10px;
+}
+
+button.drawBtn{
+    font-size:16px;
+    padding:5px 10px;
+}
+
+@keyframes bounce {
+  0% { transform: translateY(0); }
+  25% { transform: translateY(-20px); }
+  50% { transform: translateY(0); }
+  75% { transform: translateY(-10px); }
+  100% { transform: translateY(0); }
+}
+
+.bounce {
+  animation: bounce 0.6s ease;
+}
+</style>
+</head>
+<body>
+
+<h1>СОСТАВ ЧИСЛА</h1>
+
+<div class="controls">
+Число:
+<select id="numberSelect">
+<option>3</option>
+<option selected>4</option>
+<option>5</option>
+<option>6</option>
+<option>7</option>
+<option>8</option>
+<option>9</option>
+<option>10</option>
+</select>
+
+Режим:
+<select id="modeSelect">
+<option value="limited">С лимитом</option>
+<option value="unlimited">Без лимита</option>
+<option value="fill">Заполни пропуск</option>
+<option value="fix" selected>Исправь домик</option>
+</select>
+
+<button onclick="startGame()">Старт</button>
+</div>
+
+<div id="instruction"></div>
+
+<div id="houseContainer">
+<canvas id="board"></canvas>
+<div id="house"></div>
+</div>
+
+<div id="boardControls">
+<button class="drawBtn" onclick="setTool('pen')">Ручка</button>
+<button class="drawBtn" onclick="setTool('eraser')">Ластик</button>
+<button class="drawBtn" onclick="clearBoard()">Очистить</button>
+</div>
+
+<button id="checkBtn" onclick="checkHouse()" style="display:none;">
+Проверить
+</button>
+
+<div id="tokens"></div>
+
+<div id="trash"><span>Перетащи сюда лишние токены</span></div>
+
+<script>
+const imgSrc="https://catalog-cdn.detmir.st/media/M5ixUcmGflIrqy2RW3fyx1ZTxhssvWvb8UWwZeiKjIo=.jpeg";
+
+let dragged=null;
+let startParent=null;
+let offsetX=0, offsetY=0;
+let audioCtx;
+
+const board=document.getElementById("board");
+const ctx=board.getContext("2d");
+let drawing=false;
+let tool='pen';
+
+document.addEventListener("pointerdown",()=>{
+    if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+},{once:true});
+
+function popSound(){
+    if(!audioCtx)return;
+    const osc=audioCtx.createOscillator();
+    const gain=audioCtx.createGain();
+    osc.frequency.setValueAtTime(600,audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(200,audioCtx.currentTime+0.15);
+    gain.gain.setValueAtTime(.4,audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+0.15);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime+0.15);
+}
+
+function baseWidth(count){ return Math.max(260,count*60); }
+
+function resizeTokens(part){
+    const tokens=part.querySelectorAll(".token");
+    if(tokens.length===0) return;
+    const maxWidth=part.clientWidth-20;
+    let size=40;
+    if(tokens.length*45>maxWidth){
+        size=Math.floor(maxWidth/tokens.length);
+        if(size<15) size=15;
+    }
+    tokens.forEach(t=>{
+        t.style.width=size+"px";
+        t.style.height=size+"px";
+    });
+}
+
+function startGame(){
+    const N=parseInt(numberSelect.value);
+    house.innerHTML="";
+    tokens.innerHTML="";
+    const mode=modeSelect.value;
+
+    if(mode==="limited") instruction.innerText="ПО-МО-ГИ ЛА-БУ-БУ ПО-МЕС-ТИТЬ-СЯ В ДО-МИ-КАХ!";
+    else if(mode==="unlimited") instruction.innerText="РАЗМЕЩАЙ ЛА-БУ-БУ БЕЗ ЛИМИТОВ!";
+    else if(mode==="fill") instruction.innerText="НАПОЛНИ ПРОПУСКИ В ДО-МИ-КАХ!";
+    else instruction.innerText="ИСПРАВЬ ДОМИК!";
+
+    createHouse(N);
+
+    if(mode==="limited" || mode==="unlimited") createTokens(N*(N+1));
+    else createTokensForPuzzle(N, mode);
+
+    checkBtn.style.display = (mode==="unlimited" || mode==="fix" || mode==="fill") ? "inline-block" : "none";
+
+    board.width=window.innerWidth;
+    board.height=window.innerHeight;
+}
+
+function createHouse(N){
+    const mode=modeSelect.value;
+    const totalWidth=baseWidth(N);
+
+    const houseDiv=document.createElement("div");
+    houseDiv.className="house";
+
+    const roof=document.createElement("div");
+    roof.className="roof";
+    roof.style.width=totalWidth+"px";
+    roof.innerText=N;
+
+    const floors=document.createElement("div");
+    floors.className="floors";
+
+    for(let i=0;i<=N;i++){
+        const floor=document.createElement("div");
+        floor.className="floor";
+        floor.style.width=totalWidth+"px";
+
+        const left=document.createElement("div");
+        const right=document.createElement("div");
+
+        left.className="part left";
+        right.className="part right";
+
+        left.style.width=(totalWidth/2)+"px";
+        right.style.width=(totalWidth/2)+"px";
+
+        if(mode==="limited"){
+            left.dataset.limit=i;
+            right.dataset.limit=N-i;
+            left.innerHTML=`<span>${i}</span>`;
+            right.innerHTML=`<span>${N-i}</span>`;
+        } else if(mode==="fill" || mode==="fix"){
+            left.innerHTML=`<span>?</span>`;
+            right.innerHTML=`<span>?</span>`;
+        }
+
+        floor.appendChild(left);
+        floor.appendChild(right);
+        floors.appendChild(floor);
+    }
+
+    houseDiv.appendChild(roof);
+    houseDiv.appendChild(floors);
+    house.appendChild(houseDiv);
+}
+
+function createTokensForPuzzle(N, mode){
+    const floors=document.querySelectorAll(".floor");
+    floors.forEach(floor=>{
+        let leftCount,rightCount;
+
+        if(mode==="fill"){
+            leftCount=Math.floor(Math.random()*(N+1));
+            rightCount=N-leftCount;
+            if(leftCount>0 && Math.random()<0.5) leftCount--;
+            else if(rightCount>0) rightCount--;
+        } else { // fix mode
+            leftCount=Math.floor(Math.random()*(N+1));
+            rightCount=N-leftCount;
+            if(Math.random()<0.5 && leftCount>0 && rightCount>0){
+                leftCount--; rightCount++;
+            }
+        }
+
+        for(let i=0;i<leftCount;i++){
+            const img=document.createElement("img");
+            img.src=imgSrc;
+            img.className="token";
+            img.addEventListener("pointerdown",startDrag);
+            floor.querySelector(".left").appendChild(img);
+        }
+        for(let i=0;i<rightCount;i++){
+            const img=document.createElement("img");
+            img.src=imgSrc;
+            img.className="token";
+            img.addEventListener("pointerdown",startDrag);
+            floor.querySelector(".right").appendChild(img);
+        }
+
+        resizeTokens(floor.querySelector(".left"));
+        resizeTokens(floor.querySelector(".right"));
+    });
+}
+
+function createTokens(count){
+    for(let i=0;i<count;i++){
+        const img=document.createElement("img");
+        img.src=imgSrc;
+        img.className="token";
+        img.addEventListener("pointerdown",startDrag);
+        tokens.appendChild(img);
+    }
+}
+
+function startDrag(e){
+    dragged=e.target;
+    startParent=dragged.parentNode;
+
+    const rect=dragged.getBoundingClientRect();
+    offsetX=e.clientX-rect.left;
+    offsetY=e.clientY-rect.top;
+
+    document.body.appendChild(dragged);
+
+    dragged.classList.add("dragging");
+    dragged.style.width=rect.width+"px";
+    dragged.style.height=rect.height+"px";
+
+    moveAt(e.clientX,e.clientY);
+
+    document.addEventListener("pointermove",onMove);
+    document.addEventListener("pointerup",stopDrag);
+}
+
+function moveAt(x,y){
+    if(!dragged) return;
+    dragged.style.transform=`translate(${x-offsetX}px, ${y-offsetY}px)`;
+}
+
+function onMove(e){ moveAt(e.clientX,e.clientY); }
+
+function stopDrag(e){
+    document.removeEventListener("pointermove",onMove);
+    document.removeEventListener("pointerup",stopDrag);
+    if(!dragged) return;
+
+    const drop=document.elementFromPoint(e.clientX,e.clientY);
+    const part=drop?.closest(".part");
+    const trash=drop?.closest("#trash");
+    let placed=false;
+
+    if(part){ part.appendChild(dragged); resizeTokens(part); popSound(); placed=true; }
+    else if(trash){ trash.appendChild(dragged); resizeTokens(trash); popSound(); placed=true; }
+
+    if(!placed && startParent){ startParent.appendChild(dragged); resizeTokens(startParent); }
+
+    dragged.classList.remove("dragging");
+    dragged.style.transform="";
+    dragged.style.width="";
+    dragged.style.height="";
+    dragged=null;
+}
+
+function checkHouse(){
+    const N=parseInt(document.querySelector(".roof").innerText);
+    document.querySelectorAll(".floor").forEach(floor=>{
+        const leftCount=floor.querySelector(".left").querySelectorAll(".token").length;
+        const rightCount=floor.querySelector(".right").querySelectorAll(".token").length;
+        if(leftCount+rightCount===N){
+            floor.style.borderColor="green";
+            floor.classList.add("bounce");
+            setTimeout(()=>floor.classList.remove("bounce"),600);
+        } else { floor.style.borderColor="red"; }
+    });
+}
+
+// --- Доска ---
+board.addEventListener("pointerdown",e=>{
+    drawing=true;
+    ctx.beginPath();
+    ctx.moveTo(e.clientX,e.clientY);
+});
+
+board.addEventListener("pointermove",e=>{
+    if(!drawing) return;
+    if(tool==='eraser') ctx.globalCompositeOperation='destination-out';
+    else ctx.globalCompositeOperation='source-over';
+    ctx.lineTo(e.clientX,e.clientY);
+    ctx.strokeStyle="rgba(0,0,0,0.5)";
+    ctx.lineWidth=4;
+    ctx.lineCap="round";
+    ctx.stroke();
+});
+
+board.addEventListener("pointerup",()=>{drawing=false;});
+
+function setTool(t){ tool=t; }
+function clearBoard(){ ctx.clearRect(0,0,board.width,board.height); }
+</script>
+
+</body>
+</html>

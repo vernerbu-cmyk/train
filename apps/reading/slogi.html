@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Тренажёр слогов</title>
+<style>
+html, body { margin:0; height:100%; font-family: Arial, sans-serif; background:#f0f0f0; }
+body { display:flex; flex-direction:column; align-items:center; }
+
+header { 
+    background:#ff9900; 
+    color:white; 
+    padding:5px 10px;
+    font-size:32px; 
+    font-style:italic; 
+    width:100%; 
+    text-align:center; 
+    box-shadow:0 2px 5px rgba(0,0,0,0.2);
+}
+
+#title { line-height:1; margin-bottom:0; }
+#title span { display:block; }
+
+#settings { margin-top:0; text-align:center; }
+#settings input[type=range]{width:220px; vertical-align:middle; display:block; margin:0 auto;}
+#syllable-container { flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; width:100%; position:relative; }
+#syllable { font-size:96px; font-weight:bold; color:#000; opacity:0; transform: scale(0.8); transition: opacity 0.3s ease, transform 0.3s ease; }
+#extraLetter { font-size:72px; font-weight:bold; color:#000; margin-top:10px; opacity:0; transition: opacity 0.3s ease; }
+#feedbackIcon { position:absolute; font-size:72px; transform:translateX(-50%) scale(0.5); opacity:0; transition: opacity 0.3s ease, transform 0.3s ease; pointer-events:none; }
+.hidden { display:none; }
+
+.speed-labels { 
+    display:flex; 
+    justify-content:center; 
+    gap:40px; 
+    font-size:16px; 
+    color:#fff; 
+    margin:0 auto; 
+    font-weight:bold; 
+    text-shadow:none; 
+    font-style:normal; 
+    line-height:1.2;
+}
+
+label { font-size:12px; margin:0 5px; }
+button { margin-top:5px; padding:5px 10px; font-size:14px; cursor:pointer; }
+#customBannedContainer { margin-top:5px; text-align:center; }
+#customBannedContainer input[type=text]{ width:180px; font-size:12px; }
+#customBannedContainer button{ font-size:12px; }
+</style>
+</head>
+<body>
+
+<header>
+<div id="title">
+  <span>Лидер</span>
+  <span>Ген</span>
+</div>
+
+<div id="settings" class="hidden">
+<select id="level">
+  <option value="1">1</option>
+  <option value="2">2</option>
+  <option value="3">3</option>
+  <option value="4">4</option>
+  <option value="5">5</option>
+  <option value="6">6</option>
+</select>
+<div>
+  <span class="speed-labels"><span>Медленно</span><span>Быстро</span></span>
+  <input type="range" id="speed" min="1" max="100" value="50">
+</div>
+<label><input type="checkbox" id="advanced"> Продвинутый</label>
+<label><input type="checkbox" id="voice"> Голос</label>
+<label><input type="checkbox" id="manualMode"> Ручной режим (пробел)</label>
+
+<button id="toggleCustomBanned">Показать поле запрещённых комбинаций</button>
+<div id="customBannedContainer" class="hidden">
+  <input type="text" id="customBanned" placeholder="через запятую">
+  <button id="addBanned">Добавить</button>
+</div>
+</div>
+
+<button id="toggleSettings">Показать настройки</button>
+</header>
+
+<div id="syllable-container">
+<div id="feedbackIcon" class="hidden"></div>
+<div id="syllable">--</div>
+<div id="extraLetter"></div>
+</div>
+
+<script>
+const vowels=['а','е','ё','и','о','у','ы','э','ю','я'];
+const consonants=['б','в','г','д','ж','з','й','к','л','м','н','п','р','с','т','ф','х','ц','ч','ш','щ'];
+const restrictedVowelsAfter=['я','ё','е','ю'];
+const restrictedConsonants=['ж','ш','ц','щ','ч','й'];
+const bannedWords=[
+  'хуй','жоп','ёб','ёба','еб','еба','жы','шы','чя','щя','чю','щю',
+  'нах','нахе','хер',
+  'сук','сукь','бля','блять','блядь'
+];
+
+function random(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function getRandomConsonantNoRepeat(prev='') { let filtered = consonants.filter(c=>c!==prev); return random(filtered); }
+
+const levelConfigs={
+1:()=>{const v=random(vowels); const c=getRandomConsonantNoRepeat(); return v+c;},
+2:()=>{let c=getRandomConsonantNoRepeat(); let v; do{v=random(vowels);} while(restrictedConsonants.includes(c) && restrictedVowelsAfter.includes(v)); return c+v;},
+3:()=>{const v=random(vowels); const c1=getRandomConsonantNoRepeat(); let c2; do{c2=getRandomConsonantNoRepeat(c1);} while(c2===c1); return v+c1+c2;},
+4:()=>{let c1=getRandomConsonantNoRepeat(); let c2; do{c2=getRandomConsonantNoRepeat(c1);} while(c2===c1); let v; do{v=random(vowels);} while(restrictedConsonants.includes(c2) && restrictedVowelsAfter.includes(v)); return c1+c2+v;},
+5:()=>{const c1=getRandomConsonantNoRepeat(); let v; do{v=random(vowels);} while(restrictedConsonants.includes(c1) && restrictedVowelsAfter.includes(v)); let filtered=consonants.filter(c=>c!=='й'&&c!=='щ'&&c!==c1); const c2=random(filtered); return c1+v+c2+'ь';},
+6:()=>{const c=getRandomConsonantNoRepeat(); const sign=random(['ь','ъ']); const allowed=['е','ё','я','ю']; const v=random(allowed); return c+sign+v;}
+};
+
+function generateSyllable(level){
+    let syllable;
+    do{
+        syllable = levelConfigs[level]();
+
+        // Сильная проверка: любая й перед гласной запрещена
+        let invalid = false;
+        for(let i=0;i<syllable.length-1;i++){
+            if(syllable[i].toLowerCase()==='й' && vowels.includes(syllable[i+1].toLowerCase())){
+                invalid = true;
+                break;
+            }
+        }
+        if(invalid) continue;
+
+        // Убираем Ь и Ъ для уровней 1-4
+        if(level!==5 && level!==6){
+            if(syllable.includes('ь')||syllable.includes('ъ')) continue;
+        }
+
+    } while(bannedWords.some(bw => syllable.toLowerCase().includes(bw)));
+    return syllable;
+}
+
+let intervalId;
+let currentSyllable='';
+let recognition;
+const syllableDiv=document.getElementById('syllable');
+const extraLetterDiv=document.getElementById('extraLetter');
+const feedbackIcon=document.getElementById('feedbackIcon');
+
+function showNextSyllable(){
+const level=document.getElementById('level').value;
+currentSyllable=generateSyllable(level);
+syllableDiv.textContent=currentSyllable;
+extraLetterDiv.textContent=document.getElementById('advanced').checked?random(['О','Л','П']):'';
+syllableDiv.style.opacity=0;
+syllableDiv.style.transform='scale(0.8)';
+extraLetterDiv.style.opacity=0;
+feedbackIcon.classList.add('hidden');
+setTimeout(()=>{
+  syllableDiv.style.opacity=1;
+  syllableDiv.style.transform='scale(1)';
+  extraLetterDiv.style.opacity=1;
+},10);
+}
+
+function getIntervalFromSlider() {
+  const slider = document.getElementById('speed');
+  const minMs = 200;
+  const maxMs = 5000;
+  const percent = slider.value / slider.max;
+  return maxMs - percent * (maxMs - minMs);
+}
+
+function startSyllables(){
+const manual=document.getElementById('manualMode').checked;
+const voice=document.getElementById('voice').checked;
+clearInterval(intervalId);
+
+if(manual){
+    showNextSyllable();
+    return;
+}
+
+const intervalMs=getIntervalFromSlider();
+if(!voice){
+    intervalId=setInterval(showNextSyllable, intervalMs);
+}else{
+    showNextSyllable();
+    startVoiceRecognition();
+}
+}
+
+document.getElementById('level').addEventListener('change',startSyllables);
+document.getElementById('speed').addEventListener('input', () => {
+  if(!document.getElementById('voice').checked && !document.getElementById('manualMode').checked){
+    clearInterval(intervalId);
+    intervalId=setInterval(showNextSyllable,getIntervalFromSlider());
+  }
+});
+document.getElementById('advanced').addEventListener('change',startSyllables);
+document.getElementById('voice').addEventListener('change',startSyllables);
+document.getElementById('manualMode').addEventListener('change',startSyllables);
+
+document.getElementById('toggleSettings').addEventListener('click',()=>{
+const settings=document.getElementById('settings');
+settings.classList.toggle('hidden');
+document.getElementById('toggleSettings').textContent=settings.classList.contains('hidden')?'Показать настройки':'Скрыть настройки';
+});
+
+document.getElementById('toggleCustomBanned').addEventListener('click', ()=>{
+  const container=document.getElementById('customBannedContainer');
+  container.classList.toggle('hidden');
+  document.getElementById('toggleCustomBanned').textContent=container.classList.contains('hidden')?'Показать поле запрещённых комбинаций':'Скрыть поле запрещённых комбинаций';
+});
+
+document.getElementById('addBanned').addEventListener('click', ()=>{
+  const input=document.getElementById('customBanned');
+  const items=input.value.split(',').map(s=>s.trim().toLowerCase()).filter(s=>s!=='');
+  items.forEach(i=>{ if(!bannedWords.includes(i)) bannedWords.push(i); });
+  input.value='';
+  alert('Добавлено: '+items.join(', '));
+});
+
+// Голосовое распознавание (ПК)
+function startVoiceRecognition(){
+if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){
+feedbackIcon.textContent="Браузер не поддерживает голос.";
+feedbackIcon.style.color='red';
+feedbackIcon.classList.remove('hidden');
+return;
+}
+const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+recognition=new SpeechRecognition();
+recognition.lang='ru-RU';
+recognition.interimResults=false;
+recognition.continuous=false;
+
+recognition.onresult=function(event){
+let transcript = event.results[0][0].transcript.trim().toLowerCase();
+let expected = currentSyllable.toLowerCase();
+if(transcript === expected){
+  showFeedback('✔','green');
+  setTimeout(showNextSyllable,1000);
+}else{
+  showFeedback('✖','red');
+  recognition.start();
+}
+};
+
+function showFeedback(symbol,color){
+  feedbackIcon.textContent = symbol;
+  feedbackIcon.style.color = color;
+  feedbackIcon.style.opacity = 0;
+  feedbackIcon.style.transform = 'translateX(-50%) scale(0.5)';
+  feedbackIcon.classList.remove('hidden');
+  const rect = syllableDiv.getBoundingClientRect();
+  const containerRect = document.getElementById('syllable-container').getBoundingClientRect();
+  feedbackIcon.style.left = (rect.left + rect.width/2 - containerRect.left) + 'px';
+  feedbackIcon.style.top = (rect.top - containerRect.top - 80) + 'px';
+  setTimeout(()=>{
+    feedbackIcon.style.opacity = 1;
+    feedbackIcon.style.transform = 'translateX(-50%) scale(1)';
+  },10);
+}
+
+recognition.onerror=function(){recognition.stop(); setTimeout(()=>{if(document.getElementById('voice').checked) recognition.start();},500);};
+recognition.onend=function(){if(document.getElementById('voice').checked) recognition.start();};
+
+recognition.start();
+}
+
+// Ручной режим: пробел
+document.addEventListener('keydown', function(e){
+if(e.code === 'Space'){
+    const manual=document.getElementById('manualMode').checked;
+    if(manual){
+        e.preventDefault();
+        showNextSyllable();
+    }
+}
+});
+
+startSyllables();
+</script>
+</body>
+</html>

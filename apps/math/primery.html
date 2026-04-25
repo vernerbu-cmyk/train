@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>СЧЁТ В УМЕ</title>
+
+<style>
+body{margin:0;font-family:Arial;background:#fff}
+
+.topbar{
+  background:#ff7a00;
+  color:#fff;
+  font-weight:800;
+  text-align:center;
+  padding:18px;
+  position:sticky;
+  top:0;
+}
+
+.toggle{
+  position:absolute;
+  right:10px;
+  top:10px;
+  font-size:24px;
+  cursor:pointer;
+}
+
+.controls{
+  display:none;
+  flex-wrap:wrap;
+  gap:10px;
+  padding:10px;
+  background:#f3f3f3;
+}
+
+.control{
+  display:flex;
+  flex-direction:column;
+  min-width:160px;
+}
+
+select,input,button{padding:8px;font-size:16px}
+
+.display{
+  text-align:center;
+  padding:40px;
+}
+
+.problem{
+  font-size:clamp(32px,10vw,120px);
+  font-weight:800;
+}
+
+.letter{
+  font-size:clamp(40px,10vw,100px);
+}
+
+button.primary{
+  background:#ff7a00;
+  color:#fff;
+  border:none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="topbar">
+  СЧЁТ В УМЕ
+  <span class="toggle">⚙</span>
+</div>
+
+<div class="controls" id="panel">
+
+  <div class="control">
+    <label>Режим</label>
+    <select id="mode"></select>
+  </div>
+
+  <div class="control" id="submode"></div>
+
+  <div class="control">
+    <label>Мин 1</label>
+    <input id="min1" type="number" value="1">
+    <label>Макс 1</label>
+    <input id="max1" type="number" value="100">
+    <label>Мин 2</label>
+    <input id="min2" type="number" value="1">
+    <label>Макс 2</label>
+    <input id="max2" type="number" value="100">
+  </div>
+
+  <div class="control">
+    <label>Макс результат (+/-)</label>
+    <input id="maxResult" type="number" value="200">
+  </div>
+
+  <div class="control">
+    <label>Размер шрифта</label>
+    <input id="fontSize" type="range" min="20" max="200" value="80">
+  </div>
+
+  <div class="control">
+    <label>Скорость</label>
+    <input id="speed" type="range" min="100" max="5000" value="1200">
+  </div>
+
+  <!-- 🔥 ВОЗВРАТ РЕЖИМА -->
+  <div class="control">
+    <label><input type="checkbox" id="autoMode" checked> Авто</label>
+  </div>
+
+  <div class="control">
+    <label><input type="checkbox" id="rainbow"> Радуга</label>
+    <label><input type="checkbox" id="hands" checked> Руки</label>
+  </div>
+
+  <div class="control">
+    <button id="start" class="primary">Старт</button>
+    <button id="stop">Стоп</button>
+  </div>
+
+</div>
+
+<div class="display" id="display">
+  <div class="problem" id="out">—</div>
+  <div class="letter" id="hand">—</div>
+</div>
+
+<script>
+
+/* =========================
+   SUBMODE SYSTEM
+========================= */
+
+const submodes = {
+
+  plusminus: `
+    <label>+ / -</label>
+    <select id="pmType">
+      <option value="add">Только +</option>
+      <option value="sub">Только -</option>
+      <option value="both">±</option>
+    </select>
+  `,
+
+  muldiv: `
+    <label>× / ÷</label>
+    <select id="mdType">
+      <option value="mul">Только ×</option>
+      <option value="div">Только ÷</option>
+      <option value="both">× / ÷</option>
+    </select>
+  `,
+
+  fractions: `
+    <label>Дроби</label>
+    <select id="frType">
+      <option value="proper">Обыкновенные</option>
+      <option value="improper">Неправильные</option>
+      <option value="mixed">Смешанные</option>
+      <option value="decimal">Десятичные</option>
+      <option value="all">Все</option>
+    </select>
+
+    <label>Операции</label>
+    <select id="frOp">
+      <option value="pm">+ / -</option>
+      <option value="md">× / ÷</option>
+    </select>
+  `
+};
+
+/* =========================
+   ENGINE
+========================= */
+
+const Engine={
+
+  r(min,max){
+    return Math.floor(Math.random()*(max-min+1))+min;
+  },
+
+  plusminus(){
+    const type=document.getElementById("pmType")?.value || "both";
+
+    let a=this.r(+min1.value,+max1.value);
+    let b=this.r(+min2.value,+max2.value);
+
+    let op = type==="add" ? "+" :
+             type==="sub" ? "-" :
+             (Math.random()<0.5?"+":"-");
+
+    if(op==="-" && a<b)[a,b]=[b,a];
+
+    let maxR=+maxResult.value;
+
+    while(op==="+" ? (a+b>maxR) : (a-b>maxR)){
+      a=this.r(+min1.value,+max1.value);
+      b=this.r(+min2.value,+max2.value);
+      if(op==="-" && a<b)[a,b]=[b,a];
+    }
+
+    return `${a} ${op} ${b}`;
+  },
+
+  muldiv(){
+    const type=document.getElementById("mdType")?.value || "both";
+
+    let a=this.r(+min1.value,+max1.value);
+    let b=this.r(+min2.value,+max2.value);
+
+    if(type==="mul") return `${a} × ${b}`;
+    if(type==="div") return `${a*b} ÷ ${b}`;
+
+    return Math.random()<0.5
+      ? `${a} × ${b}`
+      : `${a*b} ÷ ${b}`;
+  },
+
+  fractions(){
+    const type=document.getElementById("frType")?.value || "proper";
+    const opType=document.getElementById("frOp")?.value || "pm";
+
+    const f=()=>{
+      if(type==="decimal") return (Math.random()*10).toFixed(1);
+      if(type==="proper") return `${this.r(1,9)}/${this.r(2,9)}`;
+      if(type==="improper") return `${this.r(10,20)}/${this.r(2,9)}`;
+      if(type==="mixed") return `${this.r(1,5)} ${this.r(1,9)}/${this.r(2,9)}`;
+
+      const all=["decimal","proper","improper","mixed"];
+      return all[this.r(0,3)];
+    };
+
+    let a=f();
+    let b=f();
+
+    let op = opType==="pm"
+      ? (Math.random()<0.5?"+":"-")
+      : (Math.random()<0.5?"×":"÷");
+
+    return `${a} ${op} ${b}`;
+  }
+};
+
+/* =========================
+   UI + RUNTIME
+========================= */
+
+const out=document.getElementById("out");
+const hand=document.getElementById("hand");
+const submode=document.getElementById("submode");
+const mode=document.getElementById("mode");
+
+const min1=document.getElementById("min1");
+const max1=document.getElementById("max1");
+const min2=document.getElementById("min2");
+const max2=document.getElementById("max2");
+const maxResult=document.getElementById("maxResult");
+
+const fontSize=document.getElementById("fontSize");
+const speed=document.getElementById("speed");
+const autoMode=document.getElementById("autoMode");
+const display=document.getElementById("display");
+
+const modes={
+  plusminus:Engine.plusminus.bind(Engine),
+  muldiv:Engine.muldiv.bind(Engine),
+  fractions:Engine.fractions.bind(Engine)
+};
+
+Object.keys(modes).forEach(m=>{
+  let o=document.createElement("option");
+  o.value=m;
+  o.textContent=m;
+  mode.appendChild(o);
+});
+
+function updateSubmode(){
+  submode.innerHTML=submodes[mode.value];
+}
+mode.onchange=updateSubmode;
+updateSubmode();
+
+let running=false;
+let timer=null;
+
+function render(){
+  const fn=modes[mode.value];
+  out.textContent=fn();
+
+  out.style.fontSize=fontSize.value+"px";
+
+  out.style.color=document.getElementById("rainbow").checked
+    ?`hsl(${Math.random()*360},80%,40%)`
+    :"#111";
+
+  hand.textContent=document.getElementById("hands").checked
+    ?["Л","П","О"][Math.floor(Math.random()*3)]
+    :"";
+}
+
+function loop(){
+  if(!running || !autoMode.checked) return;
+  render();
+  clearTimeout(timer);
+  timer=setTimeout(loop,+speed.value);
+}
+
+function start(){
+  if(running) return;
+  running=true;
+
+  if(autoMode.checked){
+    loop();
+  } else {
+    render();
+  }
+}
+
+function stop(){
+  running=false;
+  clearTimeout(timer);
+}
+
+/* события */
+
+document.getElementById("start").onclick=start;
+document.getElementById("stop").onclick=stop;
+
+/* скорость */
+speed.oninput=()=>{
+  if(running && autoMode.checked){
+    clearTimeout(timer);
+    timer=setTimeout(loop,+speed.value);
+  }
+};
+
+/* ручной режим — клик */
+display.onclick=()=>{
+  if(!autoMode.checked){
+    render();
+  }
+};
+
+/* пробел */
+document.addEventListener('keydown',(e)=>{
+  if(e.code==="Space"){
+    e.preventDefault();
+    if(autoMode.checked){
+      running ? stop() : start();
+    } else {
+      render();
+    }
+  }
+});
+
+/* шрифт */
+fontSize.oninput=()=>{
+  out.style.fontSize=fontSize.value+"px";
+};
+
+/* меню */
+document.querySelector(".toggle").onclick=()=>{
+  panel.style.display=panel.style.display==="flex"?"none":"flex";
+};
+
+</script>
+
+</body>
+</html>
