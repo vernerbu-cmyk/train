@@ -94,11 +94,11 @@ button{width:100%;margin-top:5px;}
 
 <div class="panel" id="basePanel">
 
-<textarea id="newWords" placeholder="слова (сессия)"></textarea>
+<textarea id="newWords" placeholder="слова (только для сессии)"></textarea>
 
 <button id="addBtn">Добавить</button>
-<button id="dedupBtn">Удалить дубликаты</button>
-<button id="clearBtn">Очистить</button>
+<button id="dedupBtn">Удалить дубликаты (сессия)</button>
+<button id="clearBtn">Очистить сессию</button>
 
 <div id="baseList"></div>
 
@@ -115,23 +115,31 @@ const speedTable=[2000,1500,1200,1000,800,600,500,400,300,200,100];
 let timer;
 
 /* =========================
-   🔥 ЗАГРУЗКА JSON (ИСПРАВЛЕНО)
+   ЗАГРУЗКА JSON (СПИСОК → УРОВНИ)
 ========================= */
 
 async function loadBase(){
   try {
 
-    const url = "/train/base.json?t=" + Date.now();
-    console.log("🔎 грузим:", url);
-
     const res = await fetch("https://vernerbu-cmyk.github.io/train/base.json");
 
-    console.log("📡 статус:", res.status);
+    if(!res.ok){
+      throw new Error("HTTP " + res.status);
+    }
 
-    const text = await res.text();
-    console.log("📦 сырой ответ:", text.slice(0, 200));
+    const list = await res.json();
 
-    wordBase = JSON.parse(text);
+    // создаём структуру уровней
+    wordBase = {
+      1: [],2: [],3: [],4:[],
+      5: [],6: [],7: [],8:[]
+    };
+
+    // раскладываем слова по уровням
+    list.forEach(w => {
+      let lvl = detectLevel(w);
+      if(wordBase[lvl]) wordBase[lvl].push(w);
+    });
 
     cleanDuplicates(wordBase);
 
@@ -139,29 +147,12 @@ async function loadBase(){
     restart();
 
   } catch(e){
-    console.error("❌ ОШИБКА:", e);
+    console.error("❌ Ошибка загрузки:", e);
     wordDisplay.textContent = "Ошибка загрузки base.json";
   }
 }
 
 loadBase();
-
-/* ========================= */
-
-function cleanDuplicates(base){
-  for(let lvl in base){
-    let set = new Set();
-
-    base[lvl] = base[lvl]
-      .map(w => w.trim())
-      .filter(w => {
-        if(!w) return false;
-        if(set.has(w)) return false;
-        set.add(w);
-        return true;
-      });
-  }
-}
 
 /* ========================= */
 
@@ -173,10 +164,10 @@ function detectLevel(w){
   if(v === 1) return 1;
   if(v === 2 && len <= 5) return 2;
   if(v === 2 && len >= 6) return 3;
-  if(v === 3 && len <= 7) return 4;
-  if(v === 3) return 5;
-  if(v === 4 && len <= 9) return 6;
-  if(v === 4) return 7;
+  if(v === 3 && len >= 5 && len <= 7) return 4;
+  if(v === 3 && len >= 7) return 5;
+  if(v === 4 && len >= 7 && len <= 9) return 6;
+  if(v === 4 && len >= 9) return 7;
   if(v >= 5) return 8;
 
   return 7;
@@ -227,7 +218,7 @@ function show(){
 
   if(level.value==="random"){
     for(let i=1;i<=8;i++){
-      if(wordBase[i]) pool.push(...wordBase[i]);
+      if(wordBase[i]) pool=pool.concat(wordBase[i]);
     }
   } else {
     pool = wordBase[level.value] || [];
@@ -264,6 +255,8 @@ auto.onchange=restart;
 fontSize.oninput=show;
 fontFamily.onchange=show;
 
+/* ========================= */
+
 document.addEventListener("keydown",e=>{
   if(!auto.checked && e.code==="Space"){
     e.preventDefault();
@@ -271,7 +264,9 @@ document.addEventListener("keydown",e=>{
   }
 });
 
-wordDisplay.onclick=()=>{ if(!auto.checked) show(); };
+wordDisplay.addEventListener("pointerup",()=>{
+  if(!auto.checked) show();
+});
 
 /* =========================
    РЕДАКТОР
@@ -283,6 +278,12 @@ bookBtn.onclick=()=>{
   render();
 };
 
+function cleanDuplicates(base){
+  for(let lvl in base){
+    base[lvl] = [...new Set(base[lvl])];
+  }
+}
+
 addBtn.onclick=()=>{
   newWords.value.split("\n")
   .map(w=>w.trim())
@@ -293,7 +294,6 @@ addBtn.onclick=()=>{
     wordBase[lvl].push(w);
   });
 
-  cleanDuplicates(wordBase);
   render();
   show();
   newWords.value="";
@@ -324,7 +324,7 @@ function render(){
     title.textContent="Уровень "+lvl;
     baseList.appendChild(title);
 
-    (wordBase[lvl]||[]).forEach((w,i)=>{
+    (wordBase[lvl] || []).forEach((w,i)=>{
 
       let row=document.createElement("div");
       row.className="wordItem";
