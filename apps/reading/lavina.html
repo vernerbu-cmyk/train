@@ -118,11 +118,15 @@ button.main{
 
 const speeds=[2,1.75,1.5,1.25,1,0.75,0.5,0.4,0.25,0.1];
 
-let texts = []; // только JSON источник
+let texts = [];
 
 let spans=[], originalWords=[];
 let i=0, running=false, timer=null;
-let startTime=0, clockInterval=null;
+
+let startTime=0;
+let clockInterval=null;
+
+let currentDelay = speeds[4] * 1000;
 
 const textBox=document.getElementById("text");
 const selector=document.getElementById("selector");
@@ -145,16 +149,14 @@ async function loadTexts(){
     const res = await fetch("texts2.json");
     const data = await res.json();
 
-    if(Array.isArray(data) && data.length){
+    if(Array.isArray(data)){
       texts = data;
-
       updateSelector();
 
-      // фикс залипания выбора
-      setTimeout(() => {
+      setTimeout(()=>{
         selector.selectedIndex = 0;
         showText();
-      }, 0);
+      },0);
     }
   }catch(e){
     console.log("texts2.json не загружен", e);
@@ -220,6 +222,8 @@ add.onclick=()=>{
 
 /* ===== TIMER ===== */
 function startClock(){
+  stopClock();
+
   clockInterval=setInterval(()=>{
     let seconds=Math.floor((Date.now()-startTime)/1000);
     timeBox.textContent="Время: "+seconds+" сек";
@@ -227,7 +231,11 @@ function startClock(){
 }
 
 function stopClock(){
-  clearInterval(clockInterval);
+  if(clockInterval){
+    clearInterval(clockInterval);
+    clockInterval=null;
+  }
+  timeBox.textContent="Время: 0 сек";
 }
 
 /* ===== DISAPPEAR ===== */
@@ -245,7 +253,7 @@ function disappearWord(){
   wordsBox.textContent="Слов: "+(spans.length-i);
 
   if(i<spans.length){
-    timer=setTimeout(disappearWord, speeds[speed.value]*1000);
+    timer=setTimeout(disappearWord, currentDelay);
   }else{
     running=false;
     stopClock();
@@ -277,17 +285,15 @@ repeatBtn.onclick=()=>{
   disappearWord();
 };
 
-/* ===== SPEED ===== */
+/* ===== SPEED (LIVE CHANGE) ===== */
 speed.oninput=()=>{
-  if(running){
-    clearTimeout(timer);
-    timer=setTimeout(disappearWord, speeds[speed.value]*1000);
-  }
+  currentDelay = speeds[speed.value] * 1000;
 };
 
 /* ===== INIT ===== */
 loadTexts();
 
 </script>
+
 </body>
 </html>
