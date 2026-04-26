@@ -115,19 +115,16 @@ const speedTable=[2000,1500,1200,1000,800,600,500,400,300,200,100];
 let timer;
 
 /* =========================
-   ЗАГРУЗКА БАЗЫ
+   🔥 ЗАГРУЗКА JSON (ВАШ ПУТЬ)
 ========================= */
 
 async function loadBase(){
   try{
 
-    // 🔥 ключевой фикс: относительный путь + анти-кеш
-    const url = "./base.json?t=" + Date.now();
-
-    const res = await fetch(url);
+    const res = await fetch("/train/base.json?t=" + Date.now());
 
     if(!res.ok){
-      throw new Error("HTTP ERROR " + res.status);
+      throw new Error("HTTP " + res.status);
     }
 
     wordBase = await res.json();
