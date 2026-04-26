@@ -118,7 +118,7 @@ button.main{
 
 const speeds=[2,1.75,1.5,1.25,1,0.75,0.5,0.4,0.25,0.1];
 
-let texts = []; // 👈 ТОЛЬКО JSON
+let texts = []; // только JSON источник
 
 let spans=[], originalWords=[];
 let i=0, running=false, timer=null;
@@ -145,12 +145,16 @@ async function loadTexts(){
     const res = await fetch("texts2.json");
     const data = await res.json();
 
-    if(Array.isArray(data)){
+    if(Array.isArray(data) && data.length){
       texts = data;
 
       updateSelector();
-      selector.value = 0;
-      showText();
+
+      // фикс залипания выбора
+      setTimeout(() => {
+        selector.selectedIndex = 0;
+        showText();
+      }, 0);
     }
   }catch(e){
     console.log("texts2.json не загружен", e);
@@ -195,6 +199,8 @@ function showText(){
   i=0;
 }
 
+selector.onchange=showText;
+
 /* ===== SETTINGS ===== */
 toggleSettings.onclick=()=>{
   settings.style.display=settings.style.display==="block"?"none":"block";
@@ -205,8 +211,9 @@ add.onclick=()=>{
   if(!t) return;
 
   texts.push(t);
+
   updateSelector();
-  selector.value=texts.length-1;
+  selector.selectedIndex=texts.length-1;
   newText.value="";
   showText();
 };
