@@ -119,16 +119,22 @@ const speedTable=[2000,1500,1200,1000,800,600,500,400,300,200,100];
 let timer;
 
 /* =========================
-   ЗАГРУЗКА JSON (ГЛАВНЫЙ ФИКС)
+   🔥 ГЛАВНЫЙ ФИКС ЗАГРУЗКИ
 ========================= */
 
 async function loadBase(){
   try{
 
-    // 🔥 универсальный путь (работает в подпапках GitHub Pages)
-    const baseUrl = new URL("./base.json", window.location.href);
+    // ВСЕГДА правильный путь от текущей страницы
+    const url = new URL("./base.json", window.location.href).href;
 
-    const res = await fetch(baseUrl.href + "?v=" + Date.now());
+    console.log("📦 Загружаю JSON:", url);
+
+    const res = await fetch(url);
+
+    if(!res.ok){
+      throw new Error("HTTP ERROR " + res.status);
+    }
 
     wordBase = await res.json();
 
@@ -138,16 +144,15 @@ async function loadBase(){
     restart();
 
   } catch(e){
-    console.error(e);
-    wordDisplay.textContent = "Ошибка загрузки base.json";
+    console.error("❌ Ошибка загрузки base.json:", e);
+    wordDisplay.textContent =
+      "Ошибка загрузки base.json (см. консоль)";
   }
 }
 
 loadBase();
 
-/* =========================
-   УДАЛЕНИЕ ДУБЛИКАТОВ
-========================= */
+/* ========================= */
 
 function cleanDuplicates(base){
   for(let lvl in base){
@@ -164,9 +169,7 @@ function cleanDuplicates(base){
   }
 }
 
-/* =========================
-   УРОВНИ
-========================= */
+/* ========================= */
 
 function detectLevel(w){
   let word = w.toLowerCase();
@@ -176,18 +179,16 @@ function detectLevel(w){
   if(v === 1) return 1;
   if(v === 2 && len <= 5) return 2;
   if(v === 2 && len >= 6) return 3;
-  if(v === 3 && len >= 5 && len <= 7) return 4;
-  if(v === 3 && len >= 7) return 5;
-  if(v === 4 && len >= 7 && len <= 9) return 6;
-  if(v === 4 && len >= 9) return 7;
+  if(v === 3 && len <= 7) return 4;
+  if(v === 3) return 5;
+  if(v === 4 && len <= 9) return 6;
+  if(v === 4) return 7;
   if(v >= 5) return 8;
 
   return 7;
 }
 
-/* =========================
-   СЛОГИ
-========================= */
+/* ========================= */
 
 function split(word){
   word = word.toLowerCase();
@@ -211,9 +212,7 @@ function split(word){
   return res;
 }
 
-/* =========================
-   ОТРИСОВКА СЛОВА
-========================= */
+/* ========================= */
 
 function decorate(w){
   let parts = split(w);
@@ -227,9 +226,7 @@ function decorate(w){
   return syllables.checked ? parts.join("-") : parts.join("");
 }
 
-/* =========================
-   ПОКАЗ СЛОВА
-========================= */
+/* ========================= */
 
 function show(){
   let pool=[];
@@ -263,9 +260,7 @@ function restart(){
   }
 }
 
-/* =========================
-   UI
-========================= */
+/* ========================= */
 
 speed.oninput=restart;
 level.onchange=show;
@@ -284,9 +279,7 @@ document.addEventListener("keydown",e=>{
 
 wordDisplay.onclick=()=>{ if(!auto.checked) show(); };
 
-/* =========================
-   РЕДАКТОР
-========================= */
+/* ========================= */
 
 bookBtn.onclick=()=>{
   basePanel.style.display =
