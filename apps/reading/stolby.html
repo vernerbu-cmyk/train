@@ -124,7 +124,7 @@ async function loadBase(){
     const url = "/train/base.json?t=" + Date.now();
     console.log("🔎 грузим:", url);
 
-    const res = await fetch(url);
+    const res = await fetch("./base.json");;
 
     console.log("📡 статус:", res.status);
 
