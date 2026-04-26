@@ -3,35 +3,98 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Исчезающий текст — полный тренажёр</title>
+<title>Исчезающий текст</title>
+
 <style>
 body { margin:0; font-family: Arial, sans-serif; background:#fffaf2; }
-header{background:orange;color:white;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;}
+
+header{
+  background:orange;
+  color:white;
+  padding:8px 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
 .logo{font-weight:bold;font-size:20px;}
+
 .speed{display:flex;align-items:center;gap:6px;font-size:14px;}
 input[type=range]{width:130px;}
-.toggles{display:flex;align-items:center;font-size:14px;gap:10px;}
-.toggles input[type=checkbox]{cursor:pointer;}
-#toggleSettings{font-size:26px;background:none;border:none;color:white;cursor:pointer;}
-.controls{margin:10px;display:flex;justify-content:center;gap:10px;}
-button.main{font-size:18px;padding:8px 18px;background:orange;color:white;border:none;border-radius:6px;cursor:pointer;}
-#settings{display:none;background:#fff3e0;padding:12px;}
-#settings textarea,#settings select{width:100%;margin-top:8px;font-size:16px;}
-#settings button{margin-top:8px;}
-#text{padding:16px;max-width:900px;margin:auto;font-size:30px;line-height:1.6;text-align:justify;word-wrap:break-word;background:white;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.1);}
-#words,#time{position:fixed;right:10px;padding:6px 10px;border-radius:6px;font-size:16px;}
-#words{bottom:10px;background:#ffe0b2;}
-#time{bottom:48px;background:#c8e6c9;}
+
+.toggles{display:flex;gap:12px;font-size:14px;}
+
+.controls{
+  margin:12px;
+  display:flex;
+  justify-content:center;
+  gap:12px;
+}
+
+button.main{
+  font-size:18px;
+  padding:8px 18px;
+  background:orange;
+  color:white;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+#settings{
+  display:none;
+  background:#fff3e0;
+  padding:12px;
+}
+
+#settings textarea,
+#settings select{
+  width:100%;
+  margin-top:8px;
+  font-size:16px;
+}
+
+#text{
+  padding:20px;
+  max-width:900px;
+  margin:auto;
+  font-size:30px;
+  line-height:1.6;
+  text-align:justify;
+  background:white;
+  border-radius:8px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+#words,#time{
+  position:fixed;
+  right:10px;
+  padding:6px 10px;
+  border-radius:6px;
+  font-size:16px;
+}
+
+#words{ bottom:10px; background:#ffe0b2; }
+#time{ bottom:48px; background:#c8e6c9; }
 </style>
 </head>
+
 <body>
+
 <header>
   <div class="logo">ЛидерГен</div>
-  <div class="speed"><span>Медленно</span><input id="speed" type="range" min="0" max="9" value="4"><span>Быстро</span></div>
+
+  <div class="speed">
+    <span>Медленно</span>
+    <input id="speed" type="range" min="0" max="9" value="4">
+    <span>Быстро</span>
+  </div>
+
   <div class="toggles">
     <label><input type="checkbox" id="paint"> Белый</label>
     <label><input type="checkbox" id="reverseMode"> Задом наперёд</label>
   </div>
+
   <button id="toggleSettings">⬇</button>
 </header>
 
@@ -52,6 +115,7 @@ button.main{font-size:18px;padding:8px 18px;background:orange;color:white;border
 <div id="time">Время: 0 сек</div>
 
 <script>
+
 const speeds=[2,1.75,1.5,1.25,1,0.75,0.5,0.4,0.25,0.1];
 
 let texts=JSON.parse(localStorage.getItem("texts"))||[
@@ -62,7 +126,31 @@ if(!localStorage.getItem("texts")){
   localStorage.setItem("texts", JSON.stringify(texts));
 }
 
-let spans=[], originalWords=[], i=0, running=false, timer=null, startTime=0;
+/* ===== JSON LOAD (NEW) ===== */
+async function loadExternalTexts(){
+  try {
+    const res = await fetch("texts2.json");
+    if(!res.ok) return;
+
+    const data = await res.json();
+
+    if(Array.isArray(data)){
+      texts = texts.concat(data);
+      texts = [...new Set(texts)];
+
+      localStorage.setItem("texts", JSON.stringify(texts));
+      updateSelector();
+      selector.value = 0;
+      showText();
+    }
+  } catch(e){
+    console.log("texts2.json не загружен:", e);
+  }
+}
+
+let spans=[], originalWords=[];
+let i=0, running=false, timer=null;
+let startTime=0, clockInterval=null;
 
 const textBox=document.getElementById("text");
 const selector=document.getElementById("selector");
@@ -70,24 +158,31 @@ const wordsBox=document.getElementById("words");
 const timeBox=document.getElementById("time");
 const paint=document.getElementById("paint");
 const reverseMode=document.getElementById("reverseMode");
-const settings=document.getElementById("settings");
-const toggleSettings=document.getElementById("toggleSettings");
 const newText=document.getElementById("newText");
 const add=document.getElementById("add");
 const speed=document.getElementById("speed");
 const startBtn=document.getElementById("start");
 const stopBtn=document.getElementById("stop");
 const repeatBtn=document.getElementById("repeat");
+const settings=document.getElementById("settings");
+const toggleSettings=document.getElementById("toggleSettings");
 
 /* ===== SELECTOR ===== */
+
 function updateSelector(){
   selector.innerHTML="";
-  texts.forEach((_,idx)=>{const o=document.createElement("option");o.value=idx;o.textContent="Текст "+(idx+1);selector.appendChild(o);});
+  texts.forEach((_,idx)=>{
+    const o=document.createElement("option");
+    o.value=idx;
+    o.textContent="Текст "+(idx+1);
+    selector.appendChild(o);
+  });
 }
 updateSelector();
-selector.value = 0;
+selector.value=0;
 
-/* ===== REVERSE WITHOUT PUNCT ===== */
+/* ===== FORMAT WORD ===== */
+
 function formatWord(word){
   if(reverseMode.checked){
     let punct="";
@@ -101,40 +196,60 @@ function formatWord(word){
 }
 
 /* ===== SHOW TEXT ===== */
+
 function showText(){
-  let t = texts[selector.value];
-  originalWords = t.split(" "); // сохраняем оригинальные слова
-  textBox.innerHTML = originalWords.map(w => `<span>${formatWord(w)}</span>`).join(" ");
-  spans = [...textBox.querySelectorAll("span")];
-  wordsBox.textContent = "Слов: "+spans.length;
-  timeBox.textContent = "Время: 0 сек";
+  let t=texts[selector.value];
+  originalWords=t.split(" ");
+  textBox.innerHTML=originalWords.map(w=>`<span>${formatWord(w)}</span>`).join(" ");
+  spans=[...textBox.querySelectorAll("span")];
+  wordsBox.textContent="Слов: "+spans.length;
+  timeBox.textContent="Время: 0 сек";
   i=0;
 }
+
 showText();
 selector.onchange=showText;
 
-/* ===== TOGGLE SETTINGS ===== */
-toggleSettings.onclick=()=>{settings.style.display=settings.style.display==="block"?"none":"block";};
+/* ===== SETTINGS ===== */
 
-/* ===== ADD TEXT ===== */
+toggleSettings.onclick=()=>{
+  settings.style.display=settings.style.display==="block"?"none":"block";
+};
+
 add.onclick=()=>{
-  const t = newText.value.replace(/\s+/g," ").trim();
+  const t=newText.value.replace(/\s+/g," ").trim();
   if(!t) return;
   texts.push(t);
   localStorage.setItem("texts", JSON.stringify(texts));
   updateSelector();
-  selector.value = texts.length-1;
+  selector.value=texts.length-1;
   newText.value="";
   showText();
 };
 
-/* ===== START / STOP ===== */
+/* ===== TIMER ===== */
+
+function startClock(){
+  clockInterval=setInterval(()=>{
+    let seconds=Math.floor((Date.now()-startTime)/1000);
+    timeBox.textContent="Время: "+seconds+" сек";
+  },200);
+}
+
+function stopClock(){
+  if(clockInterval){
+    clearInterval(clockInterval);
+    clockInterval=null;
+  }
+}
+
+/* ===== DISAPPEAR ===== */
+
 function disappearWord(){
   if(!running || i>=spans.length) return;
 
-  // обновляем оставшиеся слова из оригинального массива
   for(let j=i;j<spans.length;j++){
-    spans[j].textContent = formatWord(originalWords[j]);
+    spans[j].textContent=formatWord(originalWords[j]);
   }
 
   if(paint.checked) spans[i].style.color="white";
@@ -143,44 +258,56 @@ function disappearWord(){
   i++;
   wordsBox.textContent="Слов: "+(spans.length-i);
 
-  if(i<spans.length) timer=setTimeout(disappearWord, speeds[speed.value]*1000);
-  else {running=false; timer=null; timeBox.textContent="Время: "+Math.round((Date.now()-startTime)/1000)+" сек";}
+  if(i<spans.length){
+    timer=setTimeout(disappearWord, speeds[speed.value]*1000);
+  }else{
+    running=false;
+    timer=null;
+    stopClock();
+  }
 }
+
+/* ===== CONTROLS ===== */
 
 startBtn.onclick=()=>{
   stopBtn.onclick();
-  running=true; i=0; startTime=Date.now();
+  running=true;
+  i=0;
+  startTime=Date.now();
+  startClock();
   disappearWord();
 };
 
 stopBtn.onclick=()=>{
   running=false;
   if(timer){clearTimeout(timer); timer=null;}
-  timeBox.textContent="Время: "+Math.round((Date.now()-startTime)/1000)+" сек";
+  stopClock();
 };
 
-/* ===== REPEAT BUTTON FIXED ===== */
-repeatBtn.onclick = () => {
+repeatBtn.onclick=()=>{
   stopBtn.onclick();
-  i=0;
-  spans.forEach((s,j)=>{
-    s.style.display="inline";
-    s.style.color="black";
-    s.textContent = formatWord(originalWords[j]);
-  });
-  wordsBox.textContent = "Слов: "+spans.length;
-  timeBox.textContent = "Время: 0 сек";
-  running = true;
-  startTime = Date.now();
+  showText();
+  running=true;
+  startTime=Date.now();
+  startClock();
   disappearWord();
 };
 
-speed.oninput=()=>{
-  if(running){
-    stopBtn.onclick();
-    startBtn.onclick();
+/* ===== SPEED CHANGE ===== */
+
+speed.oninput = () => {
+  if (running) {
+    clearTimeout(timer);
+    timer = setTimeout(disappearWord, speeds[speed.value] * 1000);
   }
 };
+
+/* ===== INIT ===== */
+async function init(){
+  await loadExternalTexts();
+}
+init();
+
 </script>
 </body>
 </html>
