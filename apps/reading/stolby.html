@@ -97,8 +97,8 @@ button{width:100%;margin-top:5px;}
 <textarea id="newWords" placeholder="слова (только для сессии)"></textarea>
 
 <button id="addBtn">Добавить</button>
-<button id="dedupBtn">Удалить дубликаты (сессия)</button>
-<button id="clearBtn">Очистить сессию</button>
+<button id="dedupBtn">Удалить дубликаты</button>
+<button id="clearBtn">Очистить</button>
 
 <div id="baseList"></div>
 
@@ -110,8 +110,8 @@ button{width:100%;margin-top:5px;}
 
 let wordBase = {};
 
-const vowels="аеёиоуыэюя";
-const speedTable=[2000,1500,1200,1000,800,600,500,400,300,200,100];
+const vowels = "аеёиоуыэюя";
+const speedTable = [2000,1500,1200,1000,800,600,500,400,300,200,100];
 let timer;
 
 /* =========================
@@ -129,26 +129,26 @@ async function loadBase(){
 
     const list = await res.json();
 
-    // создаём структуру уровней
     wordBase = {
-      1: [],2: [],3: [],4:[],
-      5: [],6: [],7: [],8:[]
+      1:[],2:[],3:[],4:[],
+      5:[],6:[],7:[],8:[]
     };
 
-    // раскладываем слова по уровням
-    list.forEach(w => {
-      let lvl = detectLevel(w);
-      if(wordBase[lvl]) wordBase[lvl].push(w);
-    });
+    if(Array.isArray(list)){
+      list.forEach(w=>{
+        let lvl = detectLevel(w);
+        if(wordBase[lvl]) wordBase[lvl].push(w);
+      });
+    }
 
-    cleanDuplicates(wordBase);
+    cleanDuplicates();
 
     show();
     restart();
 
   } catch(e){
-    console.error("❌ Ошибка загрузки:", e);
-    wordDisplay.textContent = "Ошибка загрузки base.json";
+    console.error(e);
+    wordDisplay.textContent = "Ошибка загрузки";
   }
 }
 
@@ -157,82 +157,56 @@ loadBase();
 /* ========================= */
 
 function detectLevel(w){
-  let word = w.toLowerCase();
+  let word = (w || "").toLowerCase();
   let v = [...word].filter(c=>vowels.includes(c)).length;
   let len = word.length;
 
   if(v === 1) return 1;
   if(v === 2 && len <= 5) return 2;
   if(v === 2 && len >= 6) return 3;
-  if(v === 3 && len >= 5 && len <= 7) return 4;
-  if(v === 3 && len >= 7) return 5;
-  if(v === 4 && len >= 7 && len <= 9) return 6;
-  if(v === 4 && len >= 9) return 7;
-  if(v >= 5) return 8;
+  if(v === 3 && len <= 7) return 4;
+  if(v === 3 && len > 7) return 5;
+  if(v === 4) return 6;
+  if(v >= 5) return 7;
 
-  return 7;
+  return 8;
 }
 
 /* ========================= */
 
-function split(word){
-  word = word.toLowerCase();
-  let res=[],cur="";
-
-  for(let i=0;i<word.length;i++){
-    cur+=word[i];
-
-    if(vowels.includes(word[i])){
-      if(word[i+1]==="ь"){
-        cur+=word[i+1];
-        i++;
-      }
-      res.push(cur);
-      cur="";
-    }
+function cleanDuplicates(){
+  for(let k in wordBase){
+    wordBase[k] = [...new Set(wordBase[k] || [])];
   }
-
-  if(cur) res[res.length-1]+=cur;
-
-  return res;
-}
-
-/* ========================= */
-
-function decorate(w){
-  let parts = split(w);
-
-  if(highlight.checked){
-    parts = parts.map(p =>
-      "<span class='highlight'>"+p[0]+"</span>"+p.slice(1)
-    );
-  }
-
-  return syllables.checked ? parts.join("-") : parts.join("");
 }
 
 /* ========================= */
 
 function show(){
-  let pool=[];
+  let pool = [];
 
-  if(level.value==="random"){
+  if(level.value === "random"){
     for(let i=1;i<=8;i++){
-      if(wordBase[i]) pool=pool.concat(wordBase[i]);
+      if(wordBase[i]) pool.push(...wordBase[i]);
     }
   } else {
     pool = wordBase[level.value] || [];
   }
 
-  if(!pool.length){
-    wordDisplay.textContent="—";
+  if(pool.length === 0){
+    wordDisplay.textContent = "—";
     return;
   }
 
-  let w=pool[Math.floor(Math.random()*pool.length)];
+  let w = pool[Math.floor(Math.random()*pool.length)];
 
-  wordDisplay.innerHTML=decorate(w);
-  wordDisplay.style.fontSize = fontSize.value+"px";
+  if(!w){
+    wordDisplay.textContent = "—";
+    return;
+  }
+
+  wordDisplay.textContent = w;
+  wordDisplay.style.fontSize = fontSize.value + "px";
   wordDisplay.style.fontFamily = fontFamily.value;
 }
 
@@ -241,21 +215,17 @@ function show(){
 function restart(){
   clearInterval(timer);
   if(auto.checked){
-    timer=setInterval(show,speedTable[speed.value]);
+    timer = setInterval(show, speedTable[speed.value]);
   }
 }
 
 /* ========================= */
 
-speed.oninput=restart;
-level.onchange=show;
-syllables.onchange=show;
-highlight.onchange=show;
-auto.onchange=restart;
-fontSize.oninput=show;
-fontFamily.onchange=show;
-
-/* ========================= */
+speed.oninput = restart;
+level.onchange = show;
+fontSize.oninput = show;
+fontFamily.onchange = show;
+auto.onchange = restart;
 
 document.addEventListener("keydown",e=>{
   if(!auto.checked && e.code==="Space"){
@@ -264,100 +234,9 @@ document.addEventListener("keydown",e=>{
   }
 });
 
-wordDisplay.addEventListener("pointerup",()=>{
+wordDisplay.onclick = ()=>{
   if(!auto.checked) show();
-});
-
-/* =========================
-   РЕДАКТОР
-========================= */
-
-bookBtn.onclick=()=>{
-  basePanel.style.display =
-  basePanel.style.display==="block"?"none":"block";
-  render();
 };
-
-function cleanDuplicates(base){
-  for(let lvl in base){
-    base[lvl] = [...new Set(base[lvl])];
-  }
-}
-
-addBtn.onclick=()=>{
-  newWords.value.split("\n")
-  .map(w=>w.trim())
-  .filter(Boolean)
-  .forEach(w=>{
-    let lvl = detectLevel(w);
-    if(!wordBase[lvl]) wordBase[lvl]=[];
-    wordBase[lvl].push(w);
-  });
-
-  render();
-  show();
-  newWords.value="";
-};
-
-dedupBtn.onclick=()=>{
-  cleanDuplicates(wordBase);
-  render();
-};
-
-clearBtn.onclick=()=>{
-  if(confirm("Очистить сессию?")){
-    wordBase={1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[]};
-    render();
-    show();
-  }
-};
-
-/* ========================= */
-
-function render(){
-  baseList.innerHTML="";
-
-  for(let lvl=1;lvl<=8;lvl++){
-
-    let title=document.createElement("div");
-    title.className="levelTitle";
-    title.textContent="Уровень "+lvl;
-    baseList.appendChild(title);
-
-    (wordBase[lvl] || []).forEach((w,i)=>{
-
-      let row=document.createElement("div");
-      row.className="wordItem";
-
-      let text=document.createElement("div");
-      text.className="wordText";
-      text.textContent=w;
-
-      text.onclick=()=>{
-        let nw=prompt("Редактировать",w);
-        if(nw){
-          wordBase[lvl][i]=nw.trim();
-          render();
-          show();
-        }
-      };
-
-      let del=document.createElement("div");
-      del.className="deleteBtn";
-      del.textContent="✖";
-
-      del.onclick=()=>{
-        wordBase[lvl].splice(i,1);
-        render();
-        show();
-      };
-
-      row.appendChild(text);
-      row.appendChild(del);
-      baseList.appendChild(row);
-    });
-  }
-}
 
 </script>
 
