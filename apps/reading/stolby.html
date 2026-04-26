@@ -63,10 +63,14 @@ button{width:100%;margin-top:5px;}
 <label>Уровень
 <select id="level">
 <option value="random">Случайно</option>
-<option value="1">1</option><option value="2">2</option>
-<option value="3">3</option><option value="4">4</option>
-<option value="5">5</option><option value="6">6</option>
-<option value="7">7</option><option value="8">8</option>
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="4">4</option>
+<option value="5">5</option>
+<option value="6">6</option>
+<option value="7">7</option>
+<option value="8">8</option>
 </select>
 </label>
 
@@ -74,7 +78,9 @@ button{width:100%;margin-top:5px;}
 <label><input type="checkbox" id="highlight"> подсветка</label>
 <label><input type="checkbox" id="auto" checked> авто</label>
 
-<label>Размер <input type="number" id="fontSize" value="28" min="12" max="120"></label>
+<label>Размер
+<input type="number" id="fontSize" value="28" min="12" max="120">
+</label>
 
 <label>Шрифт
 <select id="fontFamily">
@@ -107,39 +113,20 @@ button{width:100%;margin-top:5px;}
 <script>
 
 let wordBase = {};
-let timer = null;
 
-const vowels = "аеёиоуыэюя";
-const speedTable = [2000,1500,1200,1000,800,600,500,400,300,200,100];
-
-/* =========================
-   ЭЛЕМЕНТЫ
-========================= */
-
-const el = id => document.getElementById(id);
-
-const levelEl = el("level");
-const speedEl = el("speed");
-const syllablesEl = el("syllables");
-const highlightEl = el("highlight");
-const autoEl = el("auto");
-const fontSizeEl = el("fontSize");
-const fontFamilyEl = el("fontFamily");
-
-const wordDisplay = el("wordDisplay");
-const baseList = el("baseList");
-const basePanel = el("basePanel");
-const newWords = el("newWords");
+const vowels="аеёиоуыэюя";
+const speedTable=[2000,1500,1200,1000,800,600,500,400,300,200,100];
+let timer;
 
 /* =========================
-   JSON LOAD (СТАБИЛЬНЫЙ ПУТЬ)
+   ЗАГРУЗКА JSON (ГЛАВНЫЙ ФИКС)
 ========================= */
 
 async function loadBase(){
   try{
 
-    // автоматически определяем путь сайта
-    const baseUrl = new URL("base.json", window.location.href);
+    // 🔥 универсальный путь (работает в подпапках GitHub Pages)
+    const baseUrl = new URL("./base.json", window.location.href);
 
     const res = await fetch(baseUrl.href + "?v=" + Date.now());
 
@@ -150,7 +137,7 @@ async function loadBase(){
     show();
     restart();
 
-  }catch(e){
+  } catch(e){
     console.error(e);
     wordDisplay.textContent = "Ошибка загрузки base.json";
   }
@@ -159,12 +146,12 @@ async function loadBase(){
 loadBase();
 
 /* =========================
-   CLEAN DUPLICATES
+   УДАЛЕНИЕ ДУБЛИКАТОВ
 ========================= */
 
 function cleanDuplicates(base){
-  for(const lvl in base){
-    const set = new Set();
+  for(let lvl in base){
+    let set = new Set();
 
     base[lvl] = base[lvl]
       .map(w => w.trim())
@@ -178,7 +165,7 @@ function cleanDuplicates(base){
 }
 
 /* =========================
-   LOGIC
+   УРОВНИ
 ========================= */
 
 function detectLevel(w){
@@ -189,16 +176,18 @@ function detectLevel(w){
   if(v === 1) return 1;
   if(v === 2 && len <= 5) return 2;
   if(v === 2 && len >= 6) return 3;
-  if(v === 3 && len <= 7) return 4;
-  if(v === 3) return 5;
-  if(v === 4 && len <= 9) return 6;
-  if(v === 4) return 7;
+  if(v === 3 && len >= 5 && len <= 7) return 4;
+  if(v === 3 && len >= 7) return 5;
+  if(v === 4 && len >= 7 && len <= 9) return 6;
+  if(v === 4 && len >= 9) return 7;
   if(v >= 5) return 8;
 
   return 7;
 }
 
-/* ========================= */
+/* =========================
+   СЛОГИ
+========================= */
 
 function split(word){
   word = word.toLowerCase();
@@ -222,31 +211,35 @@ function split(word){
   return res;
 }
 
-/* ========================= */
+/* =========================
+   ОТРИСОВКА СЛОВА
+========================= */
 
 function decorate(w){
   let parts = split(w);
 
-  if(highlightEl.checked){
+  if(highlight.checked){
     parts = parts.map(p =>
       "<span class='highlight'>"+p[0]+"</span>"+p.slice(1)
     );
   }
 
-  return syllablesEl.checked ? parts.join("-") : parts.join("");
+  return syllables.checked ? parts.join("-") : parts.join("");
 }
 
-/* ========================= */
+/* =========================
+   ПОКАЗ СЛОВА
+========================= */
 
 function show(){
   let pool=[];
 
-  if(levelEl.value==="random"){
-    for(let i=1;i<=7;i++){
+  if(level.value==="random"){
+    for(let i=1;i<=8;i++){
       if(wordBase[i]) pool.push(...wordBase[i]);
     }
   } else {
-    pool = wordBase[levelEl.value] || [];
+    pool = wordBase[level.value] || [];
   }
 
   if(!pool.length){
@@ -254,76 +247,75 @@ function show(){
     return;
   }
 
-  const w = pool[Math.floor(Math.random()*pool.length)];
+  let w=pool[Math.floor(Math.random()*pool.length)];
 
-  wordDisplay.innerHTML = decorate(w);
-  wordDisplay.style.fontSize = fontSizeEl.value+"px";
-  wordDisplay.style.fontFamily = fontFamilyEl.value;
+  wordDisplay.innerHTML=decorate(w);
+  wordDisplay.style.fontSize = fontSize.value+"px";
+  wordDisplay.style.fontFamily = fontFamily.value;
 }
 
 /* ========================= */
 
 function restart(){
   clearInterval(timer);
-  if(autoEl.checked){
-    timer = setInterval(show, speedTable[speedEl.value]);
+  if(auto.checked){
+    timer=setInterval(show,speedTable[speed.value]);
   }
 }
 
-/* ========================= */
+/* =========================
+   UI
+========================= */
 
-speedEl.oninput = restart;
-levelEl.onchange = show;
-syllablesEl.onchange = show;
-highlightEl.onchange = show;
-autoEl.onchange = restart;
-fontSizeEl.oninput = show;
-fontFamilyEl.onchange = show;
-
-/* ========================= */
+speed.oninput=restart;
+level.onchange=show;
+syllables.onchange=show;
+highlight.onchange=show;
+auto.onchange=restart;
+fontSize.oninput=show;
+fontFamily.onchange=show;
 
 document.addEventListener("keydown",e=>{
-  if(!autoEl.checked && e.code==="Space"){
+  if(!auto.checked && e.code==="Space"){
     e.preventDefault();
     show();
   }
 });
 
-wordDisplay.onclick = ()=>{
-  if(!autoEl.checked) show();
-};
+wordDisplay.onclick=()=>{ if(!auto.checked) show(); };
 
 /* =========================
-   EDITOR (СЕССИЯ)
+   РЕДАКТОР
 ========================= */
 
-bookBtn.onclick = ()=>{
+bookBtn.onclick=()=>{
   basePanel.style.display =
-    basePanel.style.display==="block"?"none":"block";
+  basePanel.style.display==="block"?"none":"block";
   render();
 };
 
-addBtn.onclick = ()=>{
+addBtn.onclick=()=>{
   newWords.value.split("\n")
-    .map(w=>w.trim())
-    .filter(Boolean)
-    .forEach(w=>{
-      const lvl = detectLevel(w);
-      if(!wordBase[lvl]) wordBase[lvl]=[];
-      wordBase[lvl].push(w);
-    });
+  .map(w=>w.trim())
+  .filter(Boolean)
+  .forEach(w=>{
+    let lvl = detectLevel(w);
+    if(!wordBase[lvl]) wordBase[lvl]=[];
+    wordBase[lvl].push(w);
+  });
 
+  cleanDuplicates(wordBase);
   render();
   show();
   newWords.value="";
 };
 
-dedupBtn.onclick = ()=>{
+dedupBtn.onclick=()=>{
   cleanDuplicates(wordBase);
   render();
 };
 
-clearBtn.onclick = ()=>{
+clearBtn.onclick=()=>{
   if(confirm("Очистить сессию?")){
     wordBase={1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[]};
     render();
@@ -338,22 +330,22 @@ function render(){
 
   for(let lvl=1;lvl<=8;lvl++){
 
-    const title = document.createElement("div");
+    let title=document.createElement("div");
     title.className="levelTitle";
     title.textContent="Уровень "+lvl;
     baseList.appendChild(title);
 
     (wordBase[lvl]||[]).forEach((w,i)=>{
 
-      const row=document.createElement("div");
+      let row=document.createElement("div");
       row.className="wordItem";
 
-      const text=document.createElement("div");
+      let text=document.createElement("div");
       text.className="wordText";
       text.textContent=w;
 
       text.onclick=()=>{
-        const nw=prompt("Редактировать",w);
+        let nw=prompt("Редактировать",w);
         if(nw){
           wordBase[lvl][i]=nw.trim();
           render();
@@ -361,7 +353,7 @@ function render(){
         }
       };
 
-      const del=document.createElement("div");
+      let del=document.createElement("div");
       del.className="deleteBtn";
       del.textContent="✖";
 
