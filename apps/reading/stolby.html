@@ -113,24 +113,19 @@ button{width:100%;margin-top:5px;}
 <script>
 
 let wordBase = {};
-
 const vowels="аеёиоуыэюя";
 const speedTable=[2000,1500,1200,1000,800,600,500,400,300,200,100];
 let timer;
 
 /* =========================
-   🔥 ГЛАВНЫЙ ФИКС ЗАГРУЗКИ
+   🔥 ЗАГРУЗКА JSON (ФИНАЛ)
 ========================= */
 
 async function loadBase(){
   try{
 
-    // ВСЕГДА правильный путь от текущей страницы
-    const url = new URL("./base.json", window.location.href).href;
-
-    console.log("📦 Загружаю JSON:", url);
-
-    const res = await fetch(url);
+    // ВАЖНО: твой сайт живёт в /train/
+    const res = await fetch("/train/base.json");
 
     if(!res.ok){
       throw new Error("HTTP ERROR " + res.status);
@@ -144,9 +139,8 @@ async function loadBase(){
     restart();
 
   } catch(e){
-    console.error("❌ Ошибка загрузки base.json:", e);
-    wordDisplay.textContent =
-      "Ошибка загрузки base.json (см. консоль)";
+    console.error("❌ Ошибка загрузки:", e);
+    wordDisplay.textContent = "Ошибка загрузки base.json";
   }
 }
 
@@ -279,7 +273,9 @@ document.addEventListener("keydown",e=>{
 
 wordDisplay.onclick=()=>{ if(!auto.checked) show(); };
 
-/* ========================= */
+/* =========================
+   РЕДАКТОР
+========================= */
 
 bookBtn.onclick=()=>{
   basePanel.style.display =
