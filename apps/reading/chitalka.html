@@ -34,7 +34,7 @@ header h1{
     font-weight:bold;
 }
 
-/* Контейнер */
+/* Контейнер текста */
 #textContainer{
     background:white;
     padding:20px;
@@ -46,10 +46,11 @@ header h1{
     margin:140px 20px 20px 20px;
 }
 
-/* скрытие */
-.hidden{ display:none; }
+.hidden{
+    display:none;
+}
 
-/* flip */
+/* эффекты */
 .flip{
     transform: rotate(180deg);
 }
@@ -72,6 +73,7 @@ header h1{
     );
 }
 
+/* маски */
 .mask-top span,
 .mask-bottom span{
     position:relative;
@@ -113,13 +115,17 @@ textarea{
 
 <input type="file" id="fileInput" accept=".txt">
 
-<label><input type="checkbox" id="hideInput"> Скрыть поле ввода</label>
+<label>
+<input type="checkbox" id="hideInput"> Скрыть поле ввода
+</label>
 
-<label>Размер:
+<label>
+Размер:
 <input type="range" id="fontSize" min="16" max="60" value="28">
 </label>
 
-<label>Помеха:
+<label>
+Помеха:
 <select id="noiseSelect">
 <option value="none">Без помех</option>
 <option value="tilt">Буквы наклонены</option>
@@ -142,7 +148,8 @@ textarea{
 <span id="tiltValue">15°</span>
 </div>
 
-<label>Сохранённые:
+<label>
+Сохранённые:
 <select id="savedTexts">
 <option value="">— выбрать —</option>
 </select>
@@ -173,13 +180,13 @@ const clearSavedBtn = document.getElementById("clearSaved");
 let savedTexts = JSON.parse(localStorage.getItem("savedTexts") || "[]");
 
 /* =========================
-   📥 ЗАГРУЗКА texts2.json
+   📥 ВОТ ИСПРАВЛЕНИЕ
+   texts.json (ВМЕСТО texts2.json)
 ========================= */
-fetch("texts2.json")
+fetch("texts.json")
 .then(r => r.json())
 .then(data => {
     if (Array.isArray(data)) {
-
         data.forEach(t => {
             if (!savedTexts.includes(t)) {
                 savedTexts.push(t);
@@ -191,7 +198,7 @@ fetch("texts2.json")
     }
 })
 .catch(err => {
-    console.log("texts2.json не найден или не загружен", err);
+    console.log("texts.json не найден:", err);
 });
 
 /* список */
@@ -207,7 +214,7 @@ function updateSavedSelect(){
 
 updateSavedSelect();
 
-/* ======= РЕНДЕР ======= */
+/* ===== РЕНДЕР ===== */
 function renderText(){
 
 let text = textInput.value;
@@ -274,7 +281,7 @@ function wrapLetters(text){
     ).join("");
 }
 
-/* ===== events ===== */
+/* events */
 textInput.addEventListener("input", renderText);
 
 noiseSelect.addEventListener("change", ()=>{
@@ -346,6 +353,5 @@ container.style.fontSize = "28px";
 renderText();
 
 </script>
-
 </body>
 </html>
