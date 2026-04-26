@@ -121,8 +121,7 @@ let timer;
 async function loadBase(){
   try{
 
-    // ✔ ВАЖНО: GitHub Pages root = /
-    const res = await fetch("/base.json?t=" + Date.now());
+    const res = await fetch("/train/base.json?t=" + Date.now());
 
     if(!res.ok){
       throw new Error("HTTP " + res.status);
@@ -136,7 +135,7 @@ async function loadBase(){
     restart();
 
   } catch(e){
-    console.error("❌ Ошибка загрузки:", e);
+    console.error("❌ Ошибка загрузки base.json:", e);
     wordDisplay.textContent = "Ошибка загрузки base.json";
   }
 }
