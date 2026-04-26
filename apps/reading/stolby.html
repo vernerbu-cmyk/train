@@ -121,14 +121,17 @@ let timer;
 async function loadBase(){
   try {
 
-    // 🔥 ТВОЙ РЕАЛЬНЫЙ ПУТЬ НА GITHUB PAGES
-    const res = await fetch("/train/base.json?t=" + Date.now());
+    const url = "/train/base.json?t=" + Date.now();
+    console.log("🔎 грузим:", url);
 
-    if(!res.ok){
-      throw new Error("HTTP " + res.status);
-    }
+    const res = await fetch(url);
 
-    wordBase = await res.json();
+    console.log("📡 статус:", res.status);
+
+    const text = await res.text();
+    console.log("📦 сырой ответ:", text.slice(0, 200));
+
+    wordBase = JSON.parse(text);
 
     cleanDuplicates(wordBase);
 
@@ -136,7 +139,7 @@ async function loadBase(){
     restart();
 
   } catch(e){
-    console.error("❌ Ошибка загрузки base.json:", e);
+    console.error("❌ ОШИБКА:", e);
     wordDisplay.textContent = "Ошибка загрузки base.json";
   }
 }
