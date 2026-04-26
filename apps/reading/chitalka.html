@@ -12,7 +12,7 @@ background:#f5f5f5;
 }
 
 .topbar{
-background:#c40000;
+background:#b80000;
 color:#fff;
 padding:10px;
 display:flex;
@@ -40,30 +40,45 @@ font-size:18px;
 line-height:1.8;
 letter-spacing:0.3px;
 word-spacing:1px;
+position:relative;
+overflow:hidden;
 }
 
-.curtain{
-background: repeating-linear-gradient(
-90deg,
-rgba(0,0,0,0.15) 0px,
-rgba(0,0,0,0.15) 2px,
-transparent 2px,
-transparent 6px
-);
+/* OVERLAY (помехи) */
+#overlay{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+pointer-events:none;
+z-index:5;
 }
 
-.topcut{
-clip-path: inset(50% 0 0 0);
+/* ШТОРКА */
+.shutter-line{
+background:white;
+width:100%;
+margin-bottom:4px;
 }
 
-.bottomcut{
-clip-path: inset(0 0 50% 0);
+/* ВЕРХ / НИЗ */
+.top-mask,
+.bottom-mask{
+position:absolute;
+left:0;
+width:100%;
+background:white;
+z-index:10;
 }
+
+.top-mask{ top:0; }
+.bottom-mask{ bottom:0; }
 
 .hidden{display:none;}
 
 textarea{
-width:220px;
+width:200px;
 height:60px;
 }
 </style>
@@ -92,6 +107,10 @@ height:60px;
 
 <input type="range" id="fontSize" min="14" max="40" value="18">
 
+<label>Наклон <input type="range" id="tilt" min="0" max="40" value="10"></label>
+
+<label>Интенсивность <input type="range" id="intensity" min="1" max="10" value="5"></label>
+
 <textarea id="input">Загрузка текста...</textarea>
 
 <button id="save">Сохранить</button>
@@ -101,15 +120,22 @@ height:60px;
 <select id="saved"></select>
 </div>
 
-<div id="out" class="box"></div>
+<div id="out" class="box">
+<div id="overlay"></div>
+</div>
 
 <script>
 
 let input = document.getElementById("input");
 let out = document.getElementById("out");
+let overlay = document.getElementById("overlay");
+
 let mode = document.getElementById("mode");
 let fontSize = document.getElementById("fontSize");
 let fontFamily = document.getElementById("fontFamily");
+let tilt = document.getElementById("tilt");
+let intensity = document.getElementById("intensity");
+
 let saved = document.getElementById("saved");
 
 let data = JSON.parse(localStorage.getItem("texts") || "[]");
@@ -118,7 +144,6 @@ let data = JSON.parse(localStorage.getItem("texts") || "[]");
 fetch("texts.json")
 .then(r=>r.json())
 .then(json=>{
-
 if(Array.isArray(json)){
 json.forEach(t=>{
 if(!data.includes(t)) data.push(t);
@@ -127,7 +152,6 @@ localStorage.setItem("texts",JSON.stringify(data));
 updateList();
 render();
 }
-
 }).catch(()=>{});
 
 /* ================= LIST ================= */
@@ -142,29 +166,73 @@ saved.appendChild(o);
 }
 updateList();
 
-/* ================= EFFECTS ================= */
-function render(){
+/* ================= EFFECT ENGINE ================= */
+function applyNoise(type){
 
-let text = input.value;
-let m = mode.value;
+overlay.innerHTML="";
 
-out.className="box";
+/* RESET */
+out.style.transform="none";
 
-if(m==="curtain") out.classList.add("curtain");
-if(m==="topcut") out.classList.add("topcut");
-if(m==="bottomcut") out.classList.add("bottomcut");
+/* ===== НАКЛОН ===== */
+if(type==="tilt"){
+let angle = Number(tilt.value);
 
-if(m==="tilt"){
-text = text.split("").map(c=>{
-let a=Math.random()*20-10;
+out.innerHTML = input.value.split("").map(c=>{
+let a = Math.random()*angle*2 - angle;
 return `<span style="display:inline-block;transform:rotate(${a}deg)">${c}</span>`;
 }).join("");
+
+return;
 }
+
+/* ===== ШТОРКА ===== */
+if(type==="curtain"){
+let lines = Number(intensity.value) * 4;
+
+for(let i=0;i<lines;i++){
+let div=document.createElement("div");
+div.className="shutter-line";
+div.style.height = (2 + intensity.value*0.8) + "px";
+overlay.appendChild(div);
+}
+return;
+}
+
+/* ===== ВЕРХ ===== */
+if(type==="topcut"){
+let h = intensity.value * 8;
+
+let top=document.createElement("div");
+top.className="top-mask";
+top.style.height = h+"px";
+
+overlay.appendChild(top);
+return;
+}
+
+/* ===== НИЗ ===== */
+if(type==="bottomcut"){
+let h = intensity.value * 8;
+
+let bottom=document.createElement("div");
+bottom.className="bottom-mask";
+bottom.style.height = h+"px";
+
+overlay.appendChild(bottom);
+return;
+}
+}
+
+/* ================= RENDER ================= */
+function render(){
 
 out.style.fontSize = fontSize.value+"px";
 out.style.fontFamily = fontFamily.value;
 
-out.innerHTML=text;
+out.innerHTML = input.value;
+
+applyNoise(mode.value);
 }
 
 /* ================= EVENTS ================= */
@@ -172,6 +240,8 @@ input.oninput=render;
 mode.onchange=render;
 fontSize.oninput=render;
 fontFamily.onchange=render;
+tilt.oninput=render;
+intensity.oninput=render;
 
 /* ================= SAVE ================= */
 document.getElementById("save").onclick=()=>{
