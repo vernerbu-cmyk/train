@@ -12,13 +12,13 @@ background:#f5f5f5;
 }
 
 .topbar{
-background:#d40000;
+background:#c40000;
 color:#fff;
 padding:10px;
 display:flex;
 flex-wrap:wrap;
-align-items:center;
 gap:10px;
+align-items:center;
 position:sticky;
 top:0;
 z-index:1000;
@@ -60,12 +60,10 @@ clip-path: inset(50% 0 0 0);
 clip-path: inset(0 0 50% 0);
 }
 
-.hidden{
-display:none;
-}
+.hidden{display:none;}
 
 textarea{
-width:200px;
+width:220px;
 height:60px;
 }
 </style>
@@ -84,25 +82,17 @@ height:60px;
 <option value="bottomcut">Без низа</option>
 </select>
 
-<label>
-Шрифт
 <select id="fontFamily">
-<option value="Arial">Arial</option>
-<option value="Georgia">Georgia</option>
-<option value="Times New Roman">Times</option>
-<option value="Verdana">Verdana</option>
-<option value="Courier New">Courier</option>
+<option>Arial</option>
+<option>Georgia</option>
+<option>Times New Roman</option>
+<option>Verdana</option>
+<option>Courier New</option>
 </select>
-</label>
 
-<label>
-Размер
 <input type="range" id="fontSize" min="14" max="40" value="18">
-</label>
 
-<textarea id="input">
-Загрузка текста...
-</textarea>
+<textarea id="input">Загрузка текста...</textarea>
 
 <button id="save">Сохранить</button>
 <button id="edit">Редактировать</button>
@@ -117,62 +107,48 @@ height:60px;
 
 let input = document.getElementById("input");
 let out = document.getElementById("out");
-
 let mode = document.getElementById("mode");
 let fontSize = document.getElementById("fontSize");
 let fontFamily = document.getElementById("fontFamily");
-
 let saved = document.getElementById("saved");
 
 let data = JSON.parse(localStorage.getItem("texts") || "[]");
 
-/* =========================
-   ЗАГРУЗКА texts.json
-========================= */
+/* ================= JSON ================= */
 fetch("texts.json")
-.then(r => r.json())
-.then(json => {
+.then(r=>r.json())
+.then(json=>{
 
 if(Array.isArray(json)){
-
-// merge без дублей
 json.forEach(t=>{
-if(!data.includes(t)){
-data.push(t);
-}
+if(!data.includes(t)) data.push(t);
 });
-
-localStorage.setItem("texts", JSON.stringify(data));
+localStorage.setItem("texts",JSON.stringify(data));
 updateList();
 render();
 }
 
-})
-.catch(()=>{});
+}).catch(()=>{});
 
-/* =========================
-   СПИСОК
-========================= */
+/* ================= LIST ================= */
 function updateList(){
-saved.innerHTML = "";
+saved.innerHTML="";
 data.forEach((t,i)=>{
-let o = document.createElement("option");
-o.value = i;
-o.textContent = "Текст " + (i+1);
+let o=document.createElement("option");
+o.value=i;
+o.textContent="Текст "+(i+1);
 saved.appendChild(o);
 });
 }
 updateList();
 
-/* =========================
-   РЕНДЕР
-========================= */
+/* ================= EFFECTS ================= */
 function render(){
 
 let text = input.value;
 let m = mode.value;
 
-out.className = "box";
+out.className="box";
 
 if(m==="curtain") out.classList.add("curtain");
 if(m==="topcut") out.classList.add("topcut");
@@ -180,76 +156,61 @@ if(m==="bottomcut") out.classList.add("bottomcut");
 
 if(m==="tilt"){
 text = text.split("").map(c=>{
-let a = Math.random()*20-10;
+let a=Math.random()*20-10;
 return `<span style="display:inline-block;transform:rotate(${a}deg)">${c}</span>`;
 }).join("");
 }
 
-out.style.fontSize = fontSize.value + "px";
+out.style.fontSize = fontSize.value+"px";
 out.style.fontFamily = fontFamily.value;
 
-out.innerHTML = text;
+out.innerHTML=text;
 }
 
-/* =========================
-   СОБЫТИЯ
-========================= */
-input.oninput = render;
-mode.onchange = render;
-fontSize.oninput = render;
-fontFamily.onchange = render;
+/* ================= EVENTS ================= */
+input.oninput=render;
+mode.onchange=render;
+fontSize.oninput=render;
+fontFamily.onchange=render;
 
-/* =========================
-   СОХРАНЕНИЕ
-========================= */
-document.getElementById("save").onclick = ()=>{
-
-let t = input.value.trim();
+/* ================= SAVE ================= */
+document.getElementById("save").onclick=()=>{
+let t=input.value.trim();
 if(!t) return;
-
 if(!data.includes(t)){
 data.push(t);
-localStorage.setItem("texts", JSON.stringify(data));
+localStorage.setItem("texts",JSON.stringify(data));
 updateList();
 }
 };
 
-/* =========================
-   ЗАГРУЗКА ИЗ СПИСКА
-========================= */
-saved.onchange = ()=>{
-let i = saved.value;
+/* ================= LOAD ================= */
+saved.onchange=()=>{
+let i=saved.value;
 if(i!==""){
-input.value = data[i];
+input.value=data[i];
 render();
 }
 };
 
-/* =========================
-   РЕДАКТИРОВАНИЕ
-========================= */
-document.getElementById("edit").onclick = ()=>{
-let i = saved.value;
+/* ================= EDIT ================= */
+document.getElementById("edit").onclick=()=>{
+let i=saved.value;
 if(i==="") return;
-input.value = data[i];
+input.value=data[i];
 render();
 };
 
-/* =========================
-   УДАЛЕНИЕ
-========================= */
-document.getElementById("del").onclick = ()=>{
-let i = saved.value;
+/* ================= DELETE ================= */
+document.getElementById("del").onclick=()=>{
+let i=saved.value;
 if(i==="") return;
-
 data.splice(i,1);
-localStorage.setItem("texts", JSON.stringify(data));
-
+localStorage.setItem("texts",JSON.stringify(data));
 updateList();
 render();
 };
 
-/* старт */
 render();
 
 </script>
