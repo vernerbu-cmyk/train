@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Maze Labubu Fix</title>
+
+<style>
+body{
+    margin:0;
+    background:white;
+    overflow:hidden;
+    font-family:Arial;
+}
+
+canvas{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100vw;
+    height:100vh;
+    display:block;
+}
+</style>
+</head>
+
+<body>
+
+<input id="cols" type="number" value="25"
+style="position:fixed;top:10px;left:10px;z-index:10;">
+
+<input id="rows" type="number" value="25"
+style="position:fixed;top:10px;left:80px;z-index:10;">
+
+<label style="position:fixed;top:12px;left:160px;z-index:10;background:white;padding:2px 6px;">
+    <input type="checkbox" id="labubuToggle" checked>
+    Лабубу
+</label>
+
+<button onclick="generateMaze()"
+style="position:fixed;top:10px;left:260px;z-index:10;">Создать</button>
+
+<button onclick="autoRun()"
+style="position:fixed;top:10px;left:340px;z-index:10;">Путь</button>
+
+<canvas id="maze"></canvas>
+
+<img id="labubuWin"
+src="https://media1.tenor.com/m/OUh0o7DMsGYAAAAC/labubu-%D0%BB%D0%B0%D0%B1%D1%83%D0%B1%D1%83.gif"
+style="position:fixed;top:0;left:0;width:100vw;height:100vh;object-fit:contain;background:rgba(0,0,0,0.6);display:none;z-index:9999;">
+
+<script>
+
+const canvas=document.getElementById("maze");
+const ctx=canvas.getContext("2d");
+const labubuWin=document.getElementById("labubuWin");
+
+let cols,rows,cellSize;
+let maze=[];
+let player;
+let exit;
+
+let trail=[];
+let autoMode=false;
+let autoPath=[];
+let autoIndex=0;
+
+let offsetX=0;
+let offsetY=0;
+
+const DIRS=[
+    {x:0,y:-1},
+    {x:1,y:0},
+    {x:0,y:1},
+    {x:-1,y:0}
+];
+
+// ===== FULLSCREEN =====
+function resizeCanvas(){
+    canvas.width=window.innerWidth;
+    canvas.height=window.innerHeight;
+
+    if(cols && rows){
+        cellSize=Math.min(
+            canvas.width/cols,
+            canvas.height/rows
+        );
+
+        offsetX=(canvas.width-cols*cellSize)/2;
+        offsetY=(canvas.height-rows*cellSize)/2;
+    }
+}
+
+window.addEventListener("resize",()=>{
+    resizeCanvas();
+    draw();
+});
+
+// ===== DSU =====
+class DSU{
+    constructor(n){
+        this.p=[...Array(n)].map((_,i)=>i);
+    }
+    find(x){
+        if(this.p[x]!==x) this.p[x]=this.find(this.p[x]);
+        return this.p[x];
+    }
+    union(a,b){
+        a=this.find(a);
+        b=this.find(b);
+        if(a===b) return false;
+        this.p[b]=a;
+        return true;
+    }
+}
+
+function idx(x,y){ return y*cols+x; }
+
+// ===== GENERATE =====
+function generateMaze(){
+
+    cols=+document.getElementById("cols").value;
+    rows=+document.getElementById("rows").value;
+
+    resizeCanvas();
+
+    maze=[];
+    trail=[];
+    autoMode=false;
+    autoPath=[];
+    autoIndex=0;
+
+    player={x:0,y:0};
+    exit={x:cols-1,y:rows-1};
+
+    labubuWin.style.display="none";
+
+    for(let y=0;y<rows;y++){
+        maze[y]=[];
+        for(let x=0;x<cols;x++){
+            maze[y][x]={walls:[true,true,true,true]};
+        }
+    }
+
+    let edges=[];
+
+    for(let y=0;y<rows;y++){
+        for(let x=0;x<cols;x++){
+            if(x<cols-1) edges.push({x,y,dir:1,nx:x+1,ny:y});
+            if(y<rows-1) edges.push({x,y,dir:2,nx:x,ny:y+1});
+        }
+    }
+
+    edges.sort(()=>Math.random()-0.5);
+
+    let dsu=new DSU(rows*cols);
+
+    for(let e of edges){
+        let a=idx(e.x,e.y);
+        let b=idx(e.nx,e.ny);
+
+        if(dsu.union(a,b)){
+            removeWall(e);
+        }
+    }
+
+    draw();
+}
+
+// ===== WALL =====
+function removeWall(e){
+    maze[e.y][e.x].walls[e.dir]=false;
+    maze[e.ny][e.nx].walls[[2,3,0,1][e.dir]]=false;
+}
+
+// ===== PATH =====
+function findPath(){
+    let q=[{x:player.x,y:player.y,path:[]}];
+    let used=new Set();
+
+    while(q.length){
+        let c=q.shift();
+        let k=c.x+","+c.y;
+        if(used.has(k)) continue;
+        used.add(k);
+
+        let p=c.path.concat({x:c.x,y:c.y});
+
+        if(c.x===exit.x&&c.y===exit.y) return p;
+
+        for(let i=0;i<4;i++){
+            if(!maze[c.y][c.x].walls[i]){
+                let nx=c.x+DIRS[i].x;
+                let ny=c.y+DIRS[i].y;
+
+                if(nx>=0&&ny>=0&&nx<cols&&ny<rows){
+                    q.push({x:nx,y:ny,path:p});
+                }
+            }
+        }
+    }
+}
+
+// ===== AUTO =====
+function autoRun(){
+    autoPath=findPath();
+    if(!autoPath) return;
+
+    autoMode=true;
+    autoIndex=0;
+}
+
+// ===== FINISH CHECK (ЕДИНАЯ ЛОГИКА) =====
+function checkFinish(){
+
+    if(player.x===exit.x && player.y===exit.y){
+
+        if(document.getElementById("labubuToggle").checked){
+            labubuWin.style.display="block";
+            setTimeout(()=>labubuWin.style.display="none",2500);
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+// ===== INPUT =====
+document.addEventListener("keydown",(e)=>{
+
+    let dx=0,dy=0;
+
+    if(e.key==="ArrowUp") dy=-1;
+    if(e.key==="ArrowDown") dy=1;
+    if(e.key==="ArrowLeft") dx=-1;
+    if(e.key==="ArrowRight") dx=1;
+
+    let nx=player.x+dx;
+    let ny=player.y+dy;
+
+    if(nx<0||ny<0||nx>=cols||ny>=rows) return;
+
+    let dir=-1;
+
+    if(dx===1) dir=1;
+    if(dx===-1) dir=3;
+    if(dy===-1) dir=0;
+    if(dy===1) dir=2;
+
+    if(dir>=0 && !maze[player.y][player.x].walls[dir]){
+        player.x=nx;
+        player.y=ny;
+
+        trail.push({x:nx,y:ny});
+
+        draw();
+
+        checkFinish(); // 🔥 FIX
+    }
+});
+
+// ===== DRAW =====
+function draw(){
+
+    if(!cols||!rows) return;
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // trail
+    if(trail.length>1){
+        ctx.strokeStyle="green";
+        ctx.lineWidth=Math.max(2,cellSize/6);
+
+        ctx.beginPath();
+        ctx.moveTo(
+            trail[0].x*cellSize+offsetX+cellSize/2,
+            trail[0].y*cellSize+offsetY+cellSize/2
+        );
+
+        for(let i=1;i<trail.length;i++){
+            ctx.lineTo(
+                trail[i].x*cellSize+offsetX+cellSize/2,
+                trail[i].y*cellSize+offsetY+cellSize/2
+            );
+        }
+
+        ctx.stroke();
+    }
+
+    // walls
+    ctx.strokeStyle="black";
+    ctx.lineWidth=2;
+
+    for(let y=0;y<rows;y++){
+        for(let x=0;x<cols;x++){
+
+            let c=maze[y][x];
+
+            let px=x*cellSize+offsetX;
+            let py=y*cellSize+offsetY;
+
+            if(c.walls[0]) line(px,py,px+cellSize,py);
+            if(c.walls[1]) line(px+cellSize,py,px+cellSize,py+cellSize);
+            if(c.walls[2]) line(px,py+cellSize,px+cellSize,py+cellSize);
+            if(c.walls[3]) line(px,py,px,py+cellSize);
+        }
+    }
+
+    // exit
+    ctx.beginPath();
+    ctx.arc(
+        exit.x*cellSize+offsetX+cellSize/2,
+        exit.y*cellSize+offsetY+cellSize/2,
+        cellSize/4,0,Math.PI*2
+    );
+    ctx.fillStyle="white";
+    ctx.fill();
+    ctx.stroke();
+
+    // player
+    ctx.fillStyle="red";
+    ctx.fillRect(
+        player.x*cellSize+offsetX+cellSize/4,
+        player.y*cellSize+offsetY+cellSize/4,
+        cellSize/2,
+        cellSize/2
+    );
+}
+
+function line(x1,y1,x2,y2){
+    ctx.beginPath();
+    ctx.moveTo(x1,y1);
+    ctx.lineTo(x2,y2);
+    ctx.stroke();
+}
+
+// ===== LOOP =====
+function loop(){
+
+    if(autoMode){
+        if(autoIndex<autoPath.length){
+            player=autoPath[autoIndex++];
+            trail.push({...player});
+
+            checkFinish(); // 🔥 FIX (важно для автопути)
+        }else autoMode=false;
+    }
+
+    draw();
+    requestAnimationFrame(loop);
+}
+
+resizeCanvas();
+generateMaze();
+loop();
+
+</script>
+
+</body>
+</html>

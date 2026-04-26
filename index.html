@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Тренажёры</title>
+
+<style>
+body{
+margin:0;
+font-family:Arial, sans-serif;
+background:linear-gradient(135deg,#eef2f7,#dfe9f3);
+-webkit-tap-highlight-color: transparent;
+}
+
+/* верх */
+#topBar{
+height:60px;
+background:#111827;
+color:white;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:0 14px;
+font-size:18px;
+position:fixed;
+top:0;left:0;right:0;
+z-index:10;
+box-shadow:0 4px 10px rgba(0,0,0,0.2);
+}
+
+.left{
+display:flex;
+align-items:center;
+gap:10px;
+}
+
+#backBtn,#fsBtn{
+cursor:pointer;
+padding:6px 10px;
+border-radius:10px;
+background:rgba(255,255,255,0.1);
+user-select:none;
+}
+
+/* сетка */
+#screen{
+display:grid;
+grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+gap:16px;
+padding:80px 14px 20px;
+}
+
+/* карточки */
+.bigCard{
+aspect-ratio:1/1;
+border-radius:18px;
+color:white;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+font-weight:bold;
+cursor:pointer;
+box-shadow:0 10px 20px rgba(0,0,0,0.15);
+transition:transform 0.2s;
+}
+
+.bigCard:active{ transform:scale(0.97); }
+
+.bigCard .icon{
+font-size:clamp(50px, 6vw, 90px);
+margin-bottom:8px;
+}
+
+/* цвета */
+.reading{ background:linear-gradient(135deg,#22c55e,#16a34a); }
+.math{ background:linear-gradient(135deg,#3b82f6,#2563eb); }
+.other{ background:linear-gradient(135deg,#a855f7,#7c3aed); }
+
+/* список */
+.card{
+background:white;
+border-radius:14px;
+padding:16px;
+font-weight:bold;
+cursor:pointer;
+box-shadow:0 6px 15px rgba(0,0,0,0.08);
+font-size:16px;
+}
+
+.card:active{ transform:scale(0.98); }
+
+/* iframe */
+#frame{
+position:fixed;
+top:60px;
+left:0;
+width:100%;
+height:calc(100% - 60px);
+border:none;
+display:none;
+background:white;
+z-index:20;
+}
+</style>
+</head>
+
+<body>
+
+<div id="topBar">
+<div class="left">
+<div id="backBtn">←</div>
+<div id="title">Тренажёры</div>
+</div>
+<div id="fsBtn">⛶</div>
+</div>
+
+<div id="screen"></div>
+<iframe id="frame"></iframe>
+
+<script>
+
+let screen=document.getElementById("screen");
+let frame=document.getElementById("frame");
+let title=document.getElementById("title");
+let backBtn=document.getElementById("backBtn");
+let fsBtn=document.getElementById("fsBtn");
+
+let state="groups";
+let currentGroup=null;
+
+/* 📌 ДАННЫЕ */
+let data=[
+
+{name:"Алфавит", icon:"🅰️", group:"Чтение", file:"apps/reading/alfavit.html"},
+{name:"Читалка", icon:"📖", group:"Чтение", file:"apps/reading/chitalka.html"},
+{name:"Лавина", icon:"🏔️", group:"Чтение", file:"apps/reading/lavina.html"},
+{name:"Нитки", icon:"🧵", group:"Чтение", file:"apps/reading/nitki.html"},
+{name:"Перевёртыш", icon:"🔄", group:"Чтение", file:"apps/reading/pereverton.html"},
+{name:"Анаграммы", icon:"🧠", group:"Чтение", file:"apps/reading/pytal.html"},
+{name:"Радуга", icon:"🌈", group:"Чтение", file:"apps/reading/raduga.html"},
+{name:"Слоги", icon:"🔤", group:"Чтение", file:"apps/reading/slogi.html"},
+{name:"Столбики", icon:"🐌", group:"Чтение", file:"apps/reading/stolby.html"},
+
+{name:"Домики", icon:"🏠", group:"Математика", file:"apps/math/domiky.html"},
+{name:"Магия", icon:"✨", group:"Математика", file:"apps/math/magia.html"},
+{name:"Примеры", icon:"➗", group:"Математика", file:"apps/math/primery.html"},
+{name:"Точки", icon:"🔵", group:"Математика", file:"apps/math/tochki.html"},
+
+{name:"Доска", icon:"🖊️", group:"Разное", file:"apps/other/doska.html"},
+{name:"Лабиринт", icon:"🌀", group:"Разное", file:"apps/other/labyrint.html"},
+
+{name:"Что изменилось", icon:"🧠", group:"Разное", file:"apps/other/chto_izmenilos.html"}
+
+];
+
+const groups=[
+{name:"Чтение", class:"reading", icon:"📘"},
+{name:"Математика", class:"math", icon:"🧮"},
+{name:"Разное", class:"other", icon:"🧠"}
+];
+
+/* fullscreen */
+fsBtn.onclick=()=>{
+document.documentElement.requestFullscreen?.();
+};
+
+document.addEventListener("keydown",(e)=>{
+if(e.key==="Escape") document.exitFullscreen?.();
+});
+
+/* назад */
+backBtn.onclick=()=>{
+
+if(frame.style.display==="block"){
+frame.style.display="none";
+frame.src="";
+return;
+}
+
+if(state==="list"){
+state="groups";
+render();
+}
+
+};
+
+/* render */
+function render(){
+
+screen.innerHTML="";
+
+if(state==="groups"){
+title.textContent="Тренажёры";
+backBtn.style.visibility="hidden";
+}
+
+if(state==="list"){
+title.textContent=currentGroup;
+backBtn.style.visibility="visible";
+}
+
+/* группы */
+if(state==="groups"){
+
+groups.forEach(g=>{
+
+let div=document.createElement("div");
+div.className="bigCard "+g.class;
+
+div.innerHTML=`
+<div class="icon">${g.icon}</div>
+<div>${g.name}</div>
+`;
+
+div.onclick=()=>{
+state="list";
+currentGroup=g.name;
+render();
+};
+
+screen.appendChild(div);
+
+});
+
+}
+
+/* список */
+if(state==="list"){
+
+data.filter(t=>t.group===currentGroup).forEach(t=>{
+
+let div=document.createElement("div");
+div.className="card";
+div.innerHTML=`${t.icon} ${t.name}`;
+
+div.onclick=()=>{
+frame.src=t.file;
+frame.style.display="block";
+};
+
+screen.appendChild(div);
+
+});
+
+}
+
+}
+
+render();
+
+</script>
+
+</body>
+</html>

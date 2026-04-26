@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Тренажёр внимания</title>
+
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background: #f4f6fb;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
+}
+
+.wrapper {
+  background: white;
+  padding: 20px 25px;
+  border-radius: 18px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+}
+
+h1 {
+  margin:0;
+  font-size:28px;
+}
+
+.controls {
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+select {
+  font-size:18px;
+  padding:8px 12px;
+  border-radius:10px;
+  border:1px solid #ccc;
+}
+
+button {
+  font-size:18px;
+  padding:10px 18px;
+  border-radius:12px;
+  border:none;
+  background:#4a7dff;
+  color:white;
+  cursor:pointer;
+}
+
+button:hover {
+  background:#3a66dd;
+}
+
+canvas {
+  border-radius:14px;
+  border:2px solid #d9e1f2;
+  cursor:pointer;
+  background:white;
+}
+
+#feedback {
+  font-size:54px;
+  font-weight:700;
+  height:70px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrapper">
+
+  <h1>Найди изменение</h1>
+
+  <div class="controls">
+    <select id="levelSelect">
+      <option value="1">Лёгкий</option>
+      <option value="2">Средний</option>
+      <option value="3">Сложный</option>
+    </select>
+
+    <button id="changeBtn">Начать</button>
+  </div>
+
+  <canvas id="canvas" width="420" height="420"></canvas>
+
+  <div id="feedback"></div>
+
+</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const feedback = document.getElementById("feedback");
+const levelSelect = document.getElementById("levelSelect");
+
+let figures = [];
+let changedIndexes = [];
+let awaitingClick = false;
+let foundCount = 0;
+let level = 1;
+
+function rand(min,max){
+  return Math.floor(Math.random()*(max-min+1))+min;
+}
+
+/* ---------- генерация без пересечений ---------- */
+function generateFigures(){
+  figures = [];
+
+  let count = level === 1 ? 4 : level === 2 ? 6 : 7;
+  const sizes = [26, 34, 48, 62];
+
+  while(figures.length < count){
+    let size = sizes[rand(0,sizes.length-1)];
+    let x = rand(size, 420-size);
+    let y = rand(size, 420-size);
+
+    let ok = true;
+    for(let f of figures){
+      let dx = f.x - x;
+      let dy = f.y - y;
+      if(Math.sqrt(dx*dx + dy*dy) < (f.size + size)/2 + 14){
+        ok = false;
+        break;
+      }
+    }
+
+    if(ok){
+      figures.push({
+        x,y,
+        size,
+        color:`hsl(${rand(0,360)},70%,55%)`,
+        shape: Math.random()>0.5?'circle':'square',
+        found:false
+      });
+    }
+  }
+
+  awaitingClick = false;
+  foundCount = 0;
+  feedback.textContent = "";
+  draw();
+}
+
+function draw(){
+  ctx.clearRect(0,0,420,420);
+
+  figures.forEach(f=>{
+    ctx.fillStyle = f.color;
+
+    if(f.shape==='circle'){
+      ctx.beginPath();
+      ctx.arc(f.x,f.y,f.size/2,0,Math.PI*2);
+      ctx.fill();
+    } else {
+      ctx.fillRect(f.x-f.size/2,f.y-f.size/2,f.size,f.size);
+    }
+  });
+}
+
+/* ---------- изменения ---------- */
+function makeChange(){
+  changedIndexes = [];
+  foundCount = 0;
+  figures.forEach(f=>f.found=false);
+
+  let changes = level === 3 ? 2 : 1;
+
+  while(changedIndexes.length < changes){
+    let idx = rand(0,figures.length-1);
+    if(!changedIndexes.includes(idx)) changedIndexes.push(idx);
+  }
+
+  changedIndexes.forEach(idx=>{
+    let f = figures[idx];
+
+    /* 🔧 ИСПРАВЛЕННАЯ ЛОГИКА УРОВНЕЙ */
+
+    if(level === 1){
+      // лёгкий: всегда заметное изменение (цвет ИЛИ движение)
+      if(Math.random() < 0.5){
+        f.color = `hsl(${rand(0,360)},70%,55%)`;
+      } else {
+        f.x = rand(f.size,420-f.size);
+        f.y = rand(f.size,420-f.size);
+      }
+    }
+
+    if(level === 2){
+      // средний: цвет + движение
+      f.color = `hsl(${rand(0,360)},70%,55%)`;
+      f.x = rand(f.size,420-f.size);
+      f.y = rand(f.size,420-f.size);
+    }
+
+    if(level === 3){
+      // сложный: несколько типов изменений
+      let options = ['color','x','y','shape'];
+      let prop = options[rand(0,options.length-1)];
+
+      if(prop==='color') f.color = `hsl(${rand(0,360)},70%,55%)`;
+      if(prop==='x') f.x = rand(f.size,420-f.size);
+      if(prop==='y') f.y = rand(f.size,420-f.size);
+      if(prop==='shape') f.shape = f.shape==='circle'?'square':'circle';
+    }
+  });
+
+  awaitingClick = true;
+  feedback.textContent = "";
+  draw();
+}
+
+/* ---------- крестик ---------- */
+function cross(x,y){
+  ctx.save();
+  ctx.strokeStyle="#ff2d2d";
+  ctx.lineWidth=6;
+  ctx.beginPath();
+  ctx.moveTo(x-18,y-18);
+  ctx.lineTo(x+18,y+18);
+  ctx.moveTo(x+18,y-18);
+  ctx.lineTo(x-18,y+18);
+  ctx.stroke();
+  ctx.restore();
+
+  setTimeout(draw,600);
+}
+
+/* ---------- клик ---------- */
+canvas.addEventListener("click",e=>{
+  if(!awaitingClick) return;
+
+  const r = canvas.getBoundingClientRect();
+  const x = e.clientX - r.left;
+  const y = e.clientY - r.top;
+
+  let hit = false;
+
+  changedIndexes.forEach(idx=>{
+    let f = figures[idx];
+    if(f.found) return;
+
+    if(f.shape==='circle'){
+      let dx = x-f.x, dy = y-f.y;
+      if(Math.sqrt(dx*dx+dy*dy) < f.size/2){
+        f.found = true;
+        hit = true;
+      }
+    } else {
+      if(x>=f.x-f.size/2 && x<=f.x+f.size/2 &&
+         y>=f.y-f.size/2 && y<=f.y+f.size/2){
+        f.found = true;
+        hit = true;
+      }
+    }
+  });
+
+  if(hit){
+    foundCount++;
+    if(foundCount === changedIndexes.length){
+      feedback.textContent = "Верно!";
+      awaitingClick = false;
+    }
+  } else {
+    feedback.textContent = "Неверно!";
+    cross(x,y);
+  }
+});
+
+/* ---------- управление ---------- */
+document.getElementById("changeBtn").onclick = makeChange;
+
+levelSelect.onchange = e=>{
+  level = +e.target.value;
+  generateFigures();
+};
+
+generateFigures();
+</script>
+
+</body>
+</html>
