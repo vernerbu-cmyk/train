@@ -118,35 +118,7 @@ button.main{
 
 const speeds=[2,1.75,1.5,1.25,1,0.75,0.5,0.4,0.25,0.1];
 
-let texts=JSON.parse(localStorage.getItem("texts"))||[
-  "Это пробный текст для проверки работы тренажёра. Каждое слово должно исчезать или белеть!"
-];
-
-if(!localStorage.getItem("texts")){
-  localStorage.setItem("texts", JSON.stringify(texts));
-}
-
-/* ===== JSON LOAD (NEW) ===== */
-async function loadExternalTexts(){
-  try {
-    const res = await fetch("texts2.json");
-    if(!res.ok) return;
-
-    const data = await res.json();
-
-    if(Array.isArray(data)){
-      texts = texts.concat(data);
-      texts = [...new Set(texts)];
-
-      localStorage.setItem("texts", JSON.stringify(texts));
-      updateSelector();
-      selector.value = 0;
-      showText();
-    }
-  } catch(e){
-    console.log("texts2.json не загружен:", e);
-  }
-}
+let texts = []; // 👈 ТОЛЬКО JSON
 
 let spans=[], originalWords=[];
 let i=0, running=false, timer=null;
@@ -167,8 +139,25 @@ const repeatBtn=document.getElementById("repeat");
 const settings=document.getElementById("settings");
 const toggleSettings=document.getElementById("toggleSettings");
 
-/* ===== SELECTOR ===== */
+/* ===== LOAD JSON ===== */
+async function loadTexts(){
+  try{
+    const res = await fetch("texts2.json");
+    const data = await res.json();
 
+    if(Array.isArray(data)){
+      texts = data;
+
+      updateSelector();
+      selector.value = 0;
+      showText();
+    }
+  }catch(e){
+    console.log("texts2.json не загружен", e);
+  }
+}
+
+/* ===== SELECTOR ===== */
 function updateSelector(){
   selector.innerHTML="";
   texts.forEach((_,idx)=>{
@@ -178,11 +167,8 @@ function updateSelector(){
     selector.appendChild(o);
   });
 }
-updateSelector();
-selector.value=0;
 
 /* ===== FORMAT WORD ===== */
-
 function formatWord(word){
   if(reverseMode.checked){
     let punct="";
@@ -196,22 +182,20 @@ function formatWord(word){
 }
 
 /* ===== SHOW TEXT ===== */
-
 function showText(){
   let t=texts[selector.value];
+  if(!t) return;
+
   originalWords=t.split(" ");
   textBox.innerHTML=originalWords.map(w=>`<span>${formatWord(w)}</span>`).join(" ");
   spans=[...textBox.querySelectorAll("span")];
+
   wordsBox.textContent="Слов: "+spans.length;
   timeBox.textContent="Время: 0 сек";
   i=0;
 }
 
-showText();
-selector.onchange=showText;
-
 /* ===== SETTINGS ===== */
-
 toggleSettings.onclick=()=>{
   settings.style.display=settings.style.display==="block"?"none":"block";
 };
@@ -219,8 +203,8 @@ toggleSettings.onclick=()=>{
 add.onclick=()=>{
   const t=newText.value.replace(/\s+/g," ").trim();
   if(!t) return;
+
   texts.push(t);
-  localStorage.setItem("texts", JSON.stringify(texts));
   updateSelector();
   selector.value=texts.length-1;
   newText.value="";
@@ -228,7 +212,6 @@ add.onclick=()=>{
 };
 
 /* ===== TIMER ===== */
-
 function startClock(){
   clockInterval=setInterval(()=>{
     let seconds=Math.floor((Date.now()-startTime)/1000);
@@ -237,14 +220,10 @@ function startClock(){
 }
 
 function stopClock(){
-  if(clockInterval){
-    clearInterval(clockInterval);
-    clockInterval=null;
-  }
+  clearInterval(clockInterval);
 }
 
 /* ===== DISAPPEAR ===== */
-
 function disappearWord(){
   if(!running || i>=spans.length) return;
 
@@ -262,13 +241,11 @@ function disappearWord(){
     timer=setTimeout(disappearWord, speeds[speed.value]*1000);
   }else{
     running=false;
-    timer=null;
     stopClock();
   }
 }
 
 /* ===== CONTROLS ===== */
-
 startBtn.onclick=()=>{
   stopBtn.onclick();
   running=true;
@@ -280,7 +257,7 @@ startBtn.onclick=()=>{
 
 stopBtn.onclick=()=>{
   running=false;
-  if(timer){clearTimeout(timer); timer=null;}
+  clearTimeout(timer);
   stopClock();
 };
 
@@ -293,20 +270,16 @@ repeatBtn.onclick=()=>{
   disappearWord();
 };
 
-/* ===== SPEED CHANGE ===== */
-
-speed.oninput = () => {
-  if (running) {
+/* ===== SPEED ===== */
+speed.oninput=()=>{
+  if(running){
     clearTimeout(timer);
-    timer = setTimeout(disappearWord, speeds[speed.value] * 1000);
+    timer=setTimeout(disappearWord, speeds[speed.value]*1000);
   }
 };
 
 /* ===== INIT ===== */
-async function init(){
-  await loadExternalTexts();
-}
-init();
+loadTexts();
 
 </script>
 </body>
