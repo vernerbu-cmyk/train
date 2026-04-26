@@ -11,7 +11,6 @@ font-family:Arial;
 background:#f5f5f5;
 }
 
-/* верхняя панель */
 .topbar{
 background:#d40000;
 color:#fff;
@@ -30,7 +29,6 @@ font-size:16px;
 margin:0 10px 0 0;
 }
 
-/* текст */
 .box{
 margin:15px;
 background:#fff;
@@ -44,7 +42,6 @@ letter-spacing:0.3px;
 word-spacing:1px;
 }
 
-/* эффекты */
 .curtain{
 background: repeating-linear-gradient(
 90deg,
@@ -63,12 +60,13 @@ clip-path: inset(50% 0 0 0);
 clip-path: inset(0 0 50% 0);
 }
 
-.skew span{
-display:inline-block;
-}
-
 .hidden{
 display:none;
+}
+
+textarea{
+width:200px;
+height:60px;
 }
 </style>
 </head>
@@ -102,9 +100,8 @@ display:none;
 <input type="range" id="fontSize" min="14" max="40" value="18">
 </label>
 
-<textarea id="input" rows="2" style="width:200px;">
-Это тестовый текст для проверки тренажёра скорочтения.
-Можно менять режимы и смотреть как он читается.
+<textarea id="input">
+Загрузка текста...
 </textarea>
 
 <button id="save">Сохранить</button>
@@ -129,6 +126,33 @@ let saved = document.getElementById("saved");
 
 let data = JSON.parse(localStorage.getItem("texts") || "[]");
 
+/* =========================
+   ЗАГРУЗКА texts.json
+========================= */
+fetch("texts.json")
+.then(r => r.json())
+.then(json => {
+
+if(Array.isArray(json)){
+
+// merge без дублей
+json.forEach(t=>{
+if(!data.includes(t)){
+data.push(t);
+}
+});
+
+localStorage.setItem("texts", JSON.stringify(data));
+updateList();
+render();
+}
+
+})
+.catch(()=>{});
+
+/* =========================
+   СПИСОК
+========================= */
 function updateList(){
 saved.innerHTML = "";
 data.forEach((t,i)=>{
@@ -140,12 +164,9 @@ saved.appendChild(o);
 }
 updateList();
 
-/* формат текста */
-function formatText(t){
-return t.split("\n").map(l=>l||" ").join("\n");
-}
-
-/* рендер */
+/* =========================
+   РЕНДЕР
+========================= */
 function render(){
 
 let text = input.value;
@@ -170,30 +191,43 @@ out.style.fontFamily = fontFamily.value;
 out.innerHTML = text;
 }
 
-/* события */
+/* =========================
+   СОБЫТИЯ
+========================= */
 input.oninput = render;
 mode.onchange = render;
 fontSize.oninput = render;
 fontFamily.onchange = render;
 
-/* сохранение */
+/* =========================
+   СОХРАНЕНИЕ
+========================= */
 document.getElementById("save").onclick = ()=>{
+
 let t = input.value.trim();
 if(!t) return;
+
 if(!data.includes(t)){
 data.push(t);
-localStorage.setItem("texts",JSON.stringify(data));
+localStorage.setItem("texts", JSON.stringify(data));
 updateList();
 }
 };
 
-/* загрузка */
+/* =========================
+   ЗАГРУЗКА ИЗ СПИСКА
+========================= */
 saved.onchange = ()=>{
-input.value = data[saved.value];
+let i = saved.value;
+if(i!==""){
+input.value = data[i];
 render();
+}
 };
 
-/* редакт */
+/* =========================
+   РЕДАКТИРОВАНИЕ
+========================= */
 document.getElementById("edit").onclick = ()=>{
 let i = saved.value;
 if(i==="") return;
@@ -201,16 +235,21 @@ input.value = data[i];
 render();
 };
 
-/* удаление */
+/* =========================
+   УДАЛЕНИЕ
+========================= */
 document.getElementById("del").onclick = ()=>{
 let i = saved.value;
 if(i==="") return;
+
 data.splice(i,1);
-localStorage.setItem("texts",JSON.stringify(data));
+localStorage.setItem("texts", JSON.stringify(data));
+
 updateList();
 render();
 };
 
+/* старт */
 render();
 
 </script>
