@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Скорочтение</title>
+<title>СКОРОЧТЕНИЕ</title>
 
 <style>
 body{
@@ -11,48 +11,45 @@ font-family:Arial;
 background:#f5f5f5;
 }
 
+/* верхняя панель */
 .topbar{
 background:#d40000;
 color:#fff;
 padding:10px;
 display:flex;
+flex-wrap:wrap;
 align-items:center;
 gap:10px;
-flex-wrap:wrap;
+position:sticky;
+top:0;
+z-index:1000;
 }
 
-.topbar h1{
+h1{
 font-size:16px;
-margin:0;
-margin-right:10px;
+margin:0 10px 0 0;
 }
 
-button, select, input{
-padding:5px;
-}
-
-.container{
-padding:15px;
-}
-
-.textbox{
-background:white;
-padding:15px;
-min-height:200px;
+/* текст */
+.box{
+margin:15px;
+background:#fff;
+padding:20px;
+min-height:250px;
 white-space:pre-wrap;
+border-radius:8px;
 font-size:18px;
-border:1px solid #ccc;
+line-height:1.8;
+letter-spacing:0.3px;
+word-spacing:1px;
 }
 
-.hidden{
-display:none;
-}
-
+/* эффекты */
 .curtain{
 background: repeating-linear-gradient(
 90deg,
-rgba(0,0,0,0.25) 0px,
-rgba(0,0,0,0.25) 2px,
+rgba(0,0,0,0.15) 0px,
+rgba(0,0,0,0.15) 2px,
 transparent 2px,
 transparent 6px
 );
@@ -68,6 +65,10 @@ clip-path: inset(0 0 50% 0);
 
 .skew span{
 display:inline-block;
+}
+
+.hidden{
+display:none;
 }
 </style>
 </head>
@@ -85,204 +86,130 @@ display:inline-block;
 <option value="bottomcut">Без низа</option>
 </select>
 
-<label>Шрифт <input type="range" id="fontSize" min="14" max="40" value="18"></label>
-
-<label class="hidden" id="intensityBox">
-Интенсивность <input type="range" id="intensity" min="1" max="10" value="5">
+<label>
+Шрифт
+<select id="fontFamily">
+<option value="Arial">Arial</option>
+<option value="Georgia">Georgia</option>
+<option value="Times New Roman">Times</option>
+<option value="Verdana">Verdana</option>
+<option value="Courier New">Courier</option>
+</select>
 </label>
 
-<label class="hidden" id="tiltBox">
-Наклон <input type="range" id="tilt" min="0" max="30" value="10">
+<label>
+Размер
+<input type="range" id="fontSize" min="14" max="40" value="18">
 </label>
 
-<button id="toggleInput">Скрыть/показать ввод</button>
-
-<select id="savedList"></select>
-<button id="saveBtn">Сохранить</button>
-<button id="editBtn">Редактировать</button>
-<button id="deleteBtn">Удалить</button>
-</div>
-
-<div class="container">
-
-<textarea id="inputText" style="width:100%;height:120px;">
-Это тестовый текст для проверки работы тренажёра скорочтения. Здесь можно менять режимы, сохранять тексты и тестировать помехи восприятия.
+<textarea id="input" rows="2" style="width:200px;">
+Это тестовый текст для проверки тренажёра скорочтения.
+Можно менять режимы и смотреть как он читается.
 </textarea>
 
-<br><br>
+<button id="save">Сохранить</button>
+<button id="edit">Редактировать</button>
+<button id="del">Удалить</button>
 
-<div id="output" class="textbox"></div>
-
+<select id="saved"></select>
 </div>
+
+<div id="out" class="box"></div>
 
 <script>
 
-let input = document.getElementById("inputText");
-let output = document.getElementById("output");
+let input = document.getElementById("input");
+let out = document.getElementById("out");
 
 let mode = document.getElementById("mode");
 let fontSize = document.getElementById("fontSize");
+let fontFamily = document.getElementById("fontFamily");
 
-let intensity = document.getElementById("intensity");
-let tilt = document.getElementById("tilt");
+let saved = document.getElementById("saved");
 
-let intensityBox = document.getElementById("intensityBox");
-let tiltBox = document.getElementById("tiltBox");
+let data = JSON.parse(localStorage.getItem("texts") || "[]");
 
-let savedList = document.getElementById("savedList");
+function updateList(){
+saved.innerHTML = "";
+data.forEach((t,i)=>{
+let o = document.createElement("option");
+o.value = i;
+o.textContent = "Текст " + (i+1);
+saved.appendChild(o);
+});
+}
+updateList();
 
-/* =========================
-   ДАННЫЕ
-========================= */
-
-let savedTexts = JSON.parse(localStorage.getItem("texts") || "[]");
-let jsonTexts = [];
-
-/* =========================
-   ЗАГРУЗКА JSON
-========================= */
-
-async function loadJSON(){
-  try{
-    const url = "./texts.json?v=" + Date.now();
-
-    const res = await fetch(url, { cache: "no-store" });
-    if(!res.ok) return;
-
-    jsonTexts = await res.json();
-    if(!Array.isArray(jsonTexts)) jsonTexts = [];
-
-    updateSavedList();
-
-  } catch(e){
-    console.log("JSON не загружен (не критично)");
-  }
+/* формат текста */
+function formatText(t){
+return t.split("\n").map(l=>l||" ").join("\n");
 }
 
-loadJSON();
-
-/* =========================
-   ОБЪЕДИНЕНИЕ
-========================= */
-
-function getAllTexts(){
-  return [...jsonTexts, ...savedTexts];
-}
-
-/* ========================= */
-
-function updateSavedList(){
-  savedList.innerHTML = "";
-
-  let all = getAllTexts();
-
-  all.forEach((t,i)=>{
-    let opt = document.createElement("option");
-    opt.value = i;
-    opt.textContent = "Текст " + (i+1);
-    savedList.appendChild(opt);
-  });
-}
-
-/* ========================= */
-
+/* рендер */
 function render(){
-let text = input.value;
-output.className = "textbox";
 
+let text = input.value;
 let m = mode.value;
 
-if(m==="curtain"){
-output.classList.add("curtain");
-}
+out.className = "box";
 
-if(m==="topcut"){
-output.classList.add("topcut");
-}
-
-if(m==="bottomcut"){
-output.classList.add("bottomcut");
-}
+if(m==="curtain") out.classList.add("curtain");
+if(m==="topcut") out.classList.add("topcut");
+if(m==="bottomcut") out.classList.add("bottomcut");
 
 if(m==="tilt"){
-let deg = tilt.value;
 text = text.split("").map(c=>{
-return `<span style="transform:rotate(${(Math.random()*deg*2-deg)}deg)">${c}</span>`;
+let a = Math.random()*20-10;
+return `<span style="display:inline-block;transform:rotate(${a}deg)">${c}</span>`;
 }).join("");
 }
 
-output.style.fontSize = fontSize.value + "px";
-output.innerHTML = text;
+out.style.fontSize = fontSize.value + "px";
+out.style.fontFamily = fontFamily.value;
+
+out.innerHTML = text;
 }
 
-/* ========================= */
-
-mode.onchange = ()=>{
-intensityBox.classList.add("hidden");
-tiltBox.classList.add("hidden");
-
-if(mode.value==="tilt") tiltBox.classList.remove("hidden");
-if(["curtain","topcut","bottomcut"].includes(mode.value)) intensityBox.classList.remove("hidden");
-
-render();
-};
-
+/* события */
 input.oninput = render;
+mode.onchange = render;
 fontSize.oninput = render;
-tilt.oninput = render;
-intensity.oninput = render;
+fontFamily.onchange = render;
 
-/* ========================= */
-
-document.getElementById("toggleInput").onclick = ()=>{
-input.classList.toggle("hidden");
-};
-
-/* ========================= */
-
-document.getElementById("saveBtn").onclick = ()=>{
+/* сохранение */
+document.getElementById("save").onclick = ()=>{
 let t = input.value.trim();
 if(!t) return;
-
-if(!savedTexts.includes(t)){
-savedTexts.push(t);
-localStorage.setItem("texts", JSON.stringify(savedTexts));
-updateSavedList();
+if(!data.includes(t)){
+data.push(t);
+localStorage.setItem("texts",JSON.stringify(data));
+updateList();
 }
 };
 
-document.getElementById("deleteBtn").onclick = ()=>{
-let i = savedList.value;
-if(i==="") return;
-
-let all = getAllTexts();
-let target = all[i];
-
-savedTexts = savedTexts.filter(x => x !== target);
-
-localStorage.setItem("texts", JSON.stringify(savedTexts));
-updateSavedList();
-};
-
-document.getElementById("editBtn").onclick = ()=>{
-let i = savedList.value;
-if(i==="") return;
-
-let all = getAllTexts();
-input.value = all[i];
+/* загрузка */
+saved.onchange = ()=>{
+input.value = data[saved.value];
 render();
 };
 
-savedList.onchange = ()=>{
-let i = savedList.value;
-if(i!==""){
-let all = getAllTexts();
-input.value = all[i];
+/* редакт */
+document.getElementById("edit").onclick = ()=>{
+let i = saved.value;
+if(i==="") return;
+input.value = data[i];
 render();
-}
 };
 
-/* ========================= */
+/* удаление */
+document.getElementById("del").onclick = ()=>{
+let i = saved.value;
+if(i==="") return;
+data.splice(i,1);
+localStorage.setItem("texts",JSON.stringify(data));
+updateList();
+render();
+};
 
 render();
 
