@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>ЛидерГен — офлайн тренажёр</title>
+<title>ЛидерГен — тренажёр</title>
 
 <style>
 body{margin:0;font-family:Arial;background:#fff;}
@@ -104,28 +104,46 @@ button{width:100%;margin-top:5px;}
 
 </div>
 
-<div class="word" id="wordDisplay">—</div>
+<div class="word" id="wordDisplay">Загрузка...</div>
 
 <script>
 
-/* =========================
-   💥 БАЗА ВНУТРИ КОДА
-========================= */
-
-let wordBase = {
-1:["дом","кот","мир"],
-2:["мама","рама","каша"],
-3:["окно","луна","вода"],
-4:["собака","машина","молоко"],
-5:["тетрадь","лошадь","камень"],
-6:["пылесос","самолёт","телевизор"],
-7:["обогреватель","компьютер","электричество"],
-8:["Мама мыла раму","Кот сидит на окне"]
-};
+let wordBase = {};
 
 const vowels="аеёиоуыэюя";
 const speedTable=[2000,1500,1200,1000,800,600,500,400,300,200,100];
 let timer;
+
+/* =========================
+   ЗАГРУЗКА БАЗЫ
+========================= */
+
+async function loadBase(){
+  try{
+
+    // 🔥 ключевой фикс: относительный путь + анти-кеш
+    const url = "./base.json?t=" + Date.now();
+
+    const res = await fetch(url);
+
+    if(!res.ok){
+      throw new Error("HTTP ERROR " + res.status);
+    }
+
+    wordBase = await res.json();
+
+    cleanDuplicates(wordBase);
+
+    show();
+    restart();
+
+  } catch(e){
+    console.error("❌ Ошибка загрузки base.json:", e);
+    wordDisplay.textContent = "Ошибка загрузки base.json";
+  }
+}
+
+loadBase();
 
 /* ========================= */
 
@@ -143,8 +161,6 @@ function cleanDuplicates(base){
       });
   }
 }
-
-cleanDuplicates(wordBase);
 
 /* ========================= */
 
@@ -257,7 +273,7 @@ document.addEventListener("keydown",e=>{
 wordDisplay.onclick=()=>{ if(!auto.checked) show(); };
 
 /* =========================
-   РЕДАКТОР (СЕССИЯ)
+   РЕДАКТОР
 ========================= */
 
 bookBtn.onclick=()=>{
