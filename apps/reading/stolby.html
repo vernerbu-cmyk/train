@@ -119,8 +119,9 @@ let timer;
 ========================= */
 
 async function loadBase(){
-  try{
+  try {
 
+    // 🔥 ТВОЙ РЕАЛЬНЫЙ ПУТЬ НА GITHUB PAGES
     const res = await fetch("/train/base.json?t=" + Date.now());
 
     if(!res.ok){
