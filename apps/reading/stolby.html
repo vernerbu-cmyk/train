@@ -115,13 +115,14 @@ const speedTable=[2000,1500,1200,1000,800,600,500,400,300,200,100];
 let timer;
 
 /* =========================
-   🔥 ЗАГРУЗКА JSON (ВАШ ПУТЬ)
+   🔥 ЗАГРУЗКА JSON (ИСПРАВЛЕНО)
 ========================= */
 
 async function loadBase(){
   try{
 
-    const res = await fetch("/train/base.json?t=" + Date.now());
+    // ✔ ВАЖНО: GitHub Pages root = /
+    const res = await fetch("/base.json?t=" + Date.now());
 
     if(!res.ok){
       throw new Error("HTTP " + res.status);
@@ -135,7 +136,7 @@ async function loadBase(){
     restart();
 
   } catch(e){
-    console.error("❌ Ошибка загрузки base.json:", e);
+    console.error("❌ Ошибка загрузки:", e);
     wordDisplay.textContent = "Ошибка загрузки base.json";
   }
 }
