@@ -2,13 +2,13 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Точки</title>
 
 <style>
 body{
   margin:0;
-  font-family:Arial;
+  font-family:Arial,sans-serif;
   background:#f5f7fb;
   text-align:center;
 }
@@ -22,142 +22,143 @@ body{
   gap:6px;
   position:sticky;
   top:0;
+  z-index:10;
 }
 
 .title{
   width:100%;
-  color:white;
-  font-style:italic;
+  color:#fff;
   font-size:20px;
+  font-style:italic;
 }
 
-button, select{
+button,select{
   font-size:14px;
 }
 
 button{
   background:#FF6A00;
-  color:white;
+  color:#fff;
   border:none;
   padding:8px 12px;
   border-radius:10px;
-  cursor:pointer;
 }
 
-button{
-  box-shadow:0 4px 0 #c84f00;
-}
-button:active{
-  transform:translateY(2px);
-  box-shadow:0 1px 0 #c84f00;
+#progress{
+  margin:10px;
 }
 
-/* =========================
-   🔥 ГЛАВНАЯ ФИКС-СЕТКА
-========================= */
 #grid{
   display:grid;
-  justify-content:center;
-  margin-top:25px;
   gap:6px;
-  width:100%;
-  grid-auto-rows:72px;
+  width:min(92vw,520px);
+  margin:0 auto 15px;
 }
 
-/* ячейка */
 .cell{
-  background:white;
+  background:#fff;
   border:1px solid #d0d7e6;
   border-radius:12px;
   display:flex;
   align-items:center;
   justify-content:center;
+  aspect-ratio:1/1;
 }
 
-.dot,.square{
+/* фигуры */
+.dot,.square,.star{
   width:55%;
   height:55%;
 }
 
-.dot{border-radius:50%;background:#111;}
-.square{background:#111;}
-
-#progress{
-  margin:10px;
-  font-size:16px;
+.dot{
+  border-radius:50%;
+  background:#111;
 }
 
-/* ===== ИСТОРИЯ ===== */
+.square{
+  background:#111;
+}
+
+.triangle{
+  width:0;
+  height:0;
+  border-left:18px solid transparent;
+  border-right:18px solid transparent;
+  border-bottom:32px solid #111;
+}
+
+.star{
+  background:#111;
+  clip-path:polygon(
+    50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,
+    50% 70%,21% 91%,32% 57%,2% 35%,39% 35%
+  );
+}
+
 #history{
   display:none;
-  margin-top:10px;
-  padding:10px;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  width:min(95vw,900px);
+  margin:10px auto 20px;
 }
 
-.histItem{
+.histWrap{
   border:1px solid #ccc;
-  padding:6px;
-  background:white;
-  border-radius:8px;
+  padding:4px;
+  background:#fff;
 }
 
-/* =========================
-   📱 МОБИЛЬНЫЙ ФИКС
-========================= */
-@media (max-width: 768px){
-
-  #grid{
-    gap:4px;
-    grid-auto-rows:52px;
-  }
-
-  .cell{
-    border-radius:10px;
-  }
+.histGrid{
+  display:grid;
+  gap:2px;
 }
 
-@media (max-width: 420px){
-
-  #grid{
-    grid-auto-rows:40px;
-    gap:3px;
-  }
-
-  button, select{
-    font-size:12px;
-    padding:6px 8px;
-  }
-
-  .title{
-    font-size:16px;
-  }
-
-  .dot,.square{
-    width:70%;
-    height:70%;
-  }
+.histCell{
+  border:1px solid #ddd;
+  aspect-ratio:1/1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
+
+.mini{
+  width:55%;
+  height:55%;
+}
+
+.mini.dot{border-radius:50%;}
 </style>
 </head>
-
 <body>
 
 <div class="topbar">
 
-  <div class="title">Точки</div>
+<div class="title">Точки</div>
 
-  <select id="gridSize">
-    <option value="3">3×3</option>
-    <option value="4">4×4</option>
-    <option value="5">5×5</option>
-  </select>
+<select id="gridSize">
+<option value="3">3×3</option>
+<option value="4">4×4</option>
+<option value="5">5×5</option>
+</select>
 
-  <button onclick="nextStep()">Далее</button>
-  <button onclick="prevStep()">Назад</button>
-  <button onclick="hideFigures()">Запомнил</button>
-  <button onclick="toggleHistory()">История</button>
-  <button onclick="printTemplates()">Печать</button>
-  <button onclick="resetTrainer()">Сброс</button>
+<select id="difficulty">
+<option value="easy">Лёгкий</option>
+<option value="medium">Средний</option>
+<option value="hard">Сложный</option>
+</select>
+
+<label style="color:white;font-size:13px;">
+<input type="checkbox" id="colorMode"> Окрашивание
+</label>
+
+<button onclick="nextStep()">Далее</button>
+<button onclick="prevStep()">Назад</button>
+<button onclick="toggleMemory()">Запомнил</button>
+<button onclick="toggleHistory()">История</button>
+<button onclick="printTemplates()">Печать</button>
+<button onclick="resetTrainer()">Сброс</button>
 
 </div>
 
@@ -166,246 +167,251 @@ button:active{
 <div id="history"></div>
 
 <script>
-
 let step = 0;
 let historyData = [];
-let hidden = false;
 
-function getCount(size){
-  return size === 3 ? 3 : size === 4 ? 4 : 5;
+const rainbow = [
+  "#FF0000", // красный
+  "#FF8C00", // насыщенный оранжевый
+  "#FFD700", // золотой жёлтый
+  "#00C800", // яркий зелёный
+  "#00A2FF", // яркий голубой
+  "#003CFF", // насыщенный синий
+  "#8A00FF"  // яркий фиолетовый
+];
+
+function getBaseCount(size){
+  if(size===3) return 3;
+  if(size===4) return 4;
+  return 5;
 }
 
-function getTypes(step){
-  return step < 12 ? ['dot'] : ['dot','square'];
-}
+/* логика уровней как зафиксирована */
+function getTypes(step,diff){
 
-function applyGridLayout(size){
-  const grid = document.getElementById('grid');
+  if(diff==="easy"){
+    return ["dot"];
+  }
 
-  // 🔥 ВАЖНО: нормальная адаптация без разъезда
-  grid.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
+  if(diff==="medium"){
+    if(step < 12){
+      return ["dot","square"];
+    }
+    return ["dot","square","triangle"];
+  }
+
+  return ["dot","square","triangle","star"];
 }
 
 function nextStep(){
 
   if(step >= 16) return;
 
-  const size = +document.getElementById('gridSize').value;
-  const progress = document.getElementById('progress');
+  const size = +document.getElementById("gridSize").value;
+  const diff = document.getElementById("difficulty").value;
+  const colorMode = document.getElementById("colorMode").checked;
 
-  const count = getCount(size);
-  const types = getTypes(step);
+  const count = getBaseCount(size);
+  const types = getTypes(step,diff);
 
-  let pattern = [];
+  let used = [];
 
-  while(pattern.length < count){
+  while(used.length < count){
     let n = Math.floor(Math.random() * size * size);
-    if(!pattern.includes(n)) pattern.push(n);
+    if(!used.includes(n)) used.push(n);
   }
 
-  let figs = pattern.map(i => ({
-    index:i,
-    type:types[Math.floor(Math.random()*types.length)]
+  let figs = used.map(index => ({
+    index:index,
+    type:types[Math.floor(Math.random()*types.length)],
+    color: colorMode
+      ? rainbow[Math.floor(Math.random()*rainbow.length)]
+      : "#111"
   }));
 
   drawGrid(size, figs);
 
-  historyData.push({size, figs});
+  historyData[step] = {
+    size:size,
+    figs:JSON.parse(JSON.stringify(figs))
+  };
 
   step++;
-  progress.textContent = `${step} / 16`;
+
+  document.getElementById("progress").textContent =
+    step + " / 16";
 }
 
-function drawGrid(size, figs){
+function drawGrid(size,figs){
 
-  const grid = document.getElementById('grid');
-  grid.innerHTML='';
-
-  applyGridLayout(size);
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  grid.style.gridTemplateColumns = `repeat(${size},1fr)`;
 
   for(let i=0;i<size*size;i++){
 
-    const cell=document.createElement('div');
-    cell.className='cell';
+    const cell = document.createElement("div");
+    cell.className = "cell";
 
-    const f = figs.find(x=>x.index===i);
+    const fig = figs.find(f => f.index===i);
 
-    if(f){
-      const d=document.createElement('div');
-      d.className=f.type;
-      cell.appendChild(d);
+    if(fig){
+
+      const el = document.createElement("div");
+      el.className = fig.type;
+
+      if(fig.type==="triangle"){
+        el.style.borderBottomColor = fig.color;
+      }else{
+        el.style.background = fig.color;
+      }
+
+      cell.appendChild(el);
     }
 
     grid.appendChild(cell);
   }
 }
 
-function hideFigures(){
-
-  const grid = document.getElementById('grid');
-  hidden = !hidden;
-
-  if(hidden){
-    grid.querySelectorAll('.cell').forEach(c => c.innerHTML = '');
-  } else {
-    const last = historyData[historyData.length - 1];
-    if(last) drawGrid(last.size, last.figs);
-  }
-}
-
 function prevStep(){
 
-  if(step<=1) return;
+  if(step <= 1) return;
 
   step--;
-  historyData.pop();
 
-  const prev = historyData[historyData.length-1];
+  const saved = historyData[step - 1];
 
-  if(prev){
-    drawGrid(prev.size,prev.figs);
-  } else {
-    document.getElementById('grid').innerHTML='';
+  if(saved){
+    drawGrid(saved.size, saved.figs);
   }
 
-  document.getElementById('progress').textContent=`${step} / 16`;
+  document.getElementById("progress").textContent =
+    step + " / 16";
 }
 
-/* ===== ИСТОРИЯ (не трогал) ===== */
-function toggleHistory(){
-
-  const h = document.getElementById('history');
-
-  const open = h.style.display === 'grid';
-  h.style.display = open ? 'none' : 'grid';
-
-  if(open) return;
-
-  h.innerHTML = '';
-
-  h.style.display = 'grid';
-  h.style.gridTemplateColumns = 'repeat(4, 1fr)';
-  h.style.gap = '10px';
-
-  historyData.forEach((item, idx) => {
-
-    const box = document.createElement('div');
-    box.className = 'histItem';
-
-    const title = document.createElement('div');
-    title.textContent = `Шаг ${idx+1}`;
-
-    const grid = document.createElement('div');
-    grid.style.display = 'grid';
-    grid.style.gridTemplateColumns = `repeat(${item.size}, 10px)`;
-    grid.style.gap = '2px';
-
-    for(let i=0;i<item.size*item.size;i++){
-
-      const c = document.createElement('div');
-      c.style.width='10px';
-      c.style.height='10px';
-      c.style.border='1px solid #ddd';
-
-      const f = item.figs.find(x=>x.index===i);
-
-      if(f){
-        const inner = document.createElement('div');
-
-        if(f.type==='dot'){
-          inner.style.width='100%';
-          inner.style.height='100%';
-          inner.style.borderRadius='50%';
-          inner.style.background='#111';
-        }
-
-        if(f.type==='square'){
-          inner.style.width='100%';
-          inner.style.height='100%';
-          inner.style.background='#111';
-        }
-
-        c.appendChild(inner);
-      }
-
-      grid.appendChild(c);
-    }
-
-    box.appendChild(title);
-    box.appendChild(grid);
-
-    h.appendChild(box);
-  });
-}
-
-/* ===== печать без изменений ===== */
-function printTemplates(){
-
-  const size = +document.getElementById('gridSize').value;
-
-  const w = window.open('');
-
-  const cellSize = Math.floor(260 / size);
-
-  let html = `
-  <html>
-  <head>
-  <style>
-    @page { size:A4; margin:10mm; }
-
-    body{
-      margin:0;
-      font-family:Arial;
-    }
-
-    .sheet{
-      display:grid;
-      grid-template-columns:repeat(4, 1fr);
-      gap:6px;
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns:repeat(${size}, ${cellSize}px);
-      border:1px solid #000;
-    }
-
-    .cell{
-      border:1px solid #000;
-    }
-  </style>
-  </head>
-
-  <body>
-  <div class="sheet">
-  `;
-
-  for(let g=0; g<16; g++){
-    html += `<div class="grid">`;
-    for(let i=0;i<size*size;i++){
-      html += `<div class="cell"></div>`;
-    }
-    html += `</div>`;
-  }
-
-  html += `</div></body></html>`;
-
-  w.document.write(html);
-  w.document.close();
-  w.print();
+function toggleMemory(){
+  const grid = document.getElementById("grid");
+  grid.style.visibility =
+    grid.style.visibility==="hidden"
+    ? "visible"
+    : "hidden";
 }
 
 function resetTrainer(){
   step = 0;
   historyData = [];
-  hidden = false;
-
-  document.getElementById('grid').innerHTML='';
-  document.getElementById('progress').textContent='0 / 16';
-  document.getElementById('history').innerHTML='';
-  document.getElementById('history').style.display='none';
+  document.getElementById("grid").innerHTML = "";
+  document.getElementById("history").style.display = "none";
+  document.getElementById("progress").textContent = "0 / 16";
 }
 
+function toggleHistory(){
+
+  const history = document.getElementById("history");
+
+  if(history.style.display==="grid"){
+    history.style.display="none";
+    return;
+  }
+
+  history.innerHTML="";
+
+  historyData.forEach(item => {
+
+    const wrap = document.createElement("div");
+    wrap.className="histWrap";
+
+    const g = document.createElement("div");
+    g.className="histGrid";
+    g.style.gridTemplateColumns =
+      `repeat(${item.size},1fr)`;
+
+    for(let i=0;i<item.size*item.size;i++){
+
+      const c = document.createElement("div");
+      c.className="histCell";
+
+      const fig = item.figs.find(f=>f.index===i);
+
+      if(fig){
+        const el = document.createElement("div");
+        el.className = "mini " + fig.type;
+
+        if(fig.type==="triangle"){
+          el.style.borderLeft="7px solid transparent";
+          el.style.borderRight="7px solid transparent";
+          el.style.borderBottom=
+            "12px solid " + fig.color;
+          el.style.width="0";
+          el.style.height="0";
+          el.style.background="transparent";
+        }else{
+          el.style.background = fig.color;
+        }
+
+        c.appendChild(el);
+      }
+
+      g.appendChild(c);
+    }
+
+    wrap.appendChild(g);
+    history.appendChild(wrap);
+  });
+
+  history.style.display="grid";
+}
+
+function printTemplates(){
+
+  const size = +document.getElementById("gridSize").value;
+
+  let w = window.open("");
+
+  let html = `
+<html>
+<head>
+<style>
+@page{size:A4;margin:8mm;}
+body{margin:0;}
+.sheet{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:6mm;
+}
+.grid{
+display:grid;
+grid-template-columns:repeat(${size},1fr);
+aspect-ratio:1/1;
+border:1px solid #000;
+}
+.cell{
+border:1px solid #000;
+aspect-ratio:1/1;
+}
+</style>
+</head>
+<body>
+<div class="sheet">
+`;
+
+  for(let i=0;i<16;i++){
+    html += `<div class="grid">`;
+    for(let j=0;j<size*size;j++){
+      html += `<div class="cell"></div>`;
+    }
+    html += `</div>`;
+  }
+
+  html += `
+</div>
+</body>
+</html>`;
+
+  w.document.write(html);
+  w.document.close();
+  w.print();
+}
 </script>
 
 </body>
