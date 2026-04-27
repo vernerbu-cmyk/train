@@ -3,57 +3,111 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Исчезающий текст</title>
+<title>Лавина</title>
 
 <style>
-body { margin:0; font-family: Arial, sans-serif; background:#fffaf2; }
+:root{
+  --blue:#1E3F8A;
+  --orange:#FF6A00;
+}
 
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f6f7fb;
+}
+
+/* ===== HEADER (FIXED CENTER) ===== */
 header{
-  background:orange;
+  background:var(--blue);
   color:white;
-  padding:8px 12px;
+  padding:10px 12px;
   display:flex;
   align-items:center;
   justify-content:space-between;
+  position:relative;
 }
 
-.logo{font-weight:bold;font-size:20px;}
+/* ===== TITLE TRUE CENTER ===== */
+.logo{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  font-weight:800;
+  font-style:italic;
+  font-size:28px;
+  letter-spacing:1px;
+  white-space:nowrap;
+}
 
-.speed{display:flex;align-items:center;gap:6px;font-size:14px;}
-input[type=range]{width:130px;}
+/* ===== SPEED ===== */
+.speed{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:13px;
+}
 
-.toggles{display:flex;gap:12px;font-size:14px;}
+input[type=range]{
+  accent-color:var(--orange);
+  width:140px;
+}
 
+/* ===== TOGGLES ===== */
+.toggles{
+  display:flex;
+  gap:10px;
+  font-size:13px;
+}
+
+.toggles input{
+  accent-color:var(--orange);
+}
+
+/* ===== BUTTONS ===== */
 .controls{
   margin:12px;
   display:flex;
   justify-content:center;
-  gap:12px;
+  gap:10px;
+  flex-wrap:wrap;
 }
 
 button.main{
-  font-size:18px;
-  padding:8px 18px;
-  background:orange;
+  background:var(--orange);
   color:white;
   border:none;
-  border-radius:6px;
+  border-radius:8px;
+  padding:10px 16px;
+  font-size:16px;
   cursor:pointer;
+  box-shadow:0 4px 0 #c24f00;
 }
 
+button.main:active{
+  transform:translateY(2px);
+  box-shadow:0 1px 0 #c24f00;
+}
+
+/* ===== SETTINGS ===== */
 #settings{
   display:none;
-  background:#fff3e0;
+  background:white;
+  margin:10px;
   padding:12px;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.08);
 }
 
-#settings textarea,
-#settings select{
+#settings select,
+#settings textarea{
   width:100%;
   margin-top:8px;
-  font-size:16px;
+  font-size:15px;
+  padding:6px;
 }
 
+/* ===== TEXT ===== */
 #text{
   padding:20px;
   max-width:900px;
@@ -62,27 +116,66 @@ button.main{
   line-height:1.6;
   text-align:justify;
   background:white;
-  border-radius:8px;
-  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+  border-radius:10px;
 }
 
+/* ===== INFO ===== */
 #words,#time{
   position:fixed;
   right:10px;
   padding:6px 10px;
-  border-radius:6px;
-  font-size:16px;
+  border-radius:8px;
+  font-size:14px;
+  background:white;
 }
 
-#words{ bottom:10px; background:#ffe0b2; }
-#time{ bottom:48px; background:#c8e6c9; }
+#words{ bottom:10px; }
+#time{ bottom:46px; }
+
+/* ===== COPYRIGHT ===== */
+#author{
+  position:fixed;
+  right:10px;
+  bottom:4px;
+  font-size:10px;
+  color:#9aa0a6;
+  opacity:0.8;
+  pointer-events:none;
+}
+
+/* ===== MOBILE ===== */
+@media (max-width:768px){
+
+  .speed, .toggles{
+    width:100%;
+    justify-content:space-between;
+  }
+
+  input[type=range]{
+    width:100%;
+  }
+
+  button.main{
+    flex:1;
+    font-size:15px;
+  }
+
+  #text{
+    font-size:22px;
+    padding:14px;
+    margin:10px;
+  }
+
+  .logo{
+    font-size:22px;
+  }
+}
 </style>
 </head>
 
 <body>
 
 <header>
-  <div class="logo">ЛидерГен</div>
 
   <div class="speed">
     <span>Медленно</span>
@@ -90,104 +183,100 @@ button.main{
     <span>Быстро</span>
   </div>
 
+  <div class="logo">Лавина</div>
+
   <div class="toggles">
-    <label><input type="checkbox" id="paint"> Белый</label>
-    <label><input type="checkbox" id="reverseMode"> Задом наперёд</label>
+    <label><input type="checkbox" id="paint"> белый</label>
+    <label><input type="checkbox" id="reverseMode"> реверс</label>
   </div>
 
-  <button id="toggleSettings">⬇</button>
 </header>
 
 <div class="controls">
   <button class="main" id="start">Старт</button>
   <button class="main" id="stop">Стоп</button>
   <button class="main" id="repeat">Повтор</button>
+  <button class="main" id="toggleSettings">Настройки</button>
 </div>
 
 <div id="settings">
   <select id="selector"></select>
-  <textarea id="newText" placeholder="Вставь свой текст"></textarea>
-  <button class="main" id="add">Добавить текст</button>
+  <textarea id="newText" placeholder="Вставь текст"></textarea>
+  <button class="main" id="add">Добавить</button>
 </div>
 
 <div id="text"></div>
+
 <div id="words"></div>
 <div id="time">Время: 0 сек</div>
+
+<div id="author">© verner</div>
 
 <script>
 
 const speeds=[2,1.75,1.5,1.25,1,0.75,0.5,0.4,0.25,0.1];
 
-let texts = [];
-
+let texts=[];
 let spans=[], originalWords=[];
 let i=0, running=false, timer=null;
 
 let startTime=0;
 let clockInterval=null;
+let currentDelay=speeds[4]*1000;
 
-let currentDelay = speeds[4] * 1000;
-
+/* ===== ELEMENTS ===== */
 const textBox=document.getElementById("text");
 const selector=document.getElementById("selector");
-const wordsBox=document.getElementById("words");
-const timeBox=document.getElementById("time");
-const paint=document.getElementById("paint");
-const reverseMode=document.getElementById("reverseMode");
-const newText=document.getElementById("newText");
-const add=document.getElementById("add");
-const speed=document.getElementById("speed");
-const startBtn=document.getElementById("start");
-const stopBtn=document.getElementById("stop");
-const repeatBtn=document.getElementById("repeat");
 const settings=document.getElementById("settings");
 const toggleSettings=document.getElementById("toggleSettings");
 
+const speed=document.getElementById("speed");
+const paint=document.getElementById("paint");
+const reverseMode=document.getElementById("reverseMode");
+
+const startBtn=document.getElementById("start");
+const stopBtn=document.getElementById("stop");
+const repeatBtn=document.getElementById("repeat");
+
+const newText=document.getElementById("newText");
+const add=document.getElementById("add");
+
+const wordsBox=document.getElementById("words");
+const timeBox=document.getElementById("time");
+
 /* ===== LOAD JSON ===== */
 async function loadTexts(){
-  try{
-    const res = await fetch("texts2.json");
-    const data = await res.json();
-
-    if(Array.isArray(data)){
-      texts = data;
-      updateSelector();
-
-      setTimeout(()=>{
-        selector.selectedIndex = 0;
-        showText();
-      },0);
-    }
-  }catch(e){
-    console.log("texts2.json не загружен", e);
-  }
+  const res=await fetch("texts2.json");
+  texts=await res.json();
+  updateSelector();
+  selector.selectedIndex=0;
+  showText();
 }
 
-/* ===== SELECTOR ===== */
+/* ===== SELECT ===== */
 function updateSelector(){
   selector.innerHTML="";
-  texts.forEach((_,idx)=>{
-    const o=document.createElement("option");
-    o.value=idx;
-    o.textContent="Текст "+(idx+1);
+  texts.forEach((_,i)=>{
+    let o=document.createElement("option");
+    o.value=i;
+    o.textContent="Текст "+(i+1);
     selector.appendChild(o);
   });
 }
 
-/* ===== FORMAT WORD ===== */
-function formatWord(word){
+/* ===== TEXT ===== */
+function formatWord(w){
   if(reverseMode.checked){
-    let punct="";
-    if(/[\.,!?:;]$/.test(word)){
-      punct = word.slice(-1);
-      word = word.slice(0,-1);
+    let p="";
+    if(/[\.,!?:;]$/.test(w)){
+      p=w.slice(-1);
+      w=w.slice(0,-1);
     }
-    return word.split("").reverse().join("") + punct;
+    return w.split("").reverse().join("")+p;
   }
-  return word;
+  return w;
 }
 
-/* ===== SHOW TEXT ===== */
 function showText(){
   let t=texts[selector.value];
   if(!t) return;
@@ -196,9 +285,9 @@ function showText(){
   textBox.innerHTML=originalWords.map(w=>`<span>${formatWord(w)}</span>`).join(" ");
   spans=[...textBox.querySelectorAll("span")];
 
+  i=0;
   wordsBox.textContent="Слов: "+spans.length;
   timeBox.textContent="Время: 0 сек";
-  i=0;
 }
 
 selector.onchange=showText;
@@ -209,54 +298,40 @@ toggleSettings.onclick=()=>{
 };
 
 add.onclick=()=>{
-  const t=newText.value.replace(/\s+/g," ").trim();
+  let t=newText.value.trim();
   if(!t) return;
 
   texts.push(t);
-
   updateSelector();
   selector.selectedIndex=texts.length-1;
-  newText.value="";
   showText();
 };
 
 /* ===== TIMER ===== */
 function startClock(){
-  stopClock();
-
+  clearInterval(clockInterval);
   clockInterval=setInterval(()=>{
-    let seconds=Math.floor((Date.now()-startTime)/1000);
-    timeBox.textContent="Время: "+seconds+" сек";
+    timeBox.textContent="Время: "+Math.floor((Date.now()-startTime)/1000)+" сек";
   },200);
 }
 
-function stopClock(){
-  if(clockInterval){
-    clearInterval(clockInterval);
-    clockInterval=null;
-  }
-  timeBox.textContent="Время: 0 сек";
-}
-
-/* ===== DISAPPEAR ===== */
-function disappearWord(){
+/* ===== CORE ===== */
+function go(){
   if(!running || i>=spans.length) return;
 
   for(let j=i;j<spans.length;j++){
     spans[j].textContent=formatWord(originalWords[j]);
   }
 
-  if(paint.checked) spans[i].style.color="white";
-  else spans[i].style.display="none";
+  spans[i].style.color=paint.checked?"white":"transparent";
 
   i++;
   wordsBox.textContent="Слов: "+(spans.length-i);
 
   if(i<spans.length){
-    timer=setTimeout(disappearWord, currentDelay);
+    timer=setTimeout(go,currentDelay);
   }else{
     running=false;
-    stopClock();
   }
 }
 
@@ -267,13 +342,12 @@ startBtn.onclick=()=>{
   i=0;
   startTime=Date.now();
   startClock();
-  disappearWord();
+  go();
 };
 
 stopBtn.onclick=()=>{
   running=false;
   clearTimeout(timer);
-  stopClock();
 };
 
 repeatBtn.onclick=()=>{
@@ -282,12 +356,12 @@ repeatBtn.onclick=()=>{
   running=true;
   startTime=Date.now();
   startClock();
-  disappearWord();
+  go();
 };
 
-/* ===== SPEED (LIVE CHANGE) ===== */
+/* ===== SPEED ===== */
 speed.oninput=()=>{
-  currentDelay = speeds[speed.value] * 1000;
+  currentDelay=speeds[speed.value]*1000;
 };
 
 /* ===== INIT ===== */
