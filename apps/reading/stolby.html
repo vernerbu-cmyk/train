@@ -2,134 +2,27 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
 <title>ЛидерГен — тренажёр</title>
 
 <style>
-body{
-  margin:0;
-  font-family:Arial;
-  background:#fff;
-}
+body{margin:0;font-family:Arial;background:#fff;}
+.top{background:#f57c00;color:#fff;padding:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.word{margin-top:80px;text-align:center;font-size:28px;font-weight:bold;user-select:none;}
+.panel{position:fixed;top:60px;left:10%;width:80%;max-width:600px;background:#fff;border:1px solid #ccc;padding:10px;display:none;z-index:1000;overflow:auto;max-height:80vh;}
+textarea,input,select{width:100%;margin-top:5px;}
+button{width:100%;margin-top:5px;}
+.highlight{color:red;font-weight:bold;}
 
-/* ===== TOP BAR ===== */
-.top{
-  background:#f57c00;
-  color:#fff;
-  padding:10px;
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  align-items:center;
-  font-size:14px;
-}
-
-.top label{
-  display:flex;
-  align-items:center;
-  gap:5px;
-}
-
-/* кнопка */
-button{
-  padding:10px;
-  font-size:16px;
-}
-
-/* ===== СЛОВО ===== */
-.word{
-  margin-top:80px;
-  text-align:center;
-  font-size:28px;
-  font-weight:bold;
-  user-select:none;
-  padding:10px;
-}
-
-/* ===== ПАНЕЛЬ ===== */
-.panel{
-  position:fixed;
-  top:60px;
-  left:5%;
-  width:90%;
-  max-width:600px;
-  background:#fff;
-  border:1px solid #ccc;
-  padding:10px;
-  display:none;
-  z-index:1000;
-  overflow:auto;
-  max-height:80vh;
-  border-radius:10px;
-}
-
-/* textarea / input */
-textarea,input,select{
-  width:100%;
-  margin-top:6px;
-  font-size:16px;
-  padding:8px;
-  box-sizing:border-box;
-}
-
-/* ===== БАЗА ===== */
-.wordItem{
-  display:flex;
-  justify-content:space-between;
-  padding:6px;
-  border-bottom:1px solid #eee;
-  font-size:16px;
-}
-
-.wordText{
-  flex:1;
-  cursor:pointer;
-}
-
-.deleteBtn{
-  color:red;
-  padding-left:10px;
-  cursor:pointer;
-  font-size:18px;
-}
-
-.levelTitle{
-  margin-top:10px;
-  font-weight:bold;
-  font-size:16px;
-}
-
-/* ===== МОБИЛЬНЫЕ ===== */
-@media (max-width:600px){
-
-  .top{
-    font-size:12px;
-    gap:6px;
-  }
-
-  .word{
-    font-size:24px;
-    margin-top:70px;
-  }
-
-  button{
-    font-size:14px;
-    padding:8px;
-  }
-
-  .panel{
-    left:2%;
-    width:96%;
-  }
-}
+.wordItem{display:flex;justify-content:space-between;padding:4px;border-bottom:1px solid #eee;}
+.wordText{flex:1;cursor:pointer;}
+.deleteBtn{color:red;cursor:pointer;padding-left:10px;}
+.levelTitle{margin-top:10px;font-weight:bold;}
 </style>
 </head>
 
 <body>
 
 <div class="top">
-
 <label>Скорость <input type="range" id="speed" min="0" max="10" value="0"></label>
 
 <label>Уровень
@@ -149,7 +42,6 @@ textarea,input,select{
 <label>Размер <input type="number" id="fontSize" value="28" min="12" max="120"></label>
 
 <button id="bookBtn">📖</button>
-
 </div>
 
 <div class="panel" id="basePanel">
@@ -189,33 +81,37 @@ function save(){
   localStorage.setItem("base",JSON.stringify(wordBase));
 }
 
-/* ===== УРОВНИ (ТВОИ ПРАВИЛА) ===== */
+/* =========================
+   ЛОГИКА УРОВНЕЙ (ТВОЯ)
+========================= */
 
 function detectLevel(w){
-  let word=w.toLowerCase();
-  let v=[...word].filter(c=>vowels.includes(c)).length;
-  let len=word.length;
+  let word = w.toLowerCase();
+  let v = [...word].filter(c=>vowels.includes(c)).length;
+  let len = word.length;
 
-  if(v===1) return 1;
+  if(v === 1) return 1;
 
-  if(v===2 && len<=5) return 2;
-  if(v===2 && len>=6) return 3;
+  if(v === 2 && len <= 5) return 2;
+  if(v === 2 && len >= 6) return 3;
 
-  if(v===3 && len>=5 && len<=7) return 4;
-  if(v===3 && len>=7) return 5;
+  if(v === 3 && len >= 5 && len <= 7) return 4;
+  if(v === 3 && len >= 7) return 5;
 
-  if(v===4 && len>=7 && len<=9) return 6;
-  if(v===4 && len>=9) return 7;
+  if(v === 4 && len >= 7 && len <= 9) return 6;
+  if(v === 4 && len >= 9) return 7;
 
-  if(v>=5) return 8;
+  if(v >= 5) return 8;
 
   return 7;
 }
 
-/* ===== СЛОГИ ===== */
+/* =========================
+   СЛОГИ (СТАБИЛЬНЫЕ)
+========================= */
 
 function split(word){
-  word=word.toLowerCase();
+  word = word.toLowerCase();
   let res=[],cur="";
 
   for(let i=0;i<word.length;i++){
@@ -236,24 +132,30 @@ function split(word){
   return res;
 }
 
-/* ===== ОТОБРАЖЕНИЕ ===== */
+/* ========================= */
 
 function decorate(w){
-  let parts=split(w);
+  let parts = split(w);
 
   if(highlight.checked){
-    parts=parts.map(p=>"<span style='color:red;font-weight:bold'>"+p[0]+"</span>"+p.slice(1));
+    parts = parts.map(p =>
+      "<span class='highlight'>"+p[0]+"</span>"+p.slice(1)
+    );
   }
 
   return syllables.checked ? parts.join("-") : parts.join("");
 }
+
+/* ========================= */
 
 function show(){
   let pool=[];
 
   if(level.value==="random"){
     for(let i=1;i<=7;i++) pool=pool.concat(wordBase[i]);
-  }else pool=wordBase[level.value];
+  } else {
+    pool=wordBase[level.value];
+  }
 
   if(!pool.length){
     wordDisplay.textContent="—";
@@ -263,8 +165,10 @@ function show(){
   let w=pool[Math.floor(Math.random()*pool.length)];
 
   wordDisplay.innerHTML=decorate(w);
-  wordDisplay.style.fontSize=fontSize.value+"px";
+  wordDisplay.style.fontSize = fontSize.value+"px";
 }
+
+/* ========================= */
 
 function restart(){
   clearInterval(timer);
@@ -273,9 +177,10 @@ function restart(){
   }
 }
 
-restart(); show();
+restart();
+show();
 
-/* ===== УПРАВЛЕНИЕ ===== */
+/* ========================= */
 
 speed.oninput=restart;
 level.onchange=show;
@@ -284,7 +189,7 @@ highlight.onchange=show;
 auto.onchange=restart;
 fontSize.oninput=show;
 
-/* ===== ПЕРЕКЛЮЧЕНИЕ ===== */
+/* ========================= */
 
 document.addEventListener("keydown",e=>{
   if(!auto.checked && e.code==="Space"){
@@ -297,10 +202,12 @@ wordDisplay.addEventListener("pointerup",()=>{
   if(!auto.checked) show();
 });
 
-/* ===== БАЗА ===== */
+/* =========================
+   БАЗА
+========================= */
 
 bookBtn.onclick=()=>{
-  basePanel.style.display=
+  basePanel.style.display =
   basePanel.style.display==="block"?"none":"block";
   render();
 };
@@ -350,7 +257,7 @@ function render(){
   }
 }
 
-/* ===== КНОПКИ ===== */
+/* ========================= */
 
 saveBtn.onclick=()=>{
   newWords.value.split("\n")
