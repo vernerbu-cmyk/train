@@ -2,82 +2,94 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>СКОРОЧТЕНИЕ</title>
+<title>Скорочтение +</title>
 
 <style>
-body{
-    font-family: Arial, sans-serif;
-    margin:0;
-    background:#f2f2f2;
+:root{
+    --blue:#1E3F8A;
+    --accent:#FF6A00;
 }
 
-/* Верхняя панель */
+body{
+    margin:0;
+    font-family:Arial;
+    background:#f4f6fb;
+}
+
+/* ===== HEADER ===== */
 header{
     position:fixed;
     top:0;
     left:0;
     width:100%;
-    background:red;
+    background:var(--blue);
     color:white;
-    padding:10px 20px;
+    padding:10px;
     display:flex;
     flex-wrap:wrap;
-    align-items:center;
-    gap:10px;
-    z-index:1000;
+    gap:8px;
     box-sizing:border-box;
+    z-index:1000;
 }
 
 header h1{
-    margin:0 20px 0 0;
+    width:100%;
+    text-align:center;
+    font-style:italic;
+    margin:0;
     font-size:20px;
-    font-weight:bold;
 }
 
-/* Контейнер текста */
+/* inputs */
+textarea{
+    width:100%;
+    height:70px;
+}
+
+button{
+    background:#2f5fb3;
+    color:white;
+    border:none;
+    padding:6px 10px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+input[type="range"]{
+    accent-color:var(--accent);
+}
+
+/* ===== TEXT ===== */
 #textContainer{
+    margin:220px 10px 40px;
+    padding:16px;
     background:white;
-    padding:20px;
     border-radius:10px;
-    min-height:400px;
+    min-height:320px;
     line-height:1.6;
     position:relative;
-    overflow:hidden;
-    margin:140px 20px 20px 20px;
+    font-size:28px;
 }
 
-.hidden{
-    display:none;
-}
+/* ===== EFFECTS ===== */
+.flip{ transform:rotate(180deg); }
 
-/* эффекты */
-.flip{
-    transform: rotate(180deg);
-}
-
-/* шторка */
 .shutter::after{
     content:"";
     position:absolute;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
+    inset:0;
     pointer-events:none;
-    background: repeating-linear-gradient(
+    background:repeating-linear-gradient(
         to right,
-        transparent 0px,
+        transparent 0,
         transparent var(--visible-width),
         white var(--visible-width),
         white calc(var(--visible-width) + var(--hide-width))
     );
 }
 
-/* маски */
 .mask-top span,
-.mask-bottom span{
-    position:relative;
-}
+.mask-bottom span{ position:relative; }
 
 .mask-top span::after{
     content:"";
@@ -99,9 +111,23 @@ header h1{
     background:white;
 }
 
-textarea{
-    width:220px;
-    height:60px;
+.hidden{ display:none; }
+
+/* verner */
+#verner{
+    position:fixed;
+    right:10px;
+    bottom:6px;
+    font-size:11px;
+    opacity:0.5;
+}
+
+/* mobile */
+@media(max-width:600px){
+    #textContainer{
+        margin:240px 10px 60px;
+        font-size:18px;
+    }
 }
 </style>
 </head>
@@ -109,14 +135,29 @@ textarea{
 <body>
 
 <header>
-<h1>СКОРОЧТЕНИЕ</h1>
 
-<textarea id="textInput">Загрузка текста...</textarea>
+<h1>Скорочтение +</h1>
 
-<input type="file" id="fileInput" accept=".txt">
+<textarea id="textInput">Жили-были дед да баба.</textarea>
+
+<input type="file" id="fileInput">
 
 <label>
-<input type="checkbox" id="hideInput"> Скрыть поле ввода
+Сохранённые:
+<select id="savedTexts">
+<option value="">— выбрать —</option>
+</select>
+</label>
+
+<label>
+Шрифт:
+<select id="fontSelect">
+<option value="Arial">Arial</option>
+<option value="Georgia">Georgia</option>
+<option value="Verdana">Verdana</option>
+<option value="Times New Roman">Times</option>
+<option value="Courier New, monospace">Mono</option>
+</select>
 </label>
 
 <label>
@@ -127,231 +168,167 @@ textarea{
 <label>
 Помеха:
 <select id="noiseSelect">
-<option value="none">Без помех</option>
-<option value="tilt">Буквы наклонены</option>
-<option value="maskTop">Закрыт верх</option>
-<option value="maskBottom">Закрыт низ</option>
-<option value="flip">Переворот 180°</option>
-<option value="shutter">Вертикальная шторка</option>
+<option value="none">Без</option>
+<option value="tilt">Наклон</option>
+<option value="maskTop">Верх</option>
+<option value="maskBottom">Низ</option>
+<option value="flip">180</option>
+<option value="shutter">Шторка</option>
 </select>
 </label>
 
 <div id="intensityBlock" class="hidden">
-Интенсивность:
 <input type="range" id="intensity" min="10" max="80" value="50">
-<span id="intensityValue">50%</span>
 </div>
 
 <div id="tiltBlock" class="hidden">
-Наклон:
 <input type="range" id="tiltStrength" min="0" max="45" value="15">
-<span id="tiltValue">15°</span>
 </div>
-
-<label>
-Сохранённые:
-<select id="savedTexts">
-<option value="">— выбрать —</option>
-</select>
-</label>
-
-<button id="clearSaved">Очистить</button>
 
 </header>
 
 <div id="textContainer"></div>
+<div id="verner">verner</div>
 
 <script>
 
-const textInput = document.getElementById("textInput");
-const container = document.getElementById("textContainer");
-const noiseSelect = document.getElementById("noiseSelect");
-const intensityBlock = document.getElementById("intensityBlock");
-const tiltBlock = document.getElementById("tiltBlock");
-const intensitySlider = document.getElementById("intensity");
-const intensityValue = document.getElementById("intensityValue");
-const tiltSlider = document.getElementById("tiltStrength");
-const tiltValue = document.getElementById("tiltValue");
-const hideInputCheckbox = document.getElementById("hideInput");
-const fileInput = document.getElementById("fileInput");
-const savedSelect = document.getElementById("savedTexts");
-const clearSavedBtn = document.getElementById("clearSaved");
+const textInput=document.getElementById("textInput");
+const container=document.getElementById("textContainer");
 
-let savedTexts = JSON.parse(localStorage.getItem("savedTexts") || "[]");
+const noiseSelect=document.getElementById("noiseSelect");
+const intensity=document.getElementById("intensity");
+const tilt=document.getElementById("tiltStrength");
 
-/* =========================
-   📥 ВОТ ИСПРАВЛЕНИЕ
-   texts.json (ВМЕСТО texts2.json)
-========================= */
+const intensityBlock=document.getElementById("intensityBlock");
+const tiltBlock=document.getElementById("tiltBlock");
+
+const fontSize=document.getElementById("fontSize");
+const fontSelect=document.getElementById("fontSelect");
+
+const savedSelect=document.getElementById("savedTexts");
+
+let savedTexts=[];
+
+/* ===== JSON ===== */
 fetch("texts.json")
-.then(r => r.json())
-.then(data => {
-    if (Array.isArray(data)) {
-        data.forEach(t => {
-            if (!savedTexts.includes(t)) {
-                savedTexts.push(t);
-            }
-        });
-
-        localStorage.setItem("savedTexts", JSON.stringify(savedTexts));
+.then(r=>r.json())
+.then(data=>{
+    if(Array.isArray(data)){
+        savedTexts=data;
         updateSavedSelect();
     }
-})
-.catch(err => {
-    console.log("texts.json не найден:", err);
 });
 
-/* список */
 function updateSavedSelect(){
-    savedSelect.innerHTML = '<option value="">— выбрать —</option>';
+    savedSelect.innerHTML='<option value="">— выбрать —</option>';
     savedTexts.forEach((t,i)=>{
-        let opt = document.createElement("option");
-        opt.value = i;
-        opt.textContent = t.length > 30 ? t.substring(0,30)+"..." : t;
+        let opt=document.createElement("option");
+        opt.value=i;
+        opt.textContent=t.length>30 ? t.slice(0,30)+"..." : t;
         savedSelect.appendChild(opt);
     });
 }
 
-updateSavedSelect();
+savedSelect.onchange=function(){
+    if(!this.value) return;
+    textInput.value=savedTexts[this.value];
+    renderText();
+};
 
-/* ===== РЕНДЕР ===== */
+/* ===== CONTROL VISIBILITY FIX ===== */
+function updateControls(){
+
+intensityBlock.classList.add("hidden");
+tiltBlock.classList.add("hidden");
+
+if(noiseSelect.value==="tilt"){
+    tiltBlock.classList.remove("hidden");
+}
+
+if(["maskTop","maskBottom","shutter"].includes(noiseSelect.value)){
+    intensityBlock.classList.remove("hidden");
+}
+}
+
+/* ===== RENDER ===== */
 function renderText(){
 
-let text = textInput.value;
-let effect = noiseSelect.value;
+let text=textInput.value;
+let e=noiseSelect.value;
+
+container.style.fontFamily=fontSelect.value;
+container.style.fontSize=fontSize.value+"px";
 
 container.className="";
 container.innerHTML=text;
 
-/* none */
-if(effect==="none"){
-    container.innerText=text;
-    return;
+if(e==="none"){
+container.innerText=text;
+return;
 }
 
-/* tilt */
-if(effect==="tilt"){
-    container.innerHTML = wrapLetters(text);
-
-    container.querySelectorAll("span").forEach(span=>{
-        let angle = Math.random()*tiltSlider.value*2 - tiltSlider.value;
-        span.style.display="inline-block";
-        span.style.transform="rotate("+angle+"deg)";
-    });
+if(e==="tilt"){
+container.innerHTML=wrap(text);
+container.querySelectorAll("span").forEach(s=>{
+let a=Math.random()*tilt.value*2-tilt.value;
+s.style.display="inline-block";
+s.style.transform=`rotate(${a}deg)`;
+});
 }
 
-/* maskTop */
-if(effect==="maskTop"){
-    container.innerHTML=wrapLetters(text);
-    container.style.setProperty('--mask-percent', intensitySlider.value+"%");
-    container.classList.add("mask-top");
+if(e==="maskTop"){
+container.innerHTML=wrap(text);
+container.style.setProperty("--mask-percent",intensity.value+"%");
+container.classList.add("mask-top");
 }
 
-/* maskBottom */
-if(effect==="maskBottom"){
-    container.innerHTML=wrapLetters(text);
-    container.style.setProperty('--mask-percent', intensitySlider.value+"%");
-    container.classList.add("mask-bottom");
+if(e==="maskBottom"){
+container.innerHTML=wrap(text);
+container.style.setProperty("--mask-percent",intensity.value+"%");
+container.classList.add("mask-bottom");
 }
 
-/* flip */
-if(effect==="flip"){
-    container.innerText=text;
-    container.classList.add("flip");
+if(e==="flip"){
+container.innerText=text;
+container.classList.add("flip");
 }
 
-/* shutter */
-if(effect==="shutter"){
-    container.innerText=text;
+if(e==="shutter"){
+container.innerText=text;
 
-    let hideWidth = 4 + (intensitySlider.value/5);
-    let visibleWidth = 40 - (intensitySlider.value/2);
+let v=40-intensity.value/2;
+let h=4+intensity.value/5;
 
-    container.style.setProperty('--visible-width', visibleWidth+"px");
-    container.style.setProperty('--hide-width', hideWidth+"px");
+container.style.setProperty("--visible-width",v+"px");
+container.style.setProperty("--hide-width",h+"px");
 
-    container.classList.add("shutter");
+container.classList.add("shutter");
 }
 }
 
-/* буквы */
-function wrapLetters(text){
-    return text.split("").map(c =>
-        (c===" " || c==="\n") ? c : "<span>"+c+"</span>"
-    ).join("");
+function wrap(t){
+return t.split("").map(c=>c===" "||c==="\n"?c:`<span>${c}</span>`).join("");
 }
 
-/* events */
-textInput.addEventListener("input", renderText);
+/* ===== EVENTS FIX ===== */
+textInput.oninput=renderText;
 
-noiseSelect.addEventListener("change", ()=>{
-    intensityBlock.classList.add("hidden");
-    tiltBlock.classList.add("hidden");
+noiseSelect.onchange=function(){
+updateControls();
+renderText();
+};
 
-    if(noiseSelect.value==="tilt") tiltBlock.classList.remove("hidden");
-    if(["maskTop","maskBottom","shutter"].includes(noiseSelect.value))
-        intensityBlock.classList.remove("hidden");
+intensity.oninput=renderText;
+tilt.oninput=renderText;
 
-    renderText();
-});
+fontSize.oninput=renderText;
+fontSelect.onchange=renderText;
 
-intensitySlider.addEventListener("input", ()=>{
-    intensityValue.textContent = intensitySlider.value + "%";
-    renderText();
-});
-
-tiltSlider.addEventListener("input", ()=>{
-    tiltValue.textContent = tiltSlider.value + "°";
-    renderText();
-});
-
-document.getElementById("fontSize").addEventListener("input", function(){
-    container.style.fontSize = this.value + "px";
-});
-
-hideInputCheckbox.addEventListener("change", function(){
-    textInput.classList.toggle("hidden");
-    fileInput.classList.toggle("hidden");
-});
-
-fileInput.addEventListener("change", function(e){
-    const file = e.target.files[0];
-    if(!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(event){
-        textInput.value = event.target.result;
-        renderText();
-    };
-    reader.readAsText(file);
-});
-
-savedSelect.addEventListener("change", function(){
-    if(this.value==="") return;
-    textInput.value = savedTexts[this.value];
-    renderText();
-});
-
-clearSavedBtn.addEventListener("click", function(){
-    savedTexts=[];
-    localStorage.removeItem("savedTexts");
-    updateSavedSelect();
-});
-
-/* автосохранение */
-textInput.addEventListener("blur", function(){
-    let text = textInput.value.trim();
-    if(text && !savedTexts.includes(text)){
-        savedTexts.push(text);
-        localStorage.setItem("savedTexts", JSON.stringify(savedTexts));
-        updateSavedSelect();
-    }
-});
-
-/* init */
-container.style.fontSize = "28px";
+/* INIT */
+updateControls();
 renderText();
 
 </script>
+
 </body>
 </html>
