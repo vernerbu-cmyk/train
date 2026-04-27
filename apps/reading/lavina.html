@@ -13,22 +13,22 @@
 
 body{
   margin:0;
-  font-family: Arial, sans-serif;
+  font-family:Arial,sans-serif;
   background:#f6f7fb;
 }
 
-/* ===== HEADER (FIXED CENTER) ===== */
+/* ===== HEADER ===== */
 header{
   background:var(--blue);
-  color:white;
+  color:#fff;
   padding:10px 12px;
   display:flex;
   align-items:center;
   justify-content:space-between;
   position:relative;
+  gap:12px;
 }
 
-/* ===== TITLE TRUE CENTER ===== */
 .logo{
   position:absolute;
   left:50%;
@@ -38,30 +38,31 @@ header{
   font-size:28px;
   letter-spacing:1px;
   white-space:nowrap;
+  pointer-events:none;
 }
 
-/* ===== SPEED ===== */
 .speed{
   display:flex;
   align-items:center;
   gap:8px;
   font-size:13px;
+  z-index:2;
 }
 
-input[type=range]{
-  accent-color:var(--orange);
-  width:140px;
-}
-
-/* ===== TOGGLES ===== */
 .toggles{
   display:flex;
   gap:10px;
   font-size:13px;
+  z-index:2;
 }
 
-.toggles input{
+input[type=range],
+input[type=checkbox]{
   accent-color:var(--orange);
+}
+
+input[type=range]{
+  width:140px;
 }
 
 /* ===== BUTTONS ===== */
@@ -69,13 +70,13 @@ input[type=range]{
   margin:12px;
   display:flex;
   justify-content:center;
-  gap:10px;
   flex-wrap:wrap;
+  gap:10px;
 }
 
 button.main{
   background:var(--orange);
-  color:white;
+  color:#fff;
   border:none;
   border-radius:8px;
   padding:10px 16px;
@@ -92,19 +93,20 @@ button.main:active{
 /* ===== SETTINGS ===== */
 #settings{
   display:none;
-  background:white;
+  background:#fff;
   margin:10px;
   padding:12px;
   border-radius:10px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.08);
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
 }
 
 #settings select,
 #settings textarea{
   width:100%;
   margin-top:8px;
-  font-size:15px;
   padding:6px;
+  font-size:15px;
+  box-sizing:border-box;
 }
 
 /* ===== TEXT ===== */
@@ -115,7 +117,7 @@ button.main:active{
   font-size:30px;
   line-height:1.6;
   text-align:justify;
-  background:white;
+  background:#fff;
   border-radius:10px;
 }
 
@@ -126,11 +128,11 @@ button.main:active{
   padding:6px 10px;
   border-radius:8px;
   font-size:14px;
-  background:white;
+  background:#fff;
 }
 
-#words{ bottom:10px; }
-#time{ bottom:46px; }
+#words{bottom:10px;}
+#time{bottom:46px;}
 
 /* ===== COPYRIGHT ===== */
 #author{
@@ -139,24 +141,53 @@ button.main:active{
   bottom:4px;
   font-size:10px;
   color:#9aa0a6;
-  opacity:0.8;
+  opacity:.8;
   pointer-events:none;
 }
 
-/* ===== MOBILE ===== */
+/* ===== MOBILE FIX ===== */
 @media (max-width:768px){
 
-  .speed, .toggles{
+  header{
+    flex-direction:column;
+    align-items:stretch;
+    padding:10px;
+  }
+
+  /* главное исправление:
+     убираем absolute центрирование на телефоне */
+  .logo{
+    position:static;
+    transform:none;
+    order:1;
+    text-align:center;
+    font-size:24px;
+    margin-bottom:4px;
+  }
+
+  .speed{
+    order:2;
     width:100%;
     justify-content:space-between;
+    flex-wrap:wrap;
+    font-size:12px;
+  }
+
+  .toggles{
+    order:3;
+    width:100%;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    font-size:12px;
   }
 
   input[type=range]{
     width:100%;
+    margin:4px 0;
   }
 
   button.main{
-    flex:1;
+    flex:1 1 40%;
     font-size:15px;
   }
 
@@ -166,8 +197,9 @@ button.main:active{
     margin:10px;
   }
 
-  .logo{
-    font-size:22px;
+  #words,#time{
+    font-size:12px;
+    right:6px;
   }
 }
 </style>
@@ -177,13 +209,13 @@ button.main:active{
 
 <header>
 
+  <div class="logo">Лавина</div>
+
   <div class="speed">
     <span>Медленно</span>
     <input id="speed" type="range" min="0" max="9" value="4">
     <span>Быстро</span>
   </div>
-
-  <div class="logo">Лавина</div>
 
   <div class="toggles">
     <label><input type="checkbox" id="paint"> белый</label>
@@ -213,18 +245,16 @@ button.main:active{
 <div id="author">© verner</div>
 
 <script>
-
 const speeds=[2,1.75,1.5,1.25,1,0.75,0.5,0.4,0.25,0.1];
 
 let texts=[];
-let spans=[], originalWords=[];
-let i=0, running=false, timer=null;
+let spans=[],originalWords=[];
+let i=0,running=false,timer=null;
 
 let startTime=0;
 let clockInterval=null;
 let currentDelay=speeds[4]*1000;
 
-/* ===== ELEMENTS ===== */
 const textBox=document.getElementById("text");
 const selector=document.getElementById("selector");
 const settings=document.getElementById("settings");
@@ -244,7 +274,6 @@ const add=document.getElementById("add");
 const wordsBox=document.getElementById("words");
 const timeBox=document.getElementById("time");
 
-/* ===== LOAD JSON ===== */
 async function loadTexts(){
   const res=await fetch("texts2.json");
   texts=await res.json();
@@ -253,18 +282,16 @@ async function loadTexts(){
   showText();
 }
 
-/* ===== SELECT ===== */
 function updateSelector(){
   selector.innerHTML="";
-  texts.forEach((_,i)=>{
-    let o=document.createElement("option");
-    o.value=i;
-    o.textContent="Текст "+(i+1);
+  texts.forEach((_,n)=>{
+    const o=document.createElement("option");
+    o.value=n;
+    o.textContent="Текст "+(n+1);
     selector.appendChild(o);
   });
 }
 
-/* ===== TEXT ===== */
 function formatWord(w){
   if(reverseMode.checked){
     let p="";
@@ -278,7 +305,7 @@ function formatWord(w){
 }
 
 function showText(){
-  let t=texts[selector.value];
+  const t=texts[selector.value];
   if(!t) return;
 
   originalWords=t.split(" ");
@@ -292,22 +319,19 @@ function showText(){
 
 selector.onchange=showText;
 
-/* ===== SETTINGS ===== */
 toggleSettings.onclick=()=>{
   settings.style.display=settings.style.display==="block"?"none":"block";
 };
 
 add.onclick=()=>{
-  let t=newText.value.trim();
+  const t=newText.value.trim();
   if(!t) return;
-
   texts.push(t);
   updateSelector();
   selector.selectedIndex=texts.length-1;
   showText();
 };
 
-/* ===== TIMER ===== */
 function startClock(){
   clearInterval(clockInterval);
   clockInterval=setInterval(()=>{
@@ -315,7 +339,6 @@ function startClock(){
   },200);
 }
 
-/* ===== CORE ===== */
 function go(){
   if(!running || i>=spans.length) return;
 
@@ -323,7 +346,7 @@ function go(){
     spans[j].textContent=formatWord(originalWords[j]);
   }
 
-  spans[i].style.color=paint.checked?"white":"transparent";
+  spans[i].style.color=paint.checked ? "white" : "transparent";
 
   i++;
   wordsBox.textContent="Слов: "+(spans.length-i);
@@ -335,7 +358,6 @@ function go(){
   }
 }
 
-/* ===== CONTROLS ===== */
 startBtn.onclick=()=>{
   stopBtn.onclick();
   running=true;
@@ -359,14 +381,11 @@ repeatBtn.onclick=()=>{
   go();
 };
 
-/* ===== SPEED ===== */
 speed.oninput=()=>{
   currentDelay=speeds[speed.value]*1000;
 };
 
-/* ===== INIT ===== */
 loadTexts();
-
 </script>
 
 </body>
