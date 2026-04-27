@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<title>Столбики</title>
+<title>ЛидерГен — тренажёр</title>
 
 <style>
 body{
@@ -13,74 +13,31 @@ body{
   background:#fff;
 }
 
-/* ===== TOP ===== */
+/* ===== TOP BAR ===== */
 .top{
-  background:#1E3F8A;
+  background:#f57c00;
   color:#fff;
   padding:10px;
   display:flex;
-  flex-direction:column;
-  gap:8px;
-}
-
-/* верхняя строка */
-.top-row{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  position:relative;
-}
-
-/* НАЗВАНИЕ (УВЕЛИЧЕНО) */
-.title{
-  font-style:italic;
-  font-weight:600;
-  font-size:22px;
-}
-
-/* кнопка настроек */
-.settings-btn{
-  position:absolute;
-  right:0;
-  background:#FF6A00;
-  color:#fff;
-  border:none;
-  padding:8px 10px;
-  border-radius:8px;
-  font-size:14px;
-  box-shadow:0 3px 0 #c94f00;
-}
-
-/* вторая строка */
-.controls{
-  display:flex;
   flex-wrap:wrap;
   gap:8px;
-  justify-content:center;
   align-items:center;
+  font-size:14px;
 }
 
-/* кнопки */
+.top label{
+  display:flex;
+  align-items:center;
+  gap:5px;
+}
+
+/* кнопка */
 button{
-  background:#FF6A00;
-  color:#fff;
-  border:none;
-  padding:10px 12px;
-  font-size:15px;
-  border-radius:8px;
-  box-shadow:0 4px 0 #c94f00;
+  padding:10px;
+  font-size:16px;
 }
 
-button:active{
-  transform:translateY(2px);
-  box-shadow:0 2px 0 #c94f00;
-}
-
-input[type="range"]{
-  accent-color:#FF6A00;
-}
-
-/* ===== WORD ===== */
+/* ===== СЛОВО ===== */
 .word{
   margin-top:80px;
   text-align:center;
@@ -90,7 +47,7 @@ input[type="range"]{
   padding:10px;
 }
 
-/* ===== PANEL ===== */
+/* ===== ПАНЕЛЬ ===== */
 .panel{
   position:fixed;
   top:60px;
@@ -98,7 +55,7 @@ input[type="range"]{
   width:90%;
   max-width:600px;
   background:#fff;
-  border:1px solid #ddd;
+  border:1px solid #ccc;
   padding:10px;
   display:none;
   z-index:1000;
@@ -107,47 +64,64 @@ input[type="range"]{
   border-radius:10px;
 }
 
+/* textarea / input */
 textarea,input,select{
   width:100%;
   margin-top:6px;
   font-size:16px;
   padding:8px;
   box-sizing:border-box;
-  border:1px solid #ccc;
-  border-radius:6px;
 }
 
+/* ===== БАЗА ===== */
 .wordItem{
   display:flex;
   justify-content:space-between;
   padding:6px;
   border-bottom:1px solid #eee;
+  font-size:16px;
 }
 
-.wordText{flex:1;cursor:pointer;}
+.wordText{
+  flex:1;
+  cursor:pointer;
+}
 
-.deleteBtn{color:#FF6A00;font-weight:bold;cursor:pointer;}
+.deleteBtn{
+  color:red;
+  padding-left:10px;
+  cursor:pointer;
+  font-size:18px;
+}
 
-.levelTitle{margin-top:10px;font-weight:bold;}
-
-.highlight{
-  color:#FF6A00;
+.levelTitle{
+  margin-top:10px;
   font-weight:bold;
+  font-size:16px;
 }
 
-/* mobile */
+/* ===== МОБИЛЬНЫЕ ===== */
 @media (max-width:600px){
-  .word{font-size:24px;margin-top:70px;}
-  .title{font-size:20px;}
-}
 
-/* copyright */
-.author{
-  position:fixed;
-  right:8px;
-  bottom:6px;
-  font-size:11px;
-  color:#999;
+  .top{
+    font-size:12px;
+    gap:6px;
+  }
+
+  .word{
+    font-size:24px;
+    margin-top:70px;
+  }
+
+  button{
+    font-size:14px;
+    padding:8px;
+  }
+
+  .panel{
+    left:2%;
+    width:96%;
+  }
 }
 </style>
 </head>
@@ -156,40 +130,32 @@ textarea,input,select{
 
 <div class="top">
 
-  <div class="top-row">
-    <div class="title">Столбики</div>
-    <button class="settings-btn" id="toggleSettings">⚙</button>
-  </div>
+<label>Скорость <input type="range" id="speed" min="0" max="10" value="0"></label>
 
-  <div class="controls" id="controls">
+<label>Уровень
+<select id="level">
+<option value="random">Случайно</option>
+<option value="1">1</option><option value="2">2</option>
+<option value="3">3</option><option value="4">4</option>
+<option value="5">5</option><option value="6">6</option>
+<option value="7">7</option><option value="8">8</option>
+</select>
+</label>
 
-    <label>Скорость <input type="range" id="speed" min="0" max="10" value="0"></label>
+<label><input type="checkbox" id="syllables"> слоги</label>
+<label><input type="checkbox" id="highlight"> подсветка</label>
+<label><input type="checkbox" id="auto" checked> авто</label>
 
-    <label>Уровень
-      <select id="level">
-        <option value="random">Случайно</option>
-        <option value="1">1</option><option value="2">2</option>
-        <option value="3">3</option><option value="4">4</option>
-        <option value="5">5</option><option value="6">6</option>
-        <option value="7">7</option><option value="8">8</option>
-      </select>
-    </label>
+<label>Размер <input type="number" id="fontSize" value="28" min="12" max="120"></label>
 
-    <label><input type="checkbox" id="syllables"> слоги</label>
-    <label><input type="checkbox" id="highlight"> подсветка</label>
-    <label><input type="checkbox" id="auto" checked> авто</label>
+<button id="bookBtn">📖</button>
 
-    <label>Размер <input type="number" id="fontSize" value="28" min="12" max="120"></label>
-
-    <button id="bookBtn">📖</button>
-
-  </div>
 </div>
 
 <div class="panel" id="basePanel">
 
-<textarea id="newWords"></textarea>
-<textarea id="sentences"></textarea>
+<textarea id="newWords" placeholder="слова"></textarea>
+<textarea id="sentences" placeholder="предложения"></textarea>
 
 <button id="saveBtn">Сохранить</button>
 
@@ -202,20 +168,7 @@ textarea,input,select{
 
 <div class="word" id="wordDisplay">—</div>
 
-<div class="author">© verner</div>
-
 <script>
-
-/* ===== UI TOGGLE ===== */
-const toggleBtn = document.getElementById("toggleSettings");
-const controls = document.getElementById("controls");
-
-toggleBtn.onclick = ()=>{
-  controls.style.display =
-    controls.style.display === "none" ? "flex" : "none";
-};
-
-/* ===== ЛОГИКА НЕ ТРОГАЛ ===== */
 
 let wordBase = JSON.parse(localStorage.getItem("base")) || {
 1:["дом","кот","мир"],
@@ -236,54 +189,79 @@ function save(){
   localStorage.setItem("base",JSON.stringify(wordBase));
 }
 
+/* ===== УРОВНИ (ТВОИ ПРАВИЛА) ===== */
+
 function detectLevel(w){
   let word=w.toLowerCase();
   let v=[...word].filter(c=>vowels.includes(c)).length;
   let len=word.length;
 
   if(v===1) return 1;
+
   if(v===2 && len<=5) return 2;
   if(v===2 && len>=6) return 3;
+
   if(v===3 && len>=5 && len<=7) return 4;
   if(v===3 && len>=7) return 5;
+
   if(v===4 && len>=7 && len<=9) return 6;
   if(v===4 && len>=9) return 7;
+
   if(v>=5) return 8;
+
   return 7;
 }
+
+/* ===== СЛОГИ ===== */
 
 function split(word){
   word=word.toLowerCase();
   let res=[],cur="";
+
   for(let i=0;i<word.length;i++){
     cur+=word[i];
+
     if(vowels.includes(word[i])){
-      if(word[i+1]==="ь"){cur+=word[i+1];i++;}
+      if(word[i+1]==="ь"){
+        cur+=word[i+1];
+        i++;
+      }
       res.push(cur);
       cur="";
     }
   }
+
   if(cur) res[res.length-1]+=cur;
+
   return res;
 }
 
+/* ===== ОТОБРАЖЕНИЕ ===== */
+
 function decorate(w){
   let parts=split(w);
+
   if(highlight.checked){
-    parts=parts.map(p=>"<span class='highlight'>"+p[0]+"</span>"+p.slice(1));
+    parts=parts.map(p=>"<span style='color:red;font-weight:bold'>"+p[0]+"</span>"+p.slice(1));
   }
+
   return syllables.checked ? parts.join("-") : parts.join("");
 }
 
 function show(){
   let pool=[];
+
   if(level.value==="random"){
     for(let i=1;i<=7;i++) pool=pool.concat(wordBase[i]);
   }else pool=wordBase[level.value];
 
-  if(!pool.length){wordDisplay.textContent="—";return;}
+  if(!pool.length){
+    wordDisplay.textContent="—";
+    return;
+  }
 
   let w=pool[Math.floor(Math.random()*pool.length)];
+
   wordDisplay.innerHTML=decorate(w);
   wordDisplay.style.fontSize=fontSize.value+"px";
 }
@@ -297,12 +275,16 @@ function restart(){
 
 restart(); show();
 
+/* ===== УПРАВЛЕНИЕ ===== */
+
 speed.oninput=restart;
 level.onchange=show;
 syllables.onchange=show;
 highlight.onchange=show;
 auto.onchange=restart;
 fontSize.oninput=show;
+
+/* ===== ПЕРЕКЛЮЧЕНИЕ ===== */
 
 document.addEventListener("keydown",e=>{
   if(!auto.checked && e.code==="Space"){
@@ -315,21 +297,26 @@ wordDisplay.addEventListener("pointerup",()=>{
   if(!auto.checked) show();
 });
 
+/* ===== БАЗА ===== */
+
 bookBtn.onclick=()=>{
-  basePanel.style.display =
-    basePanel.style.display==="block"?"none":"block";
+  basePanel.style.display=
+  basePanel.style.display==="block"?"none":"block";
   render();
 };
 
 function render(){
   baseList.innerHTML="";
+
   for(let lvl=1;lvl<=8;lvl++){
+
     let title=document.createElement("div");
     title.className="levelTitle";
     title.textContent="Уровень "+lvl;
     baseList.appendChild(title);
 
     wordBase[lvl].forEach((w,i)=>{
+
       let row=document.createElement("div");
       row.className="wordItem";
 
@@ -363,6 +350,8 @@ function render(){
   }
 }
 
+/* ===== КНОПКИ ===== */
+
 saveBtn.onclick=()=>{
   newWords.value.split("\n")
   .map(w=>w.trim())
@@ -370,20 +359,27 @@ saveBtn.onclick=()=>{
   .forEach(w=>{
     wordBase[detectLevel(w)].push(w);
   });
-  save(); render(); show(); newWords.value="";
+
+  save();
+  render();
+  show();
+  newWords.value="";
 };
 
 dedupBtn.onclick=()=>{
   for(let i=1;i<=8;i++){
     wordBase[i]=[...new Set(wordBase[i])];
   }
-  save(); render();
+  save();
+  render();
 };
 
 clearBtn.onclick=()=>{
   if(confirm("Очистить?")){
     wordBase={1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[]};
-    save(); render(); show();
+    save();
+    render();
+    show();
   }
 };
 
