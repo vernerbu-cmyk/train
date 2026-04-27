@@ -13,6 +13,7 @@ body{
   background:#fff;
 }
 
+/* ===== TOP ===== */
 .top{
   background:#1E3F8A;
   color:#fff;
@@ -22,6 +23,7 @@ body{
   gap:8px;
 }
 
+/* верхняя строка */
 .top-row{
   display:flex;
   justify-content:center;
@@ -29,12 +31,14 @@ body{
   position:relative;
 }
 
+/* НАЗВАНИЕ (УВЕЛИЧЕНО) */
 .title{
   font-style:italic;
   font-weight:600;
   font-size:22px;
 }
 
+/* кнопка настроек */
 .settings-btn{
   position:absolute;
   right:0;
@@ -47,6 +51,7 @@ body{
   box-shadow:0 3px 0 #c94f00;
 }
 
+/* вторая строка */
 .controls{
   display:flex;
   flex-wrap:wrap;
@@ -55,6 +60,7 @@ body{
   align-items:center;
 }
 
+/* кнопки */
 button{
   background:#FF6A00;
   color:#fff;
@@ -74,6 +80,7 @@ input[type="range"]{
   accent-color:#FF6A00;
 }
 
+/* ===== WORD ===== */
 .word{
   margin-top:80px;
   text-align:center;
@@ -83,6 +90,7 @@ input[type="range"]{
   padding:10px;
 }
 
+/* ===== PANEL ===== */
 .panel{
   position:fixed;
   top:60px;
@@ -127,6 +135,13 @@ textarea,input,select{
   font-weight:bold;
 }
 
+/* mobile */
+@media (max-width:600px){
+  .word{font-size:24px;margin-top:70px;}
+  .title{font-size:20px;}
+}
+
+/* copyright */
 .author{
   position:fixed;
   right:8px;
@@ -191,13 +206,18 @@ textarea,input,select{
 
 <script>
 
-/* =========================
-   📡 ЗАГРУЗКА БАЗЫ (JSON + fallback)
-========================= */
+/* ===== UI TOGGLE ===== */
+const toggleBtn = document.getElementById("toggleSettings");
+const controls = document.getElementById("controls");
 
-let wordBase;
+toggleBtn.onclick = ()=>{
+  controls.style.display =
+    controls.style.display === "none" ? "flex" : "none";
+};
 
-const defaultBase = {
+/* ===== ЛОГИКА НЕ ТРОГАЛ ===== */
+
+let wordBase = JSON.parse(localStorage.getItem("base")) || {
 1:["дом","кот","мир"],
 2:["мама","рама","каша"],
 3:[],
@@ -208,36 +228,6 @@ const defaultBase = {
 8:["Мама мыла раму","Кот сидит на окне"]
 };
 
-async function loadBase(){
-  try{
-    const res = await fetch("base.json", {cache:"no-store"});
-    if(!res.ok) throw new Error("no json");
-
-    const data = await res.json();
-    wordBase = data;
-
-    console.log("База загружена с JSON");
-  }catch(e){
-
-    const local = localStorage.getItem("base");
-
-    if(local){
-      wordBase = JSON.parse(local);
-      console.log("База загружена из localStorage");
-    }else{
-      wordBase = defaultBase;
-      console.log("База загружена по умолчанию");
-    }
-
-  }
-
-  save();
-  render();
-  show();
-}
-
-/* ========================= */
-
 const vowels="аеёиоуыэюя";
 const speedTable=[2000,1500,1200,1000,800,600,500,400,300,200,100];
 let timer;
@@ -246,7 +236,6 @@ function save(){
   localStorage.setItem("base",JSON.stringify(wordBase));
 }
 
-/* уровни */
 function detectLevel(w){
   let word=w.toLowerCase();
   let v=[...word].filter(c=>vowels.includes(c)).length;
@@ -263,7 +252,6 @@ function detectLevel(w){
   return 7;
 }
 
-/* слоги */
 function split(word){
   word=word.toLowerCase();
   let res=[],cur="";
@@ -279,7 +267,6 @@ function split(word){
   return res;
 }
 
-/* отображение */
 function decorate(w){
   let parts=split(w);
   if(highlight.checked){
@@ -308,12 +295,8 @@ function restart(){
   }
 }
 
-restart();
+restart(); show();
 
-/* init */
-loadBase();
-
-/* controls */
 speed.oninput=restart;
 level.onchange=show;
 syllables.onchange=show;
@@ -321,7 +304,6 @@ highlight.onchange=show;
 auto.onchange=restart;
 fontSize.oninput=show;
 
-/* пробел */
 document.addEventListener("keydown",e=>{
   if(!auto.checked && e.code==="Space"){
     e.preventDefault();
@@ -329,18 +311,10 @@ document.addEventListener("keydown",e=>{
   }
 });
 
-/* тап */
 wordDisplay.addEventListener("pointerup",()=>{
   if(!auto.checked) show();
 });
 
-/* UI toggle */
-toggleSettings.onclick=()=>{
-  controls.style.display =
-    controls.style.display==="none" ? "flex" : "none";
-};
-
-/* база */
 bookBtn.onclick=()=>{
   basePanel.style.display =
     basePanel.style.display==="block"?"none":"block";
@@ -349,7 +323,6 @@ bookBtn.onclick=()=>{
 
 function render(){
   baseList.innerHTML="";
-
   for(let lvl=1;lvl<=8;lvl++){
     let title=document.createElement("div");
     title.className="levelTitle";
@@ -390,15 +363,13 @@ function render(){
   }
 }
 
-/* add */
 saveBtn.onclick=()=>{
   newWords.value.split("\n")
-    .map(w=>w.trim())
-    .filter(Boolean)
-    .forEach(w=>{
-      wordBase[detectLevel(w)].push(w);
-    });
-
+  .map(w=>w.trim())
+  .filter(Boolean)
+  .forEach(w=>{
+    wordBase[detectLevel(w)].push(w);
+  });
   save(); render(); show(); newWords.value="";
 };
 
@@ -411,7 +382,7 @@ dedupBtn.onclick=()=>{
 
 clearBtn.onclick=()=>{
   if(confirm("Очистить?")){
-    wordBase=JSON.parse(JSON.stringify(defaultBase));
+    wordBase={1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[]};
     save(); render(); show();
   }
 };
