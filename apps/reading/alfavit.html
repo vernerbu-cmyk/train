@@ -3,228 +3,249 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ЛидерГен — Тренажёр Букв</title>
+<title>Радуга</title>
 
 <style>
 body {
   margin: 0;
   height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background-color: white;
-  transition: background-color 0.3s ease;
+  overflow: hidden;
+  background: white;
   font-family: Arial, sans-serif;
 }
 
+/* HEADER */
 .header {
   position: absolute;
   top: 0;
   width: 100%;
-  background-color: orange;
+  height: 56px;
+  background: #1E3F8A;
   color: white;
-  text-align: center;
-  padding: 12px 0;
-  font-size: 1.6em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.8em;
   font-weight: bold;
+  font-style: italic;
 }
 
-#lettersContainer {
-  text-align: center;
-}
-
-.letters {
+/* СТОЛБИК */
+#column {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   font-weight: bold;
-  transition: opacity 0.35s ease, transform 0.35s ease, color 0.3s ease;
-  line-height: 1.1;
+
+  transform: translateX(-50%);
+  transition: opacity 0.2s ease;
 }
 
-#letter1 { font-size: 6rem; }
-#letter2 { font-size: 5rem; }
-#letter3 { font-size: 4rem; display: none; }
+#l1 { font-size: 6rem; }
+#l2 { font-size: 5rem; }
+#l3 { font-size: 4rem; display: none; }
 
+/* CONTROLS */
 .controls {
   position: absolute;
-  bottom: 40px;
+  bottom: 50px;
+  width: 100%;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
   justify-content: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 input[type="range"] {
   width: 220px;
+  accent-color: #FF6A00;
 }
 
+/* BUTTONS */
 button {
   padding: 10px 18px;
   border: none;
-  border-radius: 12px;
-  background-color: orange;
+  border-radius: 14px;
+  background: #1E3F8A;
   color: white;
   font-weight: bold;
   cursor: pointer;
+
+  box-shadow:
+    0 4px 0 #142a5e,
+    0 6px 12px rgba(0,0,0,0.25);
+
+  transition: all 0.12s ease;
 }
 
-button:hover {
-  background-color: darkorange;
+button.pressed {
+  transform: translateY(3px);
+  box-shadow: none;
+  filter: brightness(0.9);
+}
+
+/* AUTHOR */
+.footer {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  font-size: 10px;
+  color: rgba(0,0,0,0.25);
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">ЛидерГен</div>
+<div class="header">Радуга</div>
 
-<div id="lettersContainer">
-  <div id="letter1" class="letters"></div>
-  <div id="letter2" class="letters"></div>
-  <div id="letter3" class="letters"></div>
+<div id="column">
+  <div id="l1"></div>
+  <div id="l2"></div>
+  <div id="l3"></div>
 </div>
 
 <div class="controls">
-  <label>Скорость:</label>
-  <input id="speed" type="range" min="0" max="10" step="1" value="4">
-  <button id="startBtn">Старт</button>
-  <button id="stopBtn">Стоп</button>
-  <button id="rainbowBtn">Радуга</button>
-  <button id="legsBtn">Ноги</button>
+  <input id="speed" type="range" min="0" max="10" value="4">
+  <button id="start">Старт</button>
+  <button id="stop">Стоп</button>
+  <button id="rainbow">Радуга</button>
+  <button id="legs">Ноги</button>
 </div>
 
+<div class="footer">© verner</div>
+
 <script>
-const letter1 = document.getElementById("letter1");
-const letter2 = document.getElementById("letter2");
-const letter3 = document.getElementById("letter3");
+const column=document.getElementById("column");
+const l1=document.getElementById("l1");
+const l2=document.getElementById("l2");
+const l3=document.getElementById("l3");
 
-const speedSlider = document.getElementById("speed");
-const startBtn = document.getElementById("startBtn");
-const stopBtn = document.getElementById("stopBtn");
-const rainbowBtn = document.getElementById("rainbowBtn");
-const legsBtn = document.getElementById("legsBtn");
+const speed=document.getElementById("speed");
 
-const alphabet = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯ"
-  .split("")
-  .filter(ch => ch !== "Ь" && ch !== "Ъ");
+const HEADER_HEIGHT = 56;
 
-const group = ["Л", "П", "О"];
-const legsLetters = ["Л", "П"];
+const alphabet="АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯ".split("")
+  .filter(x=>!["Ь","Ъ","Й"].includes(x));
 
-const rainbowColors = [
-  "#FF0000", // красный
-  "#FF7F00", // оранжевый
-  "#FFFF00", // жёлтый
-  "#00FF00", // зелёный
-  "#00BFFF", // голубой
-  "#0000FF", // синий
-  "#8A2BE2"  // фиолетовый
+const group=["Л","П","О"];
+const legsArr=["Л","П"];
+
+const steps=[
+2000,1750,1500,1250,1000,
+900,800,700,600,500,
+400
 ];
 
-// Фиксированные скорости (в секундах)
-const speedSteps = [2, 1.75, 1.5, 1.25, 1, 0.75, 0.5, 0.4, 0.3, 0.2, 0.1];
+/* 🌈 теперь радуга = цвета букв */
+const rainbowColors=[
+"#FF0000","#FF7F00","#FFFF00",
+"#00FF00","#00BFFF","#0000FF","#8A2BE2"
+];
 
-let intervalId = null;
-let rainbow = false;
-let legsMode = false;
-let rainbowIndex = 0;
+let timer=null;
+let rainbow=false;
+let legs=false;
+let colorIndex=0;
 
-function getIntervalTime() {
-  // слева медленно (2 сек), справа быстро (0.1 сек)
-  return speedSteps[speedSlider.value] * 1000;
+/* кнопки press */
+function bind(btn){
+  btn.addEventListener("mousedown",()=>btn.classList.add("pressed"));
+  btn.addEventListener("mouseup",()=>btn.classList.remove("pressed"));
+  btn.addEventListener("mouseleave",()=>btn.classList.remove("pressed"));
+
+  btn.addEventListener("touchstart",()=>btn.classList.add("pressed"));
+  btn.addEventListener("touchend",()=>btn.classList.remove("pressed"));
 }
 
-function getContrastColor(bgColor) {
-  const hex = bgColor.replace("#","");
-  const r = parseInt(hex.substring(0,2),16);
-  const g = parseInt(hex.substring(2,4),16);
-  const b = parseInt(hex.substring(4,6),16);
-  const brightness = (r*299 + g*587 + b*114)/1000;
-  return brightness > 128 ? "black" : "white";
+bind(document.getElementById("start"));
+bind(document.getElementById("stop"));
+bind(document.getElementById("rainbow"));
+bind(document.getElementById("legs"));
+
+function rand(a){
+  return a[Math.floor(Math.random()*a.length)];
 }
 
-function showRandomLetters() {
+function randPos(){
+  const minY = HEADER_HEIGHT + 20;
+  const maxY = window.innerHeight - 220;
 
-  const l1 = alphabet[Math.floor(Math.random() * alphabet.length)];
-  const l2 = group[Math.floor(Math.random() * group.length)];
-  const l3 = legsLetters[Math.floor(Math.random() * legsLetters.length)];
+  column.style.left = (Math.random()*(window.innerWidth-100))+"px";
+  column.style.top  = (Math.random()*(maxY-minY)+minY)+"px";
+}
 
-  letter1.style.opacity = 0;
-  letter2.style.opacity = 0;
-  letter3.style.opacity = 0;
+/* 🎯 ВАЖНО: теперь меняем ЦВЕТ БУКВ */
+function applyRainbowColor(){
+  const color = rainbowColors[colorIndex];
+  l1.style.color = color;
+  l2.style.color = color;
+  l3.style.color = color;
 
-  letter1.style.transform = "scale(0.85)";
-  letter2.style.transform = "scale(0.85)";
-  letter3.style.transform = "scale(0.85)";
+  colorIndex = (colorIndex + 1) % rainbowColors.length;
+}
 
-  setTimeout(() => {
+function update(){
 
-    letter1.textContent = l1;
-    letter2.textContent = l2;
+  column.style.opacity=0;
 
-    if (legsMode) {
-      letter3.textContent = l3;
-      letter3.style.display = "block";
+  setTimeout(()=>{
+
+    l1.textContent=rand(alphabet);
+    l2.textContent=rand(group);
+
+    if(legs){
+      l3.textContent=rand(legsArr);
+      l3.style.display="block";
     } else {
-      letter3.style.display = "none";
+      l3.style.display="none";
     }
 
-    letter1.style.opacity = 1;
-    letter2.style.opacity = 1;
-    letter3.style.opacity = 1;
+    randPos();
 
-    letter1.style.transform = "scale(1)";
-    letter2.style.transform = "scale(1)";
-    letter3.style.transform = "scale(1)";
+    column.style.opacity=1;
 
-    if (rainbow) {
-      const bg = rainbowColors[rainbowIndex];
-      document.body.style.backgroundColor = bg;
-
-      const contrast = getContrastColor(bg);
-      letter1.style.color = contrast;
-      letter2.style.color = contrast;
-      letter3.style.color = contrast;
-
-      rainbowIndex = (rainbowIndex + 1) % rainbowColors.length;
+    if(rainbow){
+      applyRainbowColor();
     } else {
-      document.body.style.backgroundColor = "white";
-      letter1.style.color = "black";
-      letter2.style.color = "black";
-      letter3.style.color = "black";
+      l1.style.color="black";
+      l2.style.color="black";
+      l3.style.color="black";
     }
 
-  }, 80);
+  },60);
 }
 
-startBtn.addEventListener("click", () => {
-  if (intervalId) clearInterval(intervalId);
-  showRandomLetters();
-  intervalId = setInterval(showRandomLetters, getIntervalTime());
-});
+/* start */
+document.getElementById("start").onclick=()=>{
+  clearInterval(timer);
+  update();
+  timer=setInterval(update,steps[speed.value]);
+};
 
-stopBtn.addEventListener("click", () => {
-  clearInterval(intervalId);
-  intervalId = null;
-});
+/* stop */
+document.getElementById("stop").onclick=()=>{
+  clearInterval(timer);
+};
 
-rainbowBtn.addEventListener("click", () => {
-  rainbow = !rainbow;
-  rainbowBtn.style.backgroundColor = rainbow ? "green" : "orange";
-});
+/* rainbow */
+document.getElementById("rainbow").onclick=()=>{
+  rainbow=!rainbow;
+};
 
-legsBtn.addEventListener("click", () => {
-  legsMode = !legsMode;
-  legsBtn.style.backgroundColor = legsMode ? "green" : "orange";
-  letter3.style.display = legsMode ? "block" : "none";
-});
+/* legs */
+document.getElementById("legs").onclick=()=>{
+  legs=!legs;
+};
 
-speedSlider.addEventListener("input", () => {
-  if (intervalId) {
-    clearInterval(intervalId);
-    intervalId = setInterval(showRandomLetters, getIntervalTime());
+/* speed */
+speed.oninput=()=>{
+  if(timer){
+    clearInterval(timer);
+    timer=setInterval(update,steps[speed.value]);
   }
-});
+};
 </script>
 
 </body>
