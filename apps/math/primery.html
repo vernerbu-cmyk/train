@@ -100,9 +100,12 @@ input[type="range"]{
   color:#999;
 }
 
-/* ❌ УБРАЛИ старый control:last-of-type фикс */
+/* ❗ старый блок кнопок скрываем (чтобы не ломал layout) */
+.controls .control:last-of-type{
+  display:none;
+}
 
-/* ===== НОВАЯ ПАНЕЛЬ КНОПОК ===== */
+/* ===== НОВЫЕ ФИКСИРОВАННЫЕ КНОПКИ ===== */
 .bottom-controls{
   position:fixed;
   bottom:14px;
@@ -110,7 +113,7 @@ input[type="range"]{
   transform:translateX(-50%);
   display:flex;
   gap:12px;
-  z-index:999;
+  z-index:9999;
 }
 
 button{
@@ -190,6 +193,12 @@ button:active{
     <label><input type="checkbox" id="autoMode" checked> Авто</label>
   </div>
 
+  <!-- старые кнопки оставляем (но они скрыты CSS) -->
+  <div class="control">
+    <button id="start">Старт / Стоп</button>
+    <button id="next">Следующий</button>
+  </div>
+
 </div>
 
 <div class="display">
@@ -197,7 +206,7 @@ button:active{
   <div class="letter" id="hand">—</div>
 </div>
 
-<!-- ✅ ВОТ ОНА -->
+<!-- НОВАЯ ПАНЕЛЬ КНОПОК -->
 <div class="bottom-controls">
   <button id="start">Старт / Стоп</button>
   <button id="next">Следующий</button>
@@ -254,13 +263,14 @@ const Engine={
   }
 };
 
-/* ===== UI (НЕ ТРОГАЛ) ===== */
+/* ===== UI (НЕ ТРОГАЮ) ===== */
 const out=document.getElementById("out");
 const hand=document.getElementById("hand");
 const panel=document.getElementById("panel");
 const mode=document.getElementById("mode");
 const autoMode=document.getElementById("autoMode");
 const speed=document.getElementById("speed");
+const fontSize=document.getElementById("fontSize");
 
 const modes={
   plusminus:Engine.plusminus,
@@ -274,6 +284,12 @@ Object.keys(modes).forEach(m=>{
   o.textContent=m;
   mode.appendChild(o);
 });
+
+function applyFont(){
+  out.style.fontSize = fontSize.value + "px";
+}
+fontSize.oninput = applyFont;
+applyFont();
 
 const submodes={
   plusminus:`<label>+/-</label><select id="pmType"><option value="add">+</option><option value="sub">-</option><option value="both">±</option></select>`,
@@ -291,6 +307,17 @@ mode.onchange();
 
 function render(){
   out.textContent=modes[mode.value]();
+
+  if(document.getElementById("rainbow").checked){
+    const rainbow=["#FF0000","#FF7A00","#FFFF00","#00FF00","#00BFFF","#0000FF","#8B00FF"];
+    out.style.color = rainbow[Math.floor(Math.random()*rainbow.length)];
+  } else {
+    out.style.color="#111";
+  }
+
+  hand.textContent=document.getElementById("hands").checked
+    ?["Л","П","О"][Math.floor(Math.random()*3)]
+    :"";
 }
 
 let running=false;
