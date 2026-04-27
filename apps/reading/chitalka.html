@@ -30,11 +30,215 @@ header{
     gap:8px;
     box-sizing:border-box;
     z-index:1000;
+    transition:transform 0.3s ease;
+}
+
+header.hidden-panel{
+    transform:translateY(-100%);
 }
 
 header h1{
     width:100%;
     text-align:center;
+    font-style:italic;
+    margin:0;
+    font-size:20px;
+}
+
+/* inputs */
+textarea{
+    width:100%;
+    height:70px;
+}
+
+button{
+    background:#2f5fb3;
+    color:white;
+    border:none;
+    padding:6px 10px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+/* ===== MOBILE UI FIX ===== */
+@media(max-width:600px){
+
+header{
+    font-size:16px;
+}
+
+button,
+select,
+input{
+    font-size:16px;
+}
+
+textarea{
+    font-size:16px;
+    height:90px;
+}
+
+#textContainer{
+    font-size:18px;
+}
+}
+
+input[type="range"]{
+    accent-color:var(--accent);
+}
+
+/* ===== TEXT ===== */
+#textContainer{
+    margin:220px 10px 40px;
+    padding:16px;
+    background:white;
+    border-radius:10px;
+    min-height:320px;
+    line-height:1.6;
+    position:relative;
+    font-size:28px;
+}
+
+/* ===== EFFECTS ===== */
+.flip{ transform:rotate(180deg); }
+
+.shutter::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    background:repeating-linear-gradient(
+        to right,
+        transparent 0,
+        transparent var(--visible-width),
+        white var(--visible-width),
+        white calc(var(--visible-width) + var(--hide-width))
+    );
+}
+
+.mask-top span,
+.mask-bottom span{ position:relative; }
+
+.mask-top span::after{
+    content:"";
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:var(--mask-percent);
+    background:white;
+}
+
+.mask-bottom span::after{
+    content:"";
+    position:absolute;
+    bottom:0;
+    left:0;
+    width:100%;
+    height:var(--mask-percent);
+    background:white;
+}
+
+.hidden{ display:none; }
+
+/* verner */
+#verner{
+    position:fixed;
+    right:10px;
+    bottom:6px;
+    font-size:11px;
+    opacity:0.5;
+}
+
+/* toggle button */
+#toggleBtn{
+    position:fixed;
+    right:10px;
+    top:10px;
+    z-index:2000;
+    background:#00000033;
+    color:white;
+    border:none;
+    padding:6px 10px;
+    border-radius:8px;
+    backdrop-filter:blur(4px);
+}
+</style>
+</head>
+
+<body>
+
+<button id="toggleBtn">⚙</button>
+
+<header id="panel">
+
+<h1>Скорочтение +</h1>
+
+<textarea id="textInput">Жили-были дед да баба.</textarea>
+
+<label>
+Сохранённые:
+<select id="savedTexts">
+<option value="">— выбрать —</option>
+</select>
+</label>
+
+<label>
+Шрифт:
+<select id="fontSelect">
+<option value="Arial">Arial</option>
+<option value="Georgia">Georgia</option>
+<option value="Verdana">Verdana</option>
+<option value="Times New Roman">Times</option>
+<option value="Courier New, monospace">Mono</option>
+</select>
+</label>
+
+<label>
+Размер:
+<input type="range" id="fontSize" min="16" max="60" value="28">
+</label>
+
+<label>
+Помеха:
+<select id="noiseSelect">
+<option value="none">Без</option>
+<option value="tilt">Наклон</option>
+<option value="maskTop">Верх</option>
+<option value="maskBottom">Низ</option>
+<option value="flip">180</option>
+<option value="shutter">Шторка</option>
+</select>
+</label>
+
+<div id="intensityBlock" class="hidden">
+<input type="range" id="intensity" min="10" max="80" value="50">
+</div>
+
+<div id="tiltBlock" class="hidden">
+<input type="range" id="tiltStrength" min="0" max="45" value="15">
+</div>
+
+</header>
+
+<div id="textContainer"></div>
+<div id="verner">verner</div>
+
+<script>
+
+const panel=document.getElementById("panel");
+const toggleBtn=document.getElementById("toggleBtn");
+
+toggleBtn.onclick=()=>{
+panel.classList.toggle("hidden-panel");
+};
+
+</script>
+
+<!-- (остальной JS у тебя остаётся БЕЗ изменений, я его не дублирую чтобы не ломать структуру) -->
+
+</body>
+</html>    text-align:center;
     font-style:italic;
     margin:0;
     font-size:20px;
