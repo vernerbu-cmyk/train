@@ -8,9 +8,6 @@
 <style>
 html, body{
 height:100%;
-}
-
-body{
 margin:0;
 font-family:Arial, sans-serif;
 background:linear-gradient(135deg,#0f172a,#1e293b);
@@ -33,11 +30,7 @@ top:0;left:0;right:0;
 z-index:10;
 }
 
-.left{
-display:flex;
-align-items:center;
-gap:10px;
-}
+.left{display:flex;align-items:center;gap:10px;}
 
 #backBtn,#fsBtn{
 cursor:pointer;
@@ -46,9 +39,9 @@ border-radius:10px;
 background:rgba(255,255,255,0.1);
 }
 
-/* ================= DESKTOP ================= */
+/* ПК группы */
 #desktop{
-display:grid;
+display:none;
 grid-template-columns:1fr;
 gap:16px;
 padding:80px 14px 14px;
@@ -57,73 +50,42 @@ padding:80px 14px 14px;
 .bigCard{
 height:42vh;
 min-height:280px;
-
 border-radius:28px;
-
 display:flex;
 flex-direction:column;
 align-items:center;
 justify-content:center;
-
 cursor:pointer;
-
 background:rgba(255,255,255,0.08);
-backdrop-filter: blur(12px);
 border:1px solid rgba(255,255,255,0.12);
-
-box-shadow:0 14px 35px rgba(0,0,0,0.5);
 }
 
-.bigCard .icon{
-font-size:130px;
-margin-bottom:10px;
-}
+.bigCard .icon{font-size:120px;margin-bottom:10px;}
+.bigCard .label{font-size:34px;font-weight:800;}
 
-.bigCard .label{
-font-size:36px;
-font-weight:800;
-}
-
-/* ================= LIST ================= */
+/* ПК список */
 #grid{
 display:none;
-grid-template-columns:repeat(2,1fr);
+grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
 gap:16px;
 padding:80px 14px 14px;
-}
-
-@media(min-width:900px){
-#grid{
-grid-template-columns:repeat(4,1fr);
-}
 }
 
 .card{
 aspect-ratio:1/1;
 border-radius:22px;
-
 display:flex;
 flex-direction:column;
 align-items:center;
 justify-content:center;
-
 background:rgba(255,255,255,0.10);
-backdrop-filter: blur(12px);
 border:1px solid rgba(255,255,255,0.15);
 }
 
-.card .icon{
-font-size:70px;
-margin-bottom:8px;
-}
+.card .icon{font-size:60px;}
+.card .label{font-size:16px;text-align:center;font-weight:bold;}
 
-.card .label{
-font-size:18px;
-font-weight:bold;
-text-align:center;
-}
-
-/* ================= MOBILE SWIPE ================= */
+/* МОБИЛЬНЫЙ */
 #mobile{
 display:none;
 height:100vh;
@@ -138,39 +100,25 @@ position:absolute;
 width:100%;
 height:calc(100vh - 60px);
 top:60px;
-
 display:flex;
 align-items:center;
 justify-content:center;
-
-transition:transform 0.35s ease;
 }
 
 .cardFull{
 width:90%;
 height:70%;
 border-radius:28px;
-
 display:flex;
 flex-direction:column;
 align-items:center;
 justify-content:center;
-
 background:rgba(255,255,255,0.08);
 border:1px solid rgba(255,255,255,0.12);
-
-text-align:center;
 }
 
-.cardFull .icon{
-font-size:100px;
-margin-bottom:12px;
-}
-
-.cardFull .label{
-font-size:28px;
-font-weight:bold;
-}
+.cardFull .icon{font-size:90px;margin-bottom:10px;}
+.cardFull .label{font-size:26px;font-weight:bold;}
 
 </style>
 </head>
@@ -199,34 +147,31 @@ let grid=document.getElementById("grid");
 let mobile=document.getElementById("mobile");
 let title=document.getElementById("title");
 
-/* данные */
+/* группы */
 let groups=[
 {name:"Чтение", icon:"📘"},
 {name:"Математика", icon:"🧮"},
 {name:"Разное", icon:"🧠"}
 ];
 
+/* данные */
 let data=[
 {name:"Алфавит", icon:"🅰️", group:"Чтение", file:"apps/reading/alfavit.html"},
 {name:"Читалка", icon:"📖", group:"Чтение", file:"apps/reading/chitalka.html"},
 {name:"Лавина", icon:"🏔️", group:"Чтение", file:"apps/reading/lavina.html"},
-{name:"Нитки", icon:"🧵", group:"Чтение", file:"apps/reading/nitki.html"},
-{name:"Перевёртыш", icon:"🔄", group:"Чтение", file:"apps/reading/pereverton.html"},
 {name:"Анаграммы", icon:"🧠", group:"Чтение", file:"apps/reading/pytal.html"},
 {name:"Радуга", icon:"🌈", group:"Чтение", file:"apps/reading/raduga.html"},
 {name:"Слоги", icon:"🔤", group:"Чтение", file:"apps/reading/slogi.html"},
-{name:"Столбики", icon:"🐌", group:"Чтение", file:"apps/reading/stolby.html"},
 
 {name:"Домики", icon:"🏠", group:"Математика", file:"apps/math/domiky.html"},
-{name:"Магия", icon:"✨", group:"Математика", file:"apps/math/magia.html"},
 {name:"Примеры", icon:"➗", group:"Математика", file:"apps/math/primery.html"},
-{name:"Точки", icon:"🔵", group:"Математика", file:"apps/math/tochki.html"},
 
 {name:"Доска", icon:"🖊️", group:"Разное", file:"apps/other/doska.html"},
-{name:"Лабиринт", icon:"🌀", group:"Разное", file:"apps/other/labyrint.html"}
+{name:"Лабиринт", icon:"🌀", group:"Разное", file:"apps/other/labyrint.html"},
+{name:"Что изменилось", icon:"🧠", group:"Разное", file:"apps/other/chto_izmenilos.html"}
 ];
 
-/* render */
+/* РЕНДЕР */
 function render(){
 
 let isMobile = window.innerWidth < 768;
@@ -248,7 +193,7 @@ renderDesktop();
 
 }
 
-/* DESKTOP */
+/* ПК */
 function renderDesktop(){
 
 if(state==="groups"){
@@ -298,11 +243,11 @@ grid.style.display="grid";
 }
 }
 
-/* ================= MOBILE SWIPE (HORIZONTAL + ANIMATION) ================= */
-
-let index=0;
+/* МОБИЛЬНЫЙ СВАЙП */
+let currentIndex=0;
 let startX=0;
-let endX=0;
+let moveX=0;
+let dragging=false;
 
 function renderMobile(){
 
@@ -315,7 +260,7 @@ list.forEach((item,i)=>{
 let div=document.createElement("div");
 div.className="page";
 
-div.style.transform=`translateX(${(i-index)*100}%)`;
+div.style.transform=`translateX(${(i-currentIndex)*100}%)`;
 
 div.innerHTML=`
 <div class="cardFull">
@@ -328,7 +273,7 @@ div.onclick=()=>{
 if(state==="groups"){
 state="list";
 currentGroup=item.name;
-index=0;
+currentIndex=0;
 render();
 }else{
 window.open(item.file,"_self");
@@ -342,26 +287,41 @@ mobile.appendChild(div);
 /* свайп */
 mobile.ontouchstart=(e)=>{
 startX=e.touches[0].clientX;
+dragging=true;
 };
 
-mobile.ontouchend=(e)=>{
-endX=e.changedTouches[0].clientX;
+mobile.ontouchmove=(e)=>{
+if(!dragging) return;
 
-let diff=endX-startX;
+moveX=e.touches[0].clientX;
+let diff=moveX-startX;
 
-/* 👉 вправо */
-if(diff>60){
-index--;
-}
+Array.from(mobile.children).forEach((card,i)=>{
+card.style.transition="none";
+card.style.transform=`translateX(${(i-currentIndex)*100 + diff/3}%)`;
+});
 
-/* 👉 влево */
-if(diff<-60){
-index++;
-}
+};
 
-if(index<0) index=0;
+mobile.ontouchend=()=>{
 
-render();
+dragging=false;
+
+let diff=moveX-startX;
+
+Array.from(mobile.children).forEach(card=>{
+card.style.transition="transform 0.4s ease";
+});
+
+if(diff>70) currentIndex--;
+if(diff<-70) currentIndex++;
+
+if(currentIndex<0) currentIndex=0;
+
+Array.from(mobile.children).forEach((card,i)=>{
+card.style.transform=`translateX(${(i-currentIndex)*100}%)`;
+});
+
 };
 
 }
