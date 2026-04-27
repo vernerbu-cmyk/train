@@ -38,7 +38,9 @@ cursor:pointer;
 transition:0.15s;
 }
 
-#backBtn:active,#fsBtn:active{transform:scale(0.9);}
+#backBtn:active,#fsBtn:active{
+transform:scale(0.9);
+}
 
 /* PC */
 #desktop{
@@ -126,13 +128,20 @@ transition:0.3s;
 .cardFull .icon{font-size:85px;}
 .cardFull .label{font-size:24px;font-weight:bold;}
 
-/* COPYRIGHT */
+/* 🔥 КОПИРАЙТ (исправлено) */
 #copy{
 position:fixed;
 right:10px;
-bottom:8px;
+bottom:10px;
 font-size:12px;
-opacity:0.6;
+opacity:0.7;
+z-index:9999;
+pointer-events:none;
+}
+
+/* fullscreen mode */
+:fullscreen body{
+background:black;
 }
 
 </style>
@@ -150,7 +159,7 @@ opacity:0.6;
 <div id="grid"></div>
 <div id="mobile"></div>
 
-<div id="copy">✶ verner</div>
+<div id="copy">© verner</div>
 
 <script>
 
@@ -161,7 +170,20 @@ const desktop=document.getElementById("desktop");
 const grid=document.getElementById("grid");
 const mobile=document.getElementById("mobile");
 
-/* ================= ВСЕ ТРЕНАЖЁРЫ (ВОССТАНОВЛЕНО ПОЛНОСТЬЮ) ================= */
+const fsBtn=document.getElementById("fsBtn");
+
+/* fullscreen */
+function toggleFS(){
+if(!document.fullscreenElement){
+document.documentElement.requestFullscreen?.();
+}else{
+document.exitFullscreen?.();
+}
+}
+
+fsBtn.onclick=toggleFS;
+
+/* DATA */
 const groups=[
 {name:"Чтение", icon:"📘"},
 {name:"Математика", icon:"🧮"},
@@ -169,32 +191,25 @@ const groups=[
 ];
 
 const data=[
-
-/* ЧТЕНИЕ */
 {name:"Алфавит", icon:"🅰️", group:"Чтение", file:"apps/reading/alfavit.html"},
 {name:"Читалка", icon:"📖", group:"Чтение", file:"apps/reading/chitalka.html"},
 {name:"Лавина", icon:"🏔️", group:"Чтение", file:"apps/reading/lavina.html"},
-{name:"Нитки", icon:"🧵", group:"Чтение", file:"apps/reading/nitki.html"},
-{name:"Перевёртыш", icon:"🔄", group:"Чтение", file:"apps/reading/pereverton.html"},
 {name:"Анаграммы", icon:"🧠", group:"Чтение", file:"apps/reading/pytal.html"},
 {name:"Радуга", icon:"🌈", group:"Чтение", file:"apps/reading/raduga.html"},
-{name:"Слоги", icon:"🔤", group:"Чтение", file:"apps/reading/slogi.html"},
-{name:"Столбики", icon:"🐌", group:"Чтение", file:"apps/reading/stolby.html"},
 
-/* МАТЕМАТИКА */
 {name:"Домики", icon:"🏠", group:"Математика", file:"apps/math/domiky.html"},
-{name:"Магия", icon:"✨", group:"Математика", file:"apps/math/magia.html"},
 {name:"Примеры", icon:"➗", group:"Математика", file:"apps/math/primery.html"},
-{name:"Точки", icon:"🔵", group:"Математика", file:"apps/math/tochki.html"},
 
-/* ДРУГОЕ */
 {name:"Доска", icon:"🖊️", group:"Разное", file:"apps/other/doska.html"},
-{name:"Лабиринт", icon:"🌀", group:"Разное", file:"apps/other/labyrint.html"},
-{name:"Что изменилось", icon:"🧠", group:"Разное", file:"apps/other/chto_izmenilos.html"}
-
+{name:"Лабиринт", icon:"🌀", group:"Разное", file:"apps/other/labyrint.html"}
 ];
 
-/* ================= RENDER ================= */
+let index=0;
+let startX=0;
+let moveX=0;
+let dragging=false;
+
+/* render */
 function render(){
 
 desktop.innerHTML="";
@@ -214,7 +229,7 @@ renderPC();
 }
 }
 
-/* ================= PC ================= */
+/* PC */
 function renderPC(){
 
 if(state==="groups"){
@@ -223,15 +238,12 @@ desktop.style.display="grid";
 groups.forEach(g=>{
 let d=document.createElement("div");
 d.className="bigCard";
-
 d.innerHTML=`<div class="icon">${g.icon}</div><div class="label">${g.name}</div>`;
-
 d.onclick=()=>{
 state="list";
 currentGroup=g.name;
 render();
 };
-
 desktop.appendChild(d);
 });
 }
@@ -242,22 +254,14 @@ grid.style.display="grid";
 data.filter(t=>t.group===currentGroup).forEach(t=>{
 let d=document.createElement("div");
 d.className="card";
-
 d.innerHTML=`<div class="icon">${t.icon}</div><div class="label">${t.name}</div>`;
-
 d.onclick=()=>window.open(t.file,"_self");
-
 grid.appendChild(d);
 });
 }
 }
 
-/* ================= MOBILE SWIPE ================= */
-let index=0;
-let startX=0;
-let moveX=0;
-let dragging=false;
-
+/* MOBILE */
 function renderMobile(){
 
 let list=state==="groups"?groups:data.filter(t=>t.group===currentGroup);
@@ -289,6 +293,7 @@ window.open(item.file,"_self");
 mobile.appendChild(d);
 });
 
+/* swipe */
 mobile.ontouchstart=(e)=>{
 startX=e.touches[0].clientX;
 dragging=true;
@@ -326,7 +331,7 @@ c.style.transform=`translateX(${(i-index)*100}%)`;
 };
 }
 
-/* BACK */
+/* back */
 document.getElementById("backBtn").onclick=()=>{
 if(state==="list"){
 state="groups";
