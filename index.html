@@ -12,9 +12,9 @@ font-family:Arial;
 background:linear-gradient(135deg,#0f172a,#1e293b);
 color:white;
 min-height:100vh;
+overflow:hidden;
 -webkit-tap-highlight-color:transparent;
 touch-action:manipulation;
-overflow:hidden;
 }
 
 /* TOP */
@@ -43,9 +43,7 @@ cursor:pointer;
 user-select:none;
 }
 
-#backBtn:active,#fsBtn:active{
-transform:scale(0.9);
-}
+#backBtn:active,#fsBtn:active{transform:scale(0.9);}
 
 /* PC */
 #desktop,#grid{
@@ -54,10 +52,7 @@ padding:80px 14px;
 }
 
 #desktop{grid-template-columns:1fr;gap:16px;}
-#grid{
-grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-gap:14px;
-}
+#grid{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;}
 
 .bigCard{
 height:38vh;
@@ -88,7 +83,7 @@ cursor:pointer;
 .card .icon{font-size:50px;}
 .card .label{font-size:14px;font-weight:bold;text-align:center;}
 
-/* MOBILE SWIPE */
+/* MOBILE */
 #mobile{
 display:none;
 position:fixed;
@@ -150,13 +145,14 @@ let state="groups";
 let currentGroup=null;
 let index=0;
 
+/* DOM */
 const desktop=document.getElementById("desktop");
 const grid=document.getElementById("grid");
 const mobile=document.getElementById("mobile");
 const backBtn=document.getElementById("backBtn");
 const fsBtn=document.getElementById("fsBtn");
 
-/* DATA */
+/* FULL DATA — ВОССТАНОВЛЕНО ПОЛНОСТЬЮ */
 const groups=[
 {name:"Чтение",icon:"📘"},
 {name:"Математика",icon:"🧮"},
@@ -164,17 +160,29 @@ const groups=[
 ];
 
 const data=[
+
+/* ЧТЕНИЕ */
 {name:"Алфавит",icon:"🅰️",group:"Чтение",file:"apps/reading/alfavit.html"},
 {name:"Читалка",icon:"📖",group:"Чтение",file:"apps/reading/chitalka.html"},
 {name:"Лавина",icon:"🏔️",group:"Чтение",file:"apps/reading/lavina.html"},
+{name:"Нитки",icon:"🧵",group:"Чтение",file:"apps/reading/nitki.html"},
+{name:"Перевёртыш",icon:"🔄",group:"Чтение",file:"apps/reading/pereverton.html"},
 {name:"Анаграммы",icon:"🧠",group:"Чтение",file:"apps/reading/pytal.html"},
 {name:"Радуга",icon:"🌈",group:"Чтение",file:"apps/reading/raduga.html"},
+{name:"Слоги",icon:"🔤",group:"Чтение",file:"apps/reading/slogi.html"},
+{name:"Столбики",icon:"🐌",group:"Чтение",file:"apps/reading/stolby.html"},
 
+/* МАТЕМАТИКА */
 {name:"Домики",icon:"🏠",group:"Математика",file:"apps/math/domiky.html"},
+{name:"Магия",icon:"✨",group:"Математика",file:"apps/math/magia.html"},
 {name:"Примеры",icon:"➗",group:"Математика",file:"apps/math/primery.html"},
+{name:"Точки",icon:"🔵",group:"Математика",file:"apps/math/tochki.html"},
 
+/* РАЗНОЕ */
 {name:"Доска",icon:"🖊️",group:"Разное",file:"apps/other/doska.html"},
-{name:"Лабиринт",icon:"🌀",group:"Разное",file:"apps/other/labyrint.html"}
+{name:"Лабиринт",icon:"🌀",group:"Разное",file:"apps/other/labyrint.html"},
+{name:"Что изменилось",icon:"👀",group:"Разное",file:"apps/other/chto_izmenilos.html"}
+
 ];
 
 /* FULLSCREEN */
@@ -213,11 +221,14 @@ groups.forEach(g=>{
 let d=document.createElement("div");
 d.className="bigCard";
 d.innerHTML=`<div class="icon">${g.icon}</div><div class="label">${g.name}</div>`;
+
 d.onclick=()=>{
 state="list";
 currentGroup=g.name;
+index=0;
 render();
 };
+
 desktop.appendChild(d);
 });
 }
@@ -235,17 +246,19 @@ grid.appendChild(d);
 }
 }
 
-/* MOBILE */
-function updateMobile(diff=0,animate=false){
+/* MOBILE SWIPE */
+function update(diff=0,anim=false){
 [...mobile.children].forEach((c,i)=>{
-c.style.transition=animate?"0.3s":"none";
+c.style.transition=anim?"0.3s":"none";
 c.style.transform=`translateX(${(i-index)*100 + diff/3}%)`;
 });
 }
 
 function renderMobile(){
 
-let list = state==="groups" ? groups : data.filter(x=>x.group===currentGroup);
+let list = state==="groups"
+? groups
+: data.filter(x=>x.group===currentGroup);
 
 list.forEach((item,i)=>{
 let d=document.createElement("div");
@@ -271,9 +284,9 @@ location.href=item.file;
 mobile.appendChild(d);
 });
 
-setTimeout(()=>updateMobile(0,false),0);
+setTimeout(()=>update(0,false),0);
 
-/* SWIPE */
+/* swipe */
 mobile.onpointerdown=(e)=>{
 startX=e.clientX;
 moveX=e.clientX;
@@ -289,7 +302,7 @@ let diff=moveX-startX;
 
 if(Math.abs(diff)>8)moved=true;
 
-updateMobile(diff,false);
+update(diff,false);
 };
 
 mobile.onpointerup=()=>{
@@ -305,13 +318,13 @@ if(index<0) index=0;
 if(index>mobile.children.length-1)
 index=mobile.children.length-1;
 
-updateMobile(0,true);
+update(0,true);
 };
 
 mobile.onpointercancel=mobile.onpointerup;
 }
 
-/* BACK */
+/* BACK FIX */
 backBtn.onclick=()=>{
 if(state==="list"){
 state="groups";
