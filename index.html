@@ -123,14 +123,14 @@ font-weight:bold;
 text-align:center;
 }
 
-/* ================= MOBILE ================= */
+/* ================= MOBILE SWIPE ================= */
 #mobile{
 display:none;
 height:100vh;
 width:100%;
 position:relative;
-touch-action:pan-y;
 overflow:hidden;
+touch-action:pan-y;
 }
 
 .page{
@@ -171,6 +171,7 @@ margin-bottom:12px;
 font-size:28px;
 font-weight:bold;
 }
+
 </style>
 </head>
 
@@ -198,14 +199,13 @@ let grid=document.getElementById("grid");
 let mobile=document.getElementById("mobile");
 let title=document.getElementById("title");
 
-/* группы */
+/* данные */
 let groups=[
 {name:"Чтение", icon:"📘"},
 {name:"Математика", icon:"🧮"},
 {name:"Разное", icon:"🧠"}
 ];
 
-/* ТВОИ ТРЕНАЖЁРЫ */
 let data=[
 {name:"Алфавит", icon:"🅰️", group:"Чтение", file:"apps/reading/alfavit.html"},
 {name:"Читалка", icon:"📖", group:"Чтение", file:"apps/reading/chitalka.html"},
@@ -223,10 +223,7 @@ let data=[
 {name:"Точки", icon:"🔵", group:"Математика", file:"apps/math/tochki.html"},
 
 {name:"Доска", icon:"🖊️", group:"Разное", file:"apps/other/doska.html"},
-{name:"Лабиринт", icon:"🌀", group:"Разное", file:"apps/other/labyrint.html"},
-
-/* 🔥 ВОТ ОНО ВЕРНУЛОСЬ */
-{name:"Что изменилось", icon:"🧠", group:"Разное", file:"apps/other/chto_izmenilos.html"}
+{name:"Лабиринт", icon:"🌀", group:"Разное", file:"apps/other/labyrint.html"}
 ];
 
 /* render */
@@ -301,19 +298,24 @@ grid.style.display="grid";
 }
 }
 
-/* MOBILE SWIPE */
+/* ================= MOBILE SWIPE (HORIZONTAL + ANIMATION) ================= */
+
 let index=0;
-let startY=0;
+let startX=0;
+let endX=0;
 
 function renderMobile(){
 
 let list = state==="groups" ? groups : data.filter(t=>t.group===currentGroup);
 
+mobile.innerHTML="";
+
 list.forEach((item,i)=>{
 
 let div=document.createElement("div");
 div.className="page";
-div.style.transform=`translateY(${(i-index)*100}%)`;
+
+div.style.transform=`translateX(${(i-index)*100}%)`;
 
 div.innerHTML=`
 <div class="cardFull">
@@ -337,15 +339,25 @@ mobile.appendChild(div);
 
 });
 
+/* свайп */
 mobile.ontouchstart=(e)=>{
-startY=e.touches[0].clientY;
+startX=e.touches[0].clientX;
 };
 
 mobile.ontouchend=(e)=>{
-let endY=e.changedTouches[0].clientY;
+endX=e.changedTouches[0].clientX;
 
-if(endY < startY-40) index++;
-if(endY > startY+40) index--;
+let diff=endX-startX;
+
+/* 👉 вправо */
+if(diff>60){
+index--;
+}
+
+/* 👉 влево */
+if(diff<-60){
+index++;
+}
 
 if(index<0) index=0;
 
