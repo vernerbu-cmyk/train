@@ -32,9 +32,367 @@ z-index:10;
 }
 
 #backBtn,#fsBtn{
-min-width:44px;
-height:44px;
+min-width:48px;
+height:48px;
 padding:0 14px;
+border-radius:12px;
+background:rgba(255,255,255,0.1);
+cursor:pointer;
+transition:.15s;
+display:flex;
+align-items:center;
+justify-content:center;
+user-select:none;
+}
+
+#backBtn:active,#fsBtn:active{
+transform:scale(.9);
+background:rgba(255,255,255,.18);
+}
+
+/* PC */
+#desktop{
+display:none;
+padding:80px 14px;
+grid-template-columns:1fr;
+gap:16px;
+}
+
+.bigCard{
+height:38vh;
+min-height:240px;
+border-radius:24px;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+background:rgba(255,255,255,.08);
+cursor:pointer;
+transition:.15s;
+}
+
+.bigCard:active{transform:scale(.96);}
+.bigCard .icon{font-size:100px;}
+.bigCard .label{font-size:30px;font-weight:bold;}
+
+#grid{
+display:none;
+padding:80px 14px;
+grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+gap:14px;
+}
+
+.card{
+aspect-ratio:1/1;
+border-radius:20px;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+background:rgba(255,255,255,.08);
+cursor:pointer;
+transition:.15s;
+padding:10px;
+box-sizing:border-box;
+}
+
+.card:active{
+transform:scale(.94);
+background:rgba(255,255,255,.15);
+}
+
+.card .icon{font-size:50px;}
+.card .label{
+font-size:14px;
+text-align:center;
+font-weight:bold;
+padding:0 8px;
+line-height:1.2;
+}
+
+/* MOBILE */
+#mobile{
+display:none;
+height:100vh;
+width:100%;
+position:relative;
+overflow:hidden;
+touch-action:pan-y;
+}
+
+.page{
+position:absolute;
+width:100%;
+height:calc(100vh - 60px);
+top:60px;
+display:flex;
+justify-content:center;
+align-items:center;
+padding:12px;
+box-sizing:border-box;
+}
+
+.cardFull{
+width:88%;
+height:68%;
+border-radius:24px;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+background:rgba(255,255,255,.08);
+transition:.3s;
+padding:18px;
+box-sizing:border-box;
+}
+
+.cardFull:active{
+transform:scale(.97);
+background:rgba(255,255,255,.14);
+}
+
+.cardFull .icon{font-size:85px;}
+.cardFull .label{
+font-size:24px;
+font-weight:bold;
+text-align:center;
+line-height:1.2;
+padding:0 10px;
+}
+
+/* copy */
+#copy{
+position:fixed;
+right:10px;
+bottom:10px;
+font-size:12px;
+opacity:.7;
+z-index:9999;
+pointer-events:none;
+}
+
+@media (max-width:768px){
+.cardFull{width:90%;height:70%;}
+.cardFull .icon{font-size:92px;}
+.cardFull .label{font-size:26px;}
+}
+</style>
+</head>
+
+<body>
+
+<div id="topBar">
+<div id="backBtn">←</div>
+<div>Тренажёры</div>
+<div id="fsBtn">⛶</div>
+</div>
+
+<div id="desktop"></div>
+<div id="grid"></div>
+<div id="mobile"></div>
+
+<div id="copy">© verner</div>
+
+<script>
+let state="groups";
+let currentGroup=null;
+
+const desktop=document.getElementById("desktop");
+const grid=document.getElementById("grid");
+const mobile=document.getElementById("mobile");
+const backBtn=document.getElementById("backBtn");
+const fsBtn=document.getElementById("fsBtn");
+
+/* FULLSCREEN */
+fsBtn.addEventListener("pointerup",()=>{
+if(!document.fullscreenElement){
+document.documentElement.requestFullscreen?.();
+}else{
+document.exitFullscreen?.();
+}
+});
+
+/* GROUPS */
+const groups=[
+{name:"Чтение",icon:"📘"},
+{name:"Математика",icon:"🧮"},
+{name:"Разное",icon:"🧠"}
+];
+
+/* ВСЁ ВЕРНУЛ */
+const data=[
+
+/* ЧТЕНИЕ */
+{name:"Алфавит",icon:"🅰️",group:"Чтение",file:"apps/reading/alfavit.html"},
+{name:"Читалка",icon:"📖",group:"Чтение",file:"apps/reading/chitalka.html"},
+{name:"Лавина",icon:"🏔️",group:"Чтение",file:"apps/reading/lavina.html"},
+{name:"Нитки",icon:"🧵",group:"Чтение",file:"apps/reading/nitki.html"},
+{name:"Перевёртыш",icon:"🔄",group:"Чтение",file:"apps/reading/pereverton.html"},
+{name:"Анаграммы",icon:"🧠",group:"Чтение",file:"apps/reading/pytal.html"},
+{name:"Радуга",icon:"🌈",group:"Чтение",file:"apps/reading/raduga.html"},
+{name:"Слоги",icon:"🔤",group:"Чтение",file:"apps/reading/slogi.html"},
+{name:"Столбики",icon:"🐌",group:"Чтение",file:"apps/reading/stolby.html"},
+
+/* МАТЕМАТИКА */
+{name:"Домики",icon:"🏠",group:"Математика",file:"apps/math/domiky.html"},
+{name:"Магия",icon:"✨",group:"Математика",file:"apps/math/magia.html"},
+{name:"Примеры",icon:"➗",group:"Математика",file:"apps/math/primery.html"},
+{name:"Точки",icon:"🔵",group:"Математика",file:"apps/math/tochki.html"},
+
+/* РАЗНОЕ */
+{name:"Доска",icon:"🖊️",group:"Разное",file:"apps/other/doska.html"},
+{name:"Лабиринт",icon:"🌀",group:"Разное",file:"apps/other/labyrint.html"},
+{name:"Что изменилось",icon:"👀",group:"Разное",file:"apps/other/chto_izmenilos.html"}
+
+];
+
+let index=0,startX=0,moveX=0,dragging=false,moved=false;
+
+function render(){
+desktop.innerHTML="";
+grid.innerHTML="";
+mobile.innerHTML="";
+
+if(window.innerWidth<768){
+desktop.style.display="none";
+grid.style.display="none";
+mobile.style.display="block";
+renderMobile();
+}else{
+mobile.style.display="none";
+renderPC();
+}
+}
+
+/* PC */
+function renderPC(){
+
+if(state==="groups"){
+desktop.style.display="grid";
+
+groups.forEach(g=>{
+let d=document.createElement("div");
+d.className="bigCard";
+d.innerHTML=`<div class="icon">${g.icon}</div><div class="label">${g.name}</div>`;
+d.addEventListener("pointerup",()=>{
+state="list";
+currentGroup=g.name;
+render();
+});
+desktop.appendChild(d);
+});
+}
+
+if(state==="list"){
+grid.style.display="grid";
+
+data.filter(x=>x.group===currentGroup).forEach(t=>{
+let d=document.createElement("div");
+d.className="card";
+d.innerHTML=`<div class="icon">${t.icon}</div><div class="label">${t.name}</div>`;
+d.addEventListener("pointerup",()=>location.href=t.file);
+grid.appendChild(d);
+});
+}
+}
+
+/* MOBILE */
+function renderMobile(){
+
+let list=state==="groups"
+? groups
+: data.filter(x=>x.group===currentGroup);
+
+list.forEach((item,i)=>{
+
+let d=document.createElement("div");
+d.className="page";
+d.style.transform=`translateX(${(i-index)*100}%)`;
+
+d.innerHTML=`
+<div class="cardFull">
+<div class="icon">${item.icon}</div>
+<div class="label">${item.name}</div>
+</div>
+`;
+
+d.addEventListener("pointerup",()=>{
+if(moved)return;
+
+if(state==="groups"){
+state="list";
+currentGroup=item.name;
+index=0;
+render();
+}else{
+location.href=item.file;
+}
+});
+
+mobile.appendChild(d);
+});
+
+/* swipe */
+mobile.onpointerdown=(e)=>{
+startX=e.clientX;
+moveX=e.clientX;
+dragging=true;
+moved=false;
+};
+
+mobile.onpointermove=(e)=>{
+if(!dragging)return;
+moveX=e.clientX;
+let diff=moveX-startX;
+if(Math.abs(diff)>8)moved=true;
+
+[...mobile.children].forEach((c,i)=>{
+c.style.transition="none";
+c.style.transform=`translateX(${(i-index)*100 + diff/3}%)`;
+});
+};
+
+mobile.onpointerup=()=>{
+if(!dragging)return;
+dragging=false;
+
+let diff=moveX-startX;
+
+[...mobile.children].forEach(c=>c.style.transition=".3s");
+
+if(diff>60) index--;
+if(diff<-60) index++;
+
+if(index<0) index=0;
+if(index>mobile.children.length-1) index=mobile.children.length-1;
+
+[...mobile.children].forEach((c,i)=>{
+c.style.transform=`translateX(${(i-index)*100}%)`;
+});
+};
+
+mobile.onpointercancel=mobile.onpointerup;
+}
+
+/* BACK FIXED */
+backBtn.addEventListener("pointerup",(e)=>{
+e.preventDefault();
+e.stopPropagation();
+
+if(state==="list"){
+state="groups";
+currentGroup=null;
+index=0;
+render();
+}
+});
+
+render();
+window.onresize=render;
+</script>
+
+</body>
+</html>padding:0 14px;
 border-radius:12px;
 background:rgba(255,255,255,0.1);
 cursor:pointer;
