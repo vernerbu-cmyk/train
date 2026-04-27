@@ -44,16 +44,28 @@ button{
   cursor:pointer;
 }
 
+button{
+  box-shadow:0 4px 0 #c84f00;
+}
+button:active{
+  transform:translateY(2px);
+  box-shadow:0 1px 0 #c84f00;
+}
+
+/* =========================
+   🔥 ГЛАВНАЯ ФИКС-СЕТКА
+========================= */
 #grid{
   display:grid;
   justify-content:center;
   margin-top:25px;
   gap:6px;
+  width:100%;
+  grid-auto-rows:72px;
 }
 
+/* ячейка */
 .cell{
-  width:72px;
-  height:72px;
   background:white;
   border:1px solid #d0d7e6;
   border-radius:12px;
@@ -89,23 +101,41 @@ button{
   border-radius:8px;
 }
 
-/* ===== МОБИЛЬНАЯ АДАПТАЦИЯ ===== */
+/* =========================
+   📱 МОБИЛЬНЫЙ ФИКС
+========================= */
 @media (max-width: 768px){
-  .cell{width:52px;height:52px;}
+
+  #grid{
+    gap:4px;
+    grid-auto-rows:52px;
+  }
+
+  .cell{
+    border-radius:10px;
+  }
 }
 
 @media (max-width: 420px){
-  .cell{width:40px;height:40px;}
-  .dot,.square{width:70%;height:70%;}
-}
 
-/* мелкий фикс кнопок */
-button{
-  box-shadow:0 4px 0 #c84f00;
-}
-button:active{
-  transform:translateY(2px);
-  box-shadow:0 1px 0 #c84f00;
+  #grid{
+    grid-auto-rows:40px;
+    gap:3px;
+  }
+
+  button, select{
+    font-size:12px;
+    padding:6px 8px;
+  }
+
+  .title{
+    font-size:16px;
+  }
+
+  .dot,.square{
+    width:70%;
+    height:70%;
+  }
 }
 </style>
 </head>
@@ -127,8 +157,6 @@ button:active{
   <button onclick="hideFigures()">Запомнил</button>
   <button onclick="toggleHistory()">История</button>
   <button onclick="printTemplates()">Печать</button>
-
-  <!-- 🔥 НОВАЯ КНОПКА -->
   <button onclick="resetTrainer()">Сброс</button>
 
 </div>
@@ -149,6 +177,13 @@ function getCount(size){
 
 function getTypes(step){
   return step < 12 ? ['dot'] : ['dot','square'];
+}
+
+function applyGridLayout(size){
+  const grid = document.getElementById('grid');
+
+  // 🔥 ВАЖНО: нормальная адаптация без разъезда
+  grid.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
 }
 
 function nextStep(){
@@ -181,24 +216,12 @@ function nextStep(){
   progress.textContent = `${step} / 16`;
 }
 
-function hideFigures(){
-
-  const grid = document.getElementById('grid');
-  hidden = !hidden;
-
-  if(hidden){
-    grid.querySelectorAll('.cell').forEach(c => c.innerHTML = '');
-  } else {
-    const last = historyData[historyData.length - 1];
-    if(last) drawGrid(last.size, last.figs);
-  }
-}
-
 function drawGrid(size, figs){
 
   const grid = document.getElementById('grid');
   grid.innerHTML='';
-  grid.style.gridTemplateColumns=`repeat(${size},72px)`;
+
+  applyGridLayout(size);
 
   for(let i=0;i<size*size;i++){
 
@@ -214,6 +237,19 @@ function drawGrid(size, figs){
     }
 
     grid.appendChild(cell);
+  }
+}
+
+function hideFigures(){
+
+  const grid = document.getElementById('grid');
+  hidden = !hidden;
+
+  if(hidden){
+    grid.querySelectorAll('.cell').forEach(c => c.innerHTML = '');
+  } else {
+    const last = historyData[historyData.length - 1];
+    if(last) drawGrid(last.size, last.figs);
   }
 }
 
@@ -235,7 +271,7 @@ function prevStep(){
   document.getElementById('progress').textContent=`${step} / 16`;
 }
 
-/* ===== ИСТОРИЯ (без изменений) ===== */
+/* ===== ИСТОРИЯ (не трогал) ===== */
 function toggleHistory(){
 
   const h = document.getElementById('history');
@@ -302,7 +338,7 @@ function toggleHistory(){
   });
 }
 
-/* ===== ПЕЧАТЬ (без изменений) ===== */
+/* ===== печать без изменений ===== */
 function printTemplates(){
 
   const size = +document.getElementById('gridSize').value;
@@ -359,19 +395,15 @@ function printTemplates(){
   w.print();
 }
 
-/* 🔥 НОВАЯ ЛОГИКА СБРОСА */
 function resetTrainer(){
-
   step = 0;
   historyData = [];
   hidden = false;
 
   document.getElementById('grid').innerHTML='';
   document.getElementById('progress').textContent='0 / 16';
-
-  const h = document.getElementById('history');
-  h.innerHTML='';
-  h.style.display='none';
+  document.getElementById('history').innerHTML='';
+  document.getElementById('history').style.display='none';
 }
 
 </script>
