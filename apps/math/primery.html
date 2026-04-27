@@ -18,7 +18,6 @@ body{
   color:#111;
 }
 
-/* ===== TOPBAR ===== */
 .topbar{
   background:var(--blue);
   color:#fff;
@@ -31,7 +30,6 @@ body{
   font-size:28px;
 }
 
-/* ===== GEAR ===== */
 .toggle{
   position:absolute;
   right:10px;
@@ -48,12 +46,6 @@ body{
   box-shadow:0 4px 0 #c84f00;
 }
 
-.toggle:active{
-  transform:translateY(2px);
-  box-shadow:0 2px 0 #c84f00;
-}
-
-/* ===== CONTROLS ===== */
 .controls{
   display:none;
   flex-wrap:wrap;
@@ -75,11 +67,6 @@ select,input{
   border:1px solid #ddd;
 }
 
-input[type="range"]{
-  accent-color:var(--orange);
-}
-
-/* ===== DISPLAY ===== */
 .display{
   text-align:center;
   padding:40px 16px;
@@ -91,17 +78,9 @@ input[type="range"]{
   gap:10px;
 }
 
-.problem{
-  font-size:80px;
-  font-weight:800;
-}
+.problem{ font-size:80px; font-weight:800; }
+.letter{ font-size:80px; font-weight:700; }
 
-.letter{
-  font-size:80px;
-  font-weight:700;
-}
-
-/* ===== AUTHOR ===== */
 .author{
   position:fixed;
   bottom:6px;
@@ -110,8 +89,8 @@ input[type="range"]{
   color:#999;
 }
 
-/* ===== BUTTONS (FIXED BOTTOM) ===== */
-.bottom-controls{
+/* ===== FIX: нижние кнопки ВСЕГДА снизу и не ломают controls ===== */
+.bottom-buttons{
   position:fixed;
   bottom:14px;
   left:50%;
@@ -129,8 +108,112 @@ button{
   background:var(--orange);
   color:#fff;
   box-shadow:0 4px 0 #c84f00;
-  cursor:pointer;
 }
+
+button:active{
+  transform:translateY(2px);
+  box-shadow:0 2px 0 #c84f00;
+}
+
+@media (max-width:768px){
+  .problem,.letter{ font-size:64px; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="topbar">
+  Считалочка
+  <div class="toggle">⚙</div>
+</div>
+
+<div class="controls" id="panel">
+
+  <div class="control">
+    <label>Режим</label>
+    <select id="mode"></select>
+  </div>
+
+  <div class="control" id="submode"></div>
+
+  <div class="control">
+    <label>Мин 1</label><input id="min1" type="number" value="1">
+    <label>Макс 1</label><input id="max1" type="number" value="100">
+    <label>Мин 2</label><input id="min2" type="number" value="1">
+    <label>Макс 2</label><input id="max2" type="number" value="100">
+  </div>
+
+  <div class="control">
+    <label>Макс ответ</label>
+    <input id="maxResult" type="number" value="200">
+  </div>
+
+  <div class="control">
+    <label><input type="checkbox" id="rainbow"> Радуга</label>
+    <label><input type="checkbox" id="hands" checked> Руки</label>
+  </div>
+
+  <div class="control">
+    <label><input type="checkbox" id="autoMode" checked> Авто</label>
+  </div>
+
+</div>
+
+<div class="display">
+  <div class="problem" id="out">—</div>
+  <div class="letter" id="hand">—</div>
+</div>
+
+<!-- FIX: кнопки ВНЕ панели -->
+<div class="bottom-buttons">
+  <button id="start">Старт / Стоп</button>
+  <button id="next">Следующий</button>
+</div>
+
+<div class="author">© verner</div>
+
+<script>
+
+/* ===== ENGINE НЕ ТРОГАЮ ===== */
+const r=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+
+const Engine={
+  plusminus(){
+    let a=r(+min1.value,+max1.value);
+    let b=r(+min2.value,+max2.value);
+    let op=Math.random()<0.5?"+":"-";
+    if(op==="-"&&a<b)[a,b]=[b,a];
+    return `${a} ${op} ${b}`;
+  },
+  muldiv(){
+    let a=r(+min1.value,+max1.value);
+    let b=r(+min2.value,+max2.value);
+    return Math.random()<0.5
+      ? `${a} × ${b}`
+      : `${a*b} ÷ ${b}`;
+  },
+  fractions(){
+    return `${r(1,8)}/${r(2,9)} + ${r(1,8)}/${r(2,9)}`;
+  }
+};
+
+/* ===== UI ===== */
+const out=document.getElementById("out");
+const hand=document.getElementById("hand");
+const panel=document.getElementById("panel");
+
+document.querySelector(".toggle").onclick=()=>{
+  panel.style.display = (panel.style.display==="flex") ? "none" : "flex";
+};
+
+/* важно: если было none → вернуть flex при первом открытии */
+panel.style.display="none";
+
+</script>
+
+</body>
+</html>}
 
 button:active{
   transform:translateY(2px);
