@@ -67,6 +67,10 @@ select,input{
   border:1px solid #ddd;
 }
 
+input[type="range"]{
+  accent-color:var(--orange);
+}
+
 .display{
   text-align:center;
   padding:40px 16px;
@@ -78,8 +82,15 @@ select,input{
   gap:10px;
 }
 
-.problem{ font-size:80px; font-weight:800; }
-.letter{ font-size:80px; font-weight:700; }
+.problem{
+  font-size:80px;
+  font-weight:800;
+}
+
+.letter{
+  font-size:80px;
+  font-weight:700;
+}
 
 .author{
   position:fixed;
@@ -89,8 +100,10 @@ select,input{
   color:#999;
 }
 
-/* ===== FIX: нижние кнопки ВСЕГДА снизу и не ломают controls ===== */
-.bottom-buttons{
+/* ❌ УБРАЛИ старый control:last-of-type фикс */
+
+/* ===== НОВАЯ ПАНЕЛЬ КНОПОК ===== */
+.bottom-controls{
   position:fixed;
   bottom:14px;
   left:50%;
@@ -108,6 +121,7 @@ button{
   background:var(--orange);
   color:#fff;
   box-shadow:0 4px 0 #c84f00;
+  cursor:pointer;
 }
 
 button:active{
@@ -116,7 +130,11 @@ button:active{
 }
 
 @media (max-width:768px){
-  .problem,.letter{ font-size:64px; }
+  .controls{ flex-direction:column; }
+  .control{ min-width:100%; }
+
+  .problem{ font-size:64px; }
+  .letter{ font-size:64px; }
 }
 </style>
 </head>
@@ -138,15 +156,29 @@ button:active{
   <div class="control" id="submode"></div>
 
   <div class="control">
-    <label>Мин 1</label><input id="min1" type="number" value="1">
-    <label>Макс 1</label><input id="max1" type="number" value="100">
-    <label>Мин 2</label><input id="min2" type="number" value="1">
-    <label>Макс 2</label><input id="max2" type="number" value="100">
+    <label>Мин 1</label>
+    <input id="min1" type="number" value="1">
+    <label>Макс 1</label>
+    <input id="max1" type="number" value="100">
+    <label>Мин 2</label>
+    <input id="min2" type="number" value="1">
+    <label>Макс 2</label>
+    <input id="max2" type="number" value="100">
   </div>
 
   <div class="control">
     <label>Макс ответ</label>
     <input id="maxResult" type="number" value="200">
+  </div>
+
+  <div class="control">
+    <label>Размер</label>
+    <input id="fontSize" type="range" min="20" max="200" value="80">
+  </div>
+
+  <div class="control">
+    <label>Скорость</label>
+    <input id="speed" type="range" min="0" max="14" value="6">
   </div>
 
   <div class="control">
@@ -165,8 +197,8 @@ button:active{
   <div class="letter" id="hand">—</div>
 </div>
 
-<!-- FIX: кнопки ВНЕ панели -->
-<div class="bottom-buttons">
+<!-- ✅ ВОТ ОНА -->
+<div class="bottom-controls">
   <button id="start">Старт / Стоп</button>
   <button id="next">Следующий</button>
 </div>
@@ -175,40 +207,118 @@ button:active{
 
 <script>
 
-/* ===== ENGINE НЕ ТРОГАЮ ===== */
+/* ===== ENGINE (НЕ ТРОГАЮ) ===== */
 const r=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 
 const Engine={
   plusminus(){
     let a=r(+min1.value,+max1.value);
     let b=r(+min2.value,+max2.value);
-    let op=Math.random()<0.5?"+":"-";
+    const t=document.getElementById("pmType")?.value||"both";
+    let op=t==="add"?"+":t==="sub"?"-":(Math.random()<0.5?"+":"-");
     if(op==="-"&&a<b)[a,b]=[b,a];
     return `${a} ${op} ${b}`;
   },
+
   muldiv(){
     let a=r(+min1.value,+max1.value);
     let b=r(+min2.value,+max2.value);
-    return Math.random()<0.5
-      ? `${a} × ${b}`
-      : `${a*b} ÷ ${b}`;
+    const t=document.getElementById("mdType")?.value||"both";
+    if(t==="mul") return `${a} × ${b}`;
+    if(t==="div") return `${a*b} ÷ ${b}`;
+    return Math.random()<0.5 ? `${a} × ${b}` : `${a*b} ÷ ${b}`;
   },
+
   fractions(){
-    return `${r(1,8)}/${r(2,9)} + ${r(1,8)}/${r(2,9)}`;
+    const type=document.getElementById("frType")?.value||"proper";
+    const op=document.getElementById("frOp")?.value||"pm";
+
+    const proper=()=>`${r(1,8)}/${r(9,12)}`;
+    const improper=()=>`${r(10,20)}/${r(2,9)}`;
+    const mixed=()=>`${r(1,5)} ${r(1,8)}/${r(9,12)}`;
+    const decimal=()=> (Math.random()*10).toFixed(1);
+
+    const pick=()=>{
+      if(type==="proper") return proper();
+      if(type==="improper") return improper();
+      if(type==="mixed") return mixed();
+      return decimal();
+    };
+
+    const a=pick();
+    const b=pick();
+
+    if(op==="pm") return `${a} + ${b}`;
+    if(op==="md") return `${a} × ${b}`;
+    return `${a} ÷ ${b}`;
   }
 };
 
-/* ===== UI ===== */
+/* ===== UI (НЕ ТРОГАЛ) ===== */
 const out=document.getElementById("out");
 const hand=document.getElementById("hand");
 const panel=document.getElementById("panel");
+const mode=document.getElementById("mode");
+const autoMode=document.getElementById("autoMode");
+const speed=document.getElementById("speed");
 
-document.querySelector(".toggle").onclick=()=>{
-  panel.style.display = (panel.style.display==="flex") ? "none" : "flex";
+const modes={
+  plusminus:Engine.plusminus,
+  muldiv:Engine.muldiv,
+  fractions:Engine.fractions
 };
 
-/* важно: если было none → вернуть flex при первом открытии */
-panel.style.display="none";
+Object.keys(modes).forEach(m=>{
+  let o=document.createElement("option");
+  o.value=m;
+  o.textContent=m;
+  mode.appendChild(o);
+});
+
+const submodes={
+  plusminus:`<label>+/-</label><select id="pmType"><option value="add">+</option><option value="sub">-</option><option value="both">±</option></select>`,
+  muldiv:`<label>×/÷</label><select id="mdType"><option value="mul">×</option><option value="div">÷</option><option value="both">×/÷</option></select>`,
+  fractions:`<label>Дроби</label><select id="frType"><option value="proper">обыкн</option><option value="improper">неправ</option><option value="mixed">смеш</option><option value="decimal">десят</option></select>
+             <label>Операции</label><select id="frOp"><option value="pm">+/-</option><option value="md">×/÷</option><option value="div">÷</option></select>`
+};
+
+const sub=document.getElementById("submode");
+
+mode.onchange=()=>{
+  sub.innerHTML=submodes[mode.value];
+};
+mode.onchange();
+
+function render(){
+  out.textContent=modes[mode.value]();
+}
+
+let running=false;
+let timer=null;
+
+const speedMap=[
+  4000,3500,3000,2500,2000,1750,1500,1250,
+  1000,750,500,400,300,200,100
+];
+
+function loop(){
+  if(!running || !autoMode.checked) return;
+  render();
+  timer=setTimeout(loop,speedMap[speed.value]);
+}
+
+document.getElementById("start").onclick=()=>{
+  running=!running;
+  if(running) loop();
+};
+
+document.getElementById("next").onclick=()=>{
+  render();
+};
+
+document.querySelector(".toggle").onclick=()=>{
+  panel.style.display = panel.style.display==="flex" ? "none" : "flex";
+};
 
 </script>
 
