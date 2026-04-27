@@ -5,78 +5,428 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Тренажёры</title>
 
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
-
 <style>
-*{
-box-sizing:border-box;
-}
-
-html,body{
+body{
 margin:0;
-padding:0;
-font-family:Arial,sans-serif;
+font-family:Arial;
 background:linear-gradient(135deg,#0f172a,#1e293b);
-color:#fff;
+color:white;
+overflow:auto;
 min-height:100vh;
-overflow-x:hidden;
 -webkit-tap-highlight-color:transparent;
 touch-action:manipulation;
 }
 
-/* верхняя панель */
+/* TOP */
 #topBar{
-position:fixed;
-top:0;
-left:0;
-right:0;
 height:60px;
-padding:0 14px;
+position:fixed;
+top:0;left:0;right:0;
 display:flex;
-align-items:center;
 justify-content:space-between;
-background:rgba(0,0,0,.42);
-backdrop-filter:blur(10px);
-z-index:1000;
-}
-
-#title{
-font-size:20px;
-font-weight:700;
-}
-
-.topBtns{
-display:flex;
-gap:10px;
 align-items:center;
+padding:0 14px;
+background:rgba(0,0,0,0.4);
+backdrop-filter:blur(10px);
+z-index:10;
 }
 
-.btn{
-min-width:42px;
-height:42px;
-padding:0 12px;
-border:none;
+#backBtn,#fsBtn{
+min-width:44px;
+height:44px;
+padding:0 14px;
 border-radius:12px;
-background:rgba(255,255,255,.12);
-color:#fff;
-font-size:18px;
+background:rgba(255,255,255,0.1);
 cursor:pointer;
-transition:transform .12s ease, background .12s ease;
+transition:0.15s;
+display:flex;
+align-items:center;
+justify-content:center;
+user-select:none;
+touch-action:manipulation;
 }
 
-.btn:active{
-transform:scale(.92);
-background:rgba(255,255,255,.22);
+#backBtn:active,#fsBtn:active{
+transform:scale(0.9);
+background:rgba(255,255,255,0.18);
 }
 
-/* контейнер */
-#app{
-padding:78px 16px 24px;
-}
-
-/* главное меню */
+/* PC */
 #desktop{
+display:none;
+padding:80px 14px;
+grid-template-columns:1fr;
+gap:16px;
+}
+
+.bigCard{
+height:38vh;
+min-height:240px;
+border-radius:24px;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+background:rgba(255,255,255,0.08);
+cursor:pointer;
+transition:0.15s;
+user-select:none;
+touch-action:manipulation;
+}
+
+.bigCard:active{transform:scale(0.96);}
+.bigCard .icon{font-size:100px;}
+.bigCard .label{font-size:30px;font-weight:bold;}
+
+/* LIST */
+#grid{
+display:none;
+padding:80px 14px;
+grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+gap:14px;
+}
+
+.card{
+aspect-ratio:1/1;
+border-radius:20px;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+background:rgba(255,255,255,0.08);
+cursor:pointer;
+transition:0.15s;
+user-select:none;
+touch-action:manipulation;
+}
+
+.card:active{
+transform:scale(0.94);
+background:rgba(255,255,255,0.15);
+}
+
+.card .icon{font-size:50px;}
+.card .label{
+font-size:14px;
+text-align:center;
+font-weight:bold;
+padding:0 8px;
+}
+
+/* MOBILE */
+#mobile{
+display:none;
+height:100vh;
+width:100%;
+position:relative;
+overflow:hidden;
+touch-action:pan-y;
+}
+
+.page{
+position:absolute;
+width:100%;
+height:calc(100vh - 60px);
+top:60px;
+display:flex;
+justify-content:center;
+align-items:center;
+padding:12px;
+box-sizing:border-box;
+}
+
+.cardFull{
+width:88%;
+height:68%;
+border-radius:24px;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+background:rgba(255,255,255,0.08);
+transition:0.3s;
+user-select:none;
+touch-action:manipulation;
+box-sizing:border-box;
+padding:18px;
+}
+
+.cardFull:active{
+transform:scale(0.97);
+background:rgba(255,255,255,0.14);
+}
+
+.cardFull .icon{font-size:85px;}
+.cardFull .label{
+font-size:24px;
+font-weight:bold;
+text-align:center;
+line-height:1.2;
+padding:0 10px;
+}
+
+/* copy */
+#copy{
+position:fixed;
+right:10px;
+bottom:10px;
+font-size:12px;
+opacity:0.7;
+z-index:9999;
+pointer-events:none;
+}
+
+:fullscreen body{
+background:black;
+}
+
+/* mobile fine tuning */
+@media (max-width:768px){
+
+#backBtn,#fsBtn{
+min-width:48px;
+height:48px;
+font-size:20px;
+}
+
+.cardFull{
+width:90%;
+height:70%;
+}
+
+.cardFull .icon{
+font-size:92px;
+}
+
+.cardFull .label{
+font-size:26px;
+}
+
+}
+</style>
+</head>
+
+<body>
+
+<div id="topBar">
+<div id="backBtn">←</div>
+<div>Тренажёры</div>
+<div id="fsBtn">⛶</div>
+</div>
+
+<div id="desktop"></div>
+<div id="grid"></div>
+<div id="mobile"></div>
+
+<div id="copy">© verner</div>
+
+<script>
+let state="groups";
+let currentGroup=null;
+
+const desktop=document.getElementById("desktop");
+const grid=document.getElementById("grid");
+const mobile=document.getElementById("mobile");
+
+const fsBtn=document.getElementById("fsBtn");
+const backBtn=document.getElementById("backBtn");
+
+/* fullscreen */
+function toggleFS(){
+if(!document.fullscreenElement){
+document.documentElement.requestFullscreen?.();
+}else{
+document.exitFullscreen?.();
+}
+}
+
+/* DATA */
+const groups=[
+{name:"Чтение", icon:"📘"},
+{name:"Математика", icon:"🧮"},
+{name:"Разное", icon:"🧠"}
+];
+
+const data=[
+{name:"Алфавит", icon:"🅰️", group:"Чтение", file:"apps/reading/alfavit.html"},
+{name:"Читалка", icon:"📖", group:"Чтение", file:"apps/reading/chitalka.html"},
+{name:"Лавина", icon:"🏔️", group:"Чтение", file:"apps/reading/lavina.html"},
+{name:"Анаграммы", icon:"🧠", group:"Чтение", file:"apps/reading/pytal.html"},
+{name:"Радуга", icon:"🌈", group:"Чтение", file:"apps/reading/raduga.html"},
+
+{name:"Домики", icon:"🏠", group:"Математика", file:"apps/math/domiky.html"},
+{name:"Примеры", icon:"➗", group:"Математика", file:"apps/math/primery.html"},
+
+{name:"Доска", icon:"🖊️", group:"Разное", file:"apps/other/doska.html"},
+{name:"Лабиринт", icon:"🌀", group:"Разное", file:"apps/other/labyrint.html"}
+];
+
+let index=0;
+let startX=0;
+let moveX=0;
+let dragging=false;
+let moved=false;
+
+/* render */
+function render(){
+
+desktop.innerHTML="";
+grid.innerHTML="";
+mobile.innerHTML="";
+
+let isMobile=window.innerWidth<768;
+
+if(isMobile){
+mobile.style.display="block";
+desktop.style.display="none";
+grid.style.display="none";
+renderMobile();
+}else{
+mobile.style.display="none";
+renderPC();
+}
+}
+
+/* PC */
+function renderPC(){
+
+if(state==="groups"){
+desktop.style.display="grid";
+
+groups.forEach(g=>{
+let d=document.createElement("div");
+d.className="bigCard";
+d.innerHTML=`<div class="icon">${g.icon}</div><div class="label">${g.name}</div>`;
+
+d.addEventListener("pointerup",()=>{
+state="list";
+currentGroup=g.name;
+render();
+});
+
+desktop.appendChild(d);
+});
+}
+
+if(state==="list"){
+grid.style.display="grid";
+
+data.filter(t=>t.group===currentGroup).forEach(t=>{
+let d=document.createElement("div");
+d.className="card";
+d.innerHTML=`<div class="icon">${t.icon}</div><div class="label">${t.name}</div>`;
+
+d.addEventListener("pointerup",()=>{
+window.open(t.file,"_self");
+});
+
+grid.appendChild(d);
+});
+}
+}
+
+/* MOBILE */
+function renderMobile(){
+
+let list=state==="groups"
+? groups
+: data.filter(t=>t.group===currentGroup);
+
+list.forEach((item,i)=>{
+
+let d=document.createElement("div");
+d.className="page";
+d.style.transform=`translateX(${(i-index)*100}%)`;
+
+d.innerHTML=`
+<div class="cardFull">
+<div class="icon">${item.icon}</div>
+<div class="label">${item.name}</div>
+</div>
+`;
+
+d.addEventListener("pointerup",()=>{
+
+if(moved)return;
+
+if(state==="groups"){
+state="list";
+currentGroup=item.name;
+index=0;
+render();
+}else{
+window.open(item.file,"_self");
+}
+
+});
+
+mobile.appendChild(d);
+});
+
+/* swipe */
+mobile.onpointerdown=(e)=>{
+startX=e.clientX;
+moveX=e.clientX;
+dragging=true;
+moved=false;
+};
+
+mobile.onpointermove=(e)=>{
+if(!dragging)return;
+
+moveX=e.clientX;
+let diff=moveX-startX;
+
+if(Math.abs(diff)>8)moved=true;
+
+Array.from(mobile.children).forEach((c,i)=>{
+c.style.transition="none";
+c.style.transform=`translateX(${(i-index)*100 + diff/3}%)`;
+});
+};
+
+mobile.onpointerup=()=>{
+if(!dragging)return;
+
+dragging=false;
+
+let diff=moveX-startX;
+
+Array.from(mobile.children).forEach(c=>{
+c.style.transition="0.3s";
+});
+
+if(diff>60) index--;
+if(diff<-60) index++;
+
+if(index<0) index=0;
+if(index>mobile.children.length-1) index=mobile.children.length-1;
+
+Array.from(mobile.children).forEach((c,i)=>{
+c.style.transform=`translateX(${(i-index)*100}%)`;
+});
+};
+
+mobile.onpointercancel=mobile.onpointerup;
+}
+
+/* buttons */
+fsBtn.addEventListener("pointerup",toggleFS);
+
+backBtn.addEventListener("pointerup",()=>{
+if(state==="list"){
+state="groups";
+index=0;
+render();
+}
+});
+
+render();
+window.onresize=render;
+</script>
+
+</body>
+</html>#desktop{
 display:grid;
 grid-template-columns:1fr;
 gap:18px;
