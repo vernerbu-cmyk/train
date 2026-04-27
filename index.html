@@ -11,10 +11,10 @@ margin:0;
 font-family:Arial;
 background:linear-gradient(135deg,#0f172a,#1e293b);
 color:white;
-overflow:auto;
 min-height:100vh;
 -webkit-tap-highlight-color:transparent;
 touch-action:manipulation;
+overflow:hidden;
 }
 
 /* TOP */
@@ -34,7 +34,300 @@ z-index:10;
 #backBtn,#fsBtn{
 min-width:48px;
 height:48px;
-padding:0 14px;
+border-radius:12px;
+background:rgba(255,255,255,0.1);
+display:flex;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+user-select:none;
+}
+
+#backBtn:active,#fsBtn:active{
+transform:scale(0.9);
+}
+
+/* PC */
+#desktop,#grid{
+display:none;
+padding:80px 14px;
+}
+
+#desktop{grid-template-columns:1fr;gap:16px;}
+#grid{
+grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+gap:14px;
+}
+
+.bigCard{
+height:38vh;
+min-height:240px;
+border-radius:24px;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+background:rgba(255,255,255,0.08);
+cursor:pointer;
+}
+
+.bigCard .icon{font-size:100px;}
+.bigCard .label{font-size:30px;font-weight:bold;}
+
+.card{
+aspect-ratio:1/1;
+border-radius:20px;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+background:rgba(255,255,255,0.08);
+cursor:pointer;
+}
+
+.card .icon{font-size:50px;}
+.card .label{font-size:14px;font-weight:bold;text-align:center;}
+
+/* MOBILE SWIPE */
+#mobile{
+display:none;
+position:fixed;
+top:60px;left:0;right:0;bottom:0;
+overflow:hidden;
+touch-action:pan-y;
+}
+
+.page{
+position:absolute;
+inset:0;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.cardFull{
+width:88%;
+height:68%;
+border-radius:24px;
+background:rgba(255,255,255,0.08);
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+}
+
+.cardFull .icon{font-size:85px;}
+.cardFull .label{font-size:24px;font-weight:bold;text-align:center;}
+
+#copy{
+position:fixed;
+right:10px;
+bottom:10px;
+font-size:12px;
+opacity:0.7;
+pointer-events:none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="topBar">
+<div id="backBtn">←</div>
+<div>Тренажёры</div>
+<div id="fsBtn">⛶</div>
+</div>
+
+<div id="desktop"></div>
+<div id="grid"></div>
+<div id="mobile"></div>
+
+<div id="copy">© verner</div>
+
+<script>
+
+let state="groups";
+let currentGroup=null;
+let index=0;
+
+const desktop=document.getElementById("desktop");
+const grid=document.getElementById("grid");
+const mobile=document.getElementById("mobile");
+const backBtn=document.getElementById("backBtn");
+const fsBtn=document.getElementById("fsBtn");
+
+/* DATA */
+const groups=[
+{name:"Чтение",icon:"📘"},
+{name:"Математика",icon:"🧮"},
+{name:"Разное",icon:"🧠"}
+];
+
+const data=[
+{name:"Алфавит",icon:"🅰️",group:"Чтение",file:"apps/reading/alfavit.html"},
+{name:"Читалка",icon:"📖",group:"Чтение",file:"apps/reading/chitalka.html"},
+{name:"Лавина",icon:"🏔️",group:"Чтение",file:"apps/reading/lavina.html"},
+{name:"Анаграммы",icon:"🧠",group:"Чтение",file:"apps/reading/pytal.html"},
+{name:"Радуга",icon:"🌈",group:"Чтение",file:"apps/reading/raduga.html"},
+
+{name:"Домики",icon:"🏠",group:"Математика",file:"apps/math/domiky.html"},
+{name:"Примеры",icon:"➗",group:"Математика",file:"apps/math/primery.html"},
+
+{name:"Доска",icon:"🖊️",group:"Разное",file:"apps/other/doska.html"},
+{name:"Лабиринт",icon:"🌀",group:"Разное",file:"apps/other/labyrint.html"}
+];
+
+/* FULLSCREEN */
+fsBtn.onclick=()=>{
+if(!document.fullscreenElement){
+document.documentElement.requestFullscreen?.();
+}else{
+document.exitFullscreen?.();
+}
+};
+
+/* RENDER */
+function render(){
+desktop.innerHTML="";
+grid.innerHTML="";
+mobile.innerHTML="";
+
+if(window.innerWidth<768){
+mobile.style.display="block";
+desktop.style.display="none";
+grid.style.display="none";
+renderMobile();
+}else{
+mobile.style.display="none";
+renderPC();
+}
+}
+
+/* PC */
+function renderPC(){
+
+if(state==="groups"){
+desktop.style.display="grid";
+
+groups.forEach(g=>{
+let d=document.createElement("div");
+d.className="bigCard";
+d.innerHTML=`<div class="icon">${g.icon}</div><div class="label">${g.name}</div>`;
+d.onclick=()=>{
+state="list";
+currentGroup=g.name;
+render();
+};
+desktop.appendChild(d);
+});
+}
+
+if(state==="list"){
+grid.style.display="grid";
+
+data.filter(x=>x.group===currentGroup).forEach(t=>{
+let d=document.createElement("div");
+d.className="card";
+d.innerHTML=`<div class="icon">${t.icon}</div><div class="label">${t.name}</div>`;
+d.onclick=()=>location.href=t.file;
+grid.appendChild(d);
+});
+}
+}
+
+/* MOBILE */
+function updateMobile(diff=0,animate=false){
+[...mobile.children].forEach((c,i)=>{
+c.style.transition=animate?"0.3s":"none";
+c.style.transform=`translateX(${(i-index)*100 + diff/3}%)`;
+});
+}
+
+function renderMobile(){
+
+let list = state==="groups" ? groups : data.filter(x=>x.group===currentGroup);
+
+list.forEach((item,i)=>{
+let d=document.createElement("div");
+d.className="page";
+d.innerHTML=`
+<div class="cardFull">
+<div class="icon">${item.icon}</div>
+<div class="label">${item.name}</div>
+</div>
+`;
+
+d.onclick=()=>{
+if(state==="groups"){
+state="list";
+currentGroup=item.name;
+index=0;
+render();
+}else{
+location.href=item.file;
+}
+};
+
+mobile.appendChild(d);
+});
+
+setTimeout(()=>updateMobile(0,false),0);
+
+/* SWIPE */
+mobile.onpointerdown=(e)=>{
+startX=e.clientX;
+moveX=e.clientX;
+dragging=true;
+moved=false;
+};
+
+mobile.onpointermove=(e)=>{
+if(!dragging)return;
+
+moveX=e.clientX;
+let diff=moveX-startX;
+
+if(Math.abs(diff)>8)moved=true;
+
+updateMobile(diff,false);
+};
+
+mobile.onpointerup=()=>{
+if(!dragging)return;
+dragging=false;
+
+let diff=moveX-startX;
+
+if(diff>60) index--;
+if(diff<-60) index++;
+
+if(index<0) index=0;
+if(index>mobile.children.length-1)
+index=mobile.children.length-1;
+
+updateMobile(0,true);
+};
+
+mobile.onpointercancel=mobile.onpointerup;
+}
+
+/* BACK */
+backBtn.onclick=()=>{
+if(state==="list"){
+state="groups";
+currentGroup=null;
+index=0;
+render();
+}
+};
+
+render();
+window.onresize=render;
+
+</script>
+
+</body>
+</html>padding:0 14px;
 border-radius:12px;
 background:rgba(255,255,255,0.1);
 cursor:pointer;
