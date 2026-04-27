@@ -46,6 +46,7 @@ body{
   box-shadow:0 4px 0 #c84f00;
 }
 
+/* ===== SETTINGS PANEL ===== */
 .controls{
   display:none;
   flex-wrap:wrap;
@@ -71,6 +72,7 @@ input[type="range"]{
   accent-color:var(--orange);
 }
 
+/* ===== DISPLAY ===== */
 .display{
   text-align:center;
   padding:40px 16px;
@@ -100,12 +102,7 @@ input[type="range"]{
   color:#999;
 }
 
-/* ❗ старый блок кнопок скрываем (чтобы не ломал layout) */
-.controls .control:last-of-type{
-  display:none;
-}
-
-/* ===== НОВЫЕ ФИКСИРОВАННЫЕ КНОПКИ ===== */
+/* ===== BUTTONS (ВЫНЕСЕНЫ ИЗ SETTINGS) ===== */
 .bottom-controls{
   position:fixed;
   bottom:14px;
@@ -113,7 +110,7 @@ input[type="range"]{
   transform:translateX(-50%);
   display:flex;
   gap:12px;
-  z-index:9999;
+  z-index:999;
 }
 
 button{
@@ -135,7 +132,6 @@ button:active{
 @media (max-width:768px){
   .controls{ flex-direction:column; }
   .control{ min-width:100%; }
-
   .problem{ font-size:64px; }
   .letter{ font-size:64px; }
 }
@@ -149,6 +145,7 @@ button:active{
   <div class="toggle">⚙</div>
 </div>
 
+<!-- SETTINGS -->
 <div class="controls" id="panel">
 
   <div class="control">
@@ -193,23 +190,18 @@ button:active{
     <label><input type="checkbox" id="autoMode" checked> Авто</label>
   </div>
 
-  <!-- старые кнопки оставляем (но они скрыты CSS) -->
-  <div class="control">
-    <button id="start">Старт / Стоп</button>
-    <button id="next">Следующий</button>
-  </div>
-
 </div>
 
-<div class="display">
-  <div class="problem" id="out">—</div>
-  <div class="letter" id="hand">—</div>
-</div>
-
-<!-- НОВАЯ ПАНЕЛЬ КНОПОК -->
+<!-- FIXED BUTTONS (НЕ СКРЫВАЮТСЯ БОЛЬШЕ НИКОГДА) -->
 <div class="bottom-controls">
   <button id="start">Старт / Стоп</button>
   <button id="next">Следующий</button>
+</div>
+
+<!-- DISPLAY -->
+<div class="display">
+  <div class="problem" id="out">—</div>
+  <div class="letter" id="hand">—</div>
 </div>
 
 <div class="author">© verner</div>
@@ -263,7 +255,7 @@ const Engine={
   }
 };
 
-/* ===== UI (НЕ ТРОГАЮ) ===== */
+/* ===== UI ===== */
 const out=document.getElementById("out");
 const hand=document.getElementById("hand");
 const panel=document.getElementById("panel");
@@ -285,12 +277,16 @@ Object.keys(modes).forEach(m=>{
   mode.appendChild(o);
 });
 
+mode.selectedIndex = 0;
+
+/* FONT SIZE */
 function applyFont(){
   out.style.fontSize = fontSize.value + "px";
 }
 fontSize.oninput = applyFont;
 applyFont();
 
+/* SUBMODE */
 const submodes={
   plusminus:`<label>+/-</label><select id="pmType"><option value="add">+</option><option value="sub">-</option><option value="both">±</option></select>`,
   muldiv:`<label>×/÷</label><select id="mdType"><option value="mul">×</option><option value="div">÷</option><option value="both">×/÷</option></select>`,
@@ -305,21 +301,27 @@ mode.onchange=()=>{
 };
 mode.onchange();
 
+/* SAFE RENDER */
 function render(){
-  out.textContent=modes[mode.value]();
+  try{
+    out.textContent=modes[mode.value]();
 
-  if(document.getElementById("rainbow").checked){
-    const rainbow=["#FF0000","#FF7A00","#FFFF00","#00FF00","#00BFFF","#0000FF","#8B00FF"];
-    out.style.color = rainbow[Math.floor(Math.random()*rainbow.length)];
-  } else {
-    out.style.color="#111";
+    if(document.getElementById("rainbow")?.checked){
+      const rainbow=["#FF0000","#FF7A00","#FFFF00","#00FF00","#00BFFF","#0000FF","#8B00FF"];
+      out.style.color = rainbow[Math.floor(Math.random()*rainbow.length)];
+    } else {
+      out.style.color="#111";
+    }
+
+    hand.textContent=document.getElementById("hands")?.checked
+      ?["Л","П","О"][Math.floor(Math.random()*3)]
+      :"";
+  } catch(e){
+    out.textContent="—";
   }
-
-  hand.textContent=document.getElementById("hands").checked
-    ?["Л","П","О"][Math.floor(Math.random()*3)]
-    :"";
 }
 
+/* LOOP */
 let running=false;
 let timer=null;
 
@@ -334,6 +336,7 @@ function loop(){
   timer=setTimeout(loop,speedMap[speed.value]);
 }
 
+/* BUTTONS */
 document.getElementById("start").onclick=()=>{
   running=!running;
   if(running) loop();
@@ -343,6 +346,7 @@ document.getElementById("next").onclick=()=>{
   render();
 };
 
+/* TOGGLE SETTINGS */
 document.querySelector(".toggle").onclick=()=>{
   panel.style.display = panel.style.display==="flex" ? "none" : "flex";
 };
