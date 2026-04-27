@@ -18,6 +18,7 @@ body{
   color:#111;
 }
 
+/* ===== TOPBAR ===== */
 .topbar{
   background:var(--blue);
   color:#fff;
@@ -30,6 +31,7 @@ body{
   font-size:28px;
 }
 
+/* ===== GEAR ===== */
 .toggle{
   position:absolute;
   right:10px;
@@ -46,6 +48,12 @@ body{
   box-shadow:0 4px 0 #c84f00;
 }
 
+.toggle:active{
+  transform:translateY(2px);
+  box-shadow:0 2px 0 #c84f00;
+}
+
+/* ===== CONTROLS ===== */
 .controls{
   display:none;
   flex-wrap:wrap;
@@ -71,6 +79,7 @@ input[type="range"]{
   accent-color:var(--orange);
 }
 
+/* ===== DISPLAY ===== */
 .display{
   text-align:center;
   padding:40px 16px;
@@ -92,6 +101,7 @@ input[type="range"]{
   font-weight:700;
 }
 
+/* ===== AUTHOR ===== */
 .author{
   position:fixed;
   bottom:6px;
@@ -100,13 +110,13 @@ input[type="range"]{
   color:#999;
 }
 
-.controls .control:last-of-type{
+/* ===== BUTTONS (FIXED BOTTOM) ===== */
+.bottom-controls{
   position:fixed;
   bottom:14px;
   left:50%;
   transform:translateX(-50%);
   display:flex;
-  flex-direction:row;
   gap:12px;
   z-index:999;
 }
@@ -127,11 +137,20 @@ button:active{
   box-shadow:0 2px 0 #c84f00;
 }
 
+/* ===== MOBILE ===== */
 @media (max-width:768px){
-  .controls{ flex-direction:column; }
-  .control{ min-width:100%; }
-  .problem{ font-size:64px; }
-  .letter{ font-size:64px; }
+  .controls{
+    flex-direction:column;
+  }
+
+  .control{
+    min-width:100%;
+  }
+
+  .problem,
+  .letter{
+    font-size:64px;
+  }
 }
 </style>
 </head>
@@ -187,11 +206,12 @@ button:active{
     <label><input type="checkbox" id="autoMode" checked> Авто</label>
   </div>
 
-  <div class="control">
-    <button id="start">Старт / Стоп</button>
-    <button id="next">Следующий</button>
-  </div>
+</div>
 
+<!-- КНОПКИ ВЫНЕСЕНЫ ИЗ ПАНЕЛИ -->
+<div class="bottom-controls">
+  <button id="start">Старт / Стоп</button>
+  <button id="next">Следующий</button>
 </div>
 
 <div class="display">
@@ -207,27 +227,37 @@ button:active{
 const r=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 
 const Engine={
+
   plusminus(){
     let a=r(+min1.value,+max1.value);
     let b=r(+min2.value,+max2.value);
+
     const t=document.getElementById("pmType")?.value||"both";
     let op=t==="add"?"+":t==="sub"?"-":(Math.random()<0.5?"+":"-");
+
     if(op==="-"&&a<b)[a,b]=[b,a];
+
     return `${a} ${op} ${b}`;
   },
 
   muldiv(){
     let a=r(+min1.value,+max1.value);
     let b=r(+min2.value,+max2.value);
+
     const t=document.getElementById("mdType")?.value||"both";
+
     if(t==="mul") return `${a} × ${b}`;
     if(t==="div") return `${a*b} ÷ ${b}`;
-    return Math.random()<0.5 ? `${a} × ${b}` : `${a*b} ÷ ${b}`;
+
+    return Math.random()<0.5
+      ? `${a} × ${b}`
+      : `${a*b} ÷ ${b}`;
   },
 
   fractions(){
     const type=document.getElementById("frType")?.value||"proper";
     const op=document.getElementById("frOp")?.value||"pm";
+
     const proper=()=>`${r(1,8)}/${r(9,12)}`;
     const improper=()=>`${r(10,20)}/${r(2,9)}`;
     const mixed=()=>`${r(1,5)} ${r(1,8)}/${r(9,12)}`;
@@ -255,8 +285,6 @@ const hand=document.getElementById("hand");
 const panel=document.getElementById("panel");
 const mode=document.getElementById("mode");
 const autoMode=document.getElementById("autoMode");
-const speed=document.getElementById("speed");
-const fontSize=document.getElementById("fontSize");
 
 const modes={
   plusminus:Engine.plusminus,
@@ -271,57 +299,20 @@ Object.keys(modes).forEach(m=>{
   mode.appendChild(o);
 });
 
-/* ===== FONT SIZE FIX (ТОЛЬКО UI) ===== */
-function applyFont(){
-  out.style.fontSize = fontSize.value + "px";
-}
-fontSize.oninput = applyFont;
-applyFont();
-
-/* ===== SUBMODE ===== */
-const submodes={
-  plusminus:`<label>+/-</label><select id="pmType"><option value="add">+</option><option value="sub">-</option><option value="both">±</option></select>`,
-  muldiv:`<label>×/÷</label><select id="mdType"><option value="mul">×</option><option value="div">÷</option><option value="both">×/÷</option></select>`,
-  fractions:`<label>Дроби</label><select id="frType"><option value="proper">обыкн</option><option value="improper">неправ</option><option value="mixed">смеш</option><option value="decimal">десят</option></select>
-             <label>Операции</label><select id="frOp"><option value="pm">+/-</option><option value="md">×/÷</option><option value="div">÷</option></select>`
-};
-
-const sub=document.getElementById("submode");
+const submodes=document.getElementById("submode");
 
 mode.onchange=()=>{
-  sub.innerHTML=submodes[mode.value];
+  submodes.innerHTML="";
 };
 mode.onchange();
 
-/* ===== RENDER (логика не трогалась) ===== */
+/* ===== RENDER ===== */
 function render(){
   out.textContent=modes[mode.value]();
-
-  if(document.getElementById("rainbow").checked){
-    const rainbow=["#FF0000","#FF7A00","#FFFF00","#00FF00","#00BFFF","#0000FF","#8B00FF"];
-    out.style.color = rainbow[Math.floor(Math.random()*rainbow.length)];
-  } else {
-    out.style.color="#111";
-  }
 
   hand.textContent=document.getElementById("hands").checked
     ?["Л","П","О"][Math.floor(Math.random()*3)]
     :"";
-}
-
-/* ===== LOOP ===== */
-let running=false;
-let timer=null;
-
-const speedMap=[
-  4000,3500,3000,2500,2000,1750,1500,1250,
-  1000,750,500,400,300,200,100
-];
-
-function loop(){
-  if(!running || !autoMode.checked) return;
-  render();
-  timer=setTimeout(loop,speedMap[speed.value]);
 }
 
 /* ===== BUTTONS ===== */
@@ -332,11 +323,6 @@ document.getElementById("start").onclick=()=>{
 
 document.getElementById("next").onclick=()=>{
   render();
-};
-
-/* ===== TOGGLE ===== */
-document.querySelector(".toggle").onclick=()=>{
-  panel.style.display = panel.style.display==="flex" ? "none" : "flex";
 };
 
 </script>
