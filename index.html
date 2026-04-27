@@ -6,86 +6,92 @@
 <title>Тренажёры</title>
 
 <style>
-html, body{
-height:100%;
+body{
 margin:0;
-font-family:Arial, sans-serif;
+font-family:Arial;
 background:linear-gradient(135deg,#0f172a,#1e293b);
 color:white;
 overflow:auto;
+min-height:100vh;
 -webkit-tap-highlight-color: transparent;
 }
 
-/* верх */
+/* TOP */
 #topBar{
 height:60px;
-background:rgba(0,0,0,0.35);
-backdrop-filter: blur(10px);
-display:flex;
-align-items:center;
-justify-content:space-between;
-padding:0 14px;
 position:fixed;
 top:0;left:0;right:0;
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:0 14px;
+background:rgba(0,0,0,0.4);
+backdrop-filter: blur(10px);
 z-index:10;
 }
 
-.left{display:flex;align-items:center;gap:10px;}
-
 #backBtn,#fsBtn{
-cursor:pointer;
 padding:6px 10px;
 border-radius:10px;
 background:rgba(255,255,255,0.1);
+cursor:pointer;
+transition:0.15s;
 }
 
-/* ПК группы */
+#backBtn:active,#fsBtn:active{transform:scale(0.9);}
+
+/* PC */
 #desktop{
 display:none;
+padding:80px 14px;
 grid-template-columns:1fr;
 gap:16px;
-padding:80px 14px 14px;
 }
 
 .bigCard{
-height:42vh;
-min-height:280px;
-border-radius:28px;
+height:38vh;
+min-height:240px;
+border-radius:24px;
 display:flex;
 flex-direction:column;
-align-items:center;
 justify-content:center;
-cursor:pointer;
+align-items:center;
 background:rgba(255,255,255,0.08);
-border:1px solid rgba(255,255,255,0.12);
+cursor:pointer;
+transition:0.15s;
 }
 
-.bigCard .icon{font-size:120px;margin-bottom:10px;}
-.bigCard .label{font-size:34px;font-weight:800;}
+.bigCard:active{transform:scale(0.96);}
 
-/* ПК список */
+.bigCard .icon{font-size:100px;}
+.bigCard .label{font-size:30px;font-weight:bold;}
+
+/* LIST */
 #grid{
 display:none;
-grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-gap:16px;
-padding:80px 14px 14px;
+padding:80px 14px;
+grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+gap:14px;
 }
 
 .card{
 aspect-ratio:1/1;
-border-radius:22px;
+border-radius:20px;
 display:flex;
 flex-direction:column;
-align-items:center;
 justify-content:center;
-background:rgba(255,255,255,0.10);
-border:1px solid rgba(255,255,255,0.15);
+align-items:center;
+background:rgba(255,255,255,0.08);
+cursor:pointer;
+transition:0.15s;
 }
 
-.card .icon{font-size:60px;}
-.card .label{font-size:16px;text-align:center;font-weight:bold;}
+.card:active{transform:scale(0.94);}
 
-/* МОБИЛЬНЫЙ */
+.card .icon{font-size:50px;}
+.card .label{font-size:14px;text-align:center;font-weight:bold;}
+
+/* MOBILE */
 #mobile{
 display:none;
 height:100vh;
@@ -101,24 +107,33 @@ width:100%;
 height:calc(100vh - 60px);
 top:60px;
 display:flex;
-align-items:center;
 justify-content:center;
+align-items:center;
 }
 
 .cardFull{
-width:90%;
-height:70%;
-border-radius:28px;
+width:85%;
+height:65%;
+border-radius:24px;
 display:flex;
 flex-direction:column;
-align-items:center;
 justify-content:center;
+align-items:center;
 background:rgba(255,255,255,0.08);
-border:1px solid rgba(255,255,255,0.12);
+transition:0.3s;
 }
 
-.cardFull .icon{font-size:90px;margin-bottom:10px;}
-.cardFull .label{font-size:26px;font-weight:bold;}
+.cardFull .icon{font-size:85px;}
+.cardFull .label{font-size:24px;font-weight:bold;}
+
+/* COPYRIGHT */
+#copy{
+position:fixed;
+right:10px;
+bottom:8px;
+font-size:12px;
+opacity:0.6;
+}
 
 </style>
 </head>
@@ -126,10 +141,8 @@ border:1px solid rgba(255,255,255,0.12);
 <body>
 
 <div id="topBar">
-<div class="left">
 <div id="backBtn">←</div>
-<div id="title">Тренажёры</div>
-</div>
+<div>Тренажёры</div>
 <div id="fsBtn">⛶</div>
 </div>
 
@@ -137,196 +150,183 @@ border:1px solid rgba(255,255,255,0.12);
 <div id="grid"></div>
 <div id="mobile"></div>
 
+<div id="copy">✶ verner</div>
+
 <script>
 
 let state="groups";
 let currentGroup=null;
 
-let desktop=document.getElementById("desktop");
-let grid=document.getElementById("grid");
-let mobile=document.getElementById("mobile");
-let title=document.getElementById("title");
+const desktop=document.getElementById("desktop");
+const grid=document.getElementById("grid");
+const mobile=document.getElementById("mobile");
 
-/* группы */
-let groups=[
+/* ================= ВСЕ ТРЕНАЖЁРЫ (ВОССТАНОВЛЕНО ПОЛНОСТЬЮ) ================= */
+const groups=[
 {name:"Чтение", icon:"📘"},
 {name:"Математика", icon:"🧮"},
 {name:"Разное", icon:"🧠"}
 ];
 
-/* данные */
-let data=[
+const data=[
+
+/* ЧТЕНИЕ */
 {name:"Алфавит", icon:"🅰️", group:"Чтение", file:"apps/reading/alfavit.html"},
 {name:"Читалка", icon:"📖", group:"Чтение", file:"apps/reading/chitalka.html"},
 {name:"Лавина", icon:"🏔️", group:"Чтение", file:"apps/reading/lavina.html"},
+{name:"Нитки", icon:"🧵", group:"Чтение", file:"apps/reading/nitki.html"},
+{name:"Перевёртыш", icon:"🔄", group:"Чтение", file:"apps/reading/pereverton.html"},
 {name:"Анаграммы", icon:"🧠", group:"Чтение", file:"apps/reading/pytal.html"},
 {name:"Радуга", icon:"🌈", group:"Чтение", file:"apps/reading/raduga.html"},
 {name:"Слоги", icon:"🔤", group:"Чтение", file:"apps/reading/slogi.html"},
+{name:"Столбики", icon:"🐌", group:"Чтение", file:"apps/reading/stolby.html"},
 
+/* МАТЕМАТИКА */
 {name:"Домики", icon:"🏠", group:"Математика", file:"apps/math/domiky.html"},
+{name:"Магия", icon:"✨", group:"Математика", file:"apps/math/magia.html"},
 {name:"Примеры", icon:"➗", group:"Математика", file:"apps/math/primery.html"},
+{name:"Точки", icon:"🔵", group:"Математика", file:"apps/math/tochki.html"},
 
+/* ДРУГОЕ */
 {name:"Доска", icon:"🖊️", group:"Разное", file:"apps/other/doska.html"},
 {name:"Лабиринт", icon:"🌀", group:"Разное", file:"apps/other/labyrint.html"},
 {name:"Что изменилось", icon:"🧠", group:"Разное", file:"apps/other/chto_izmenilos.html"}
+
 ];
 
-/* РЕНДЕР */
+/* ================= RENDER ================= */
 function render(){
-
-let isMobile = window.innerWidth < 768;
-
-desktop.style.display="none";
-grid.style.display="none";
-mobile.style.display="none";
 
 desktop.innerHTML="";
 grid.innerHTML="";
 mobile.innerHTML="";
 
+let isMobile=window.innerWidth<768;
+
 if(isMobile){
-renderMobile();
 mobile.style.display="block";
+desktop.style.display="none";
+grid.style.display="none";
+renderMobile();
 }else{
-renderDesktop();
+mobile.style.display="none";
+renderPC();
+}
 }
 
-}
-
-/* ПК */
-function renderDesktop(){
+/* ================= PC ================= */
+function renderPC(){
 
 if(state==="groups"){
-title.textContent="Тренажёры";
+desktop.style.display="grid";
 
 groups.forEach(g=>{
-let div=document.createElement("div");
-div.className="bigCard";
+let d=document.createElement("div");
+d.className="bigCard";
 
-div.innerHTML=`
-<div class="icon">${g.icon}</div>
-<div class="label">${g.name}</div>
-`;
+d.innerHTML=`<div class="icon">${g.icon}</div><div class="label">${g.name}</div>`;
 
-div.onclick=()=>{
+d.onclick=()=>{
 state="list";
 currentGroup=g.name;
 render();
 };
 
-desktop.appendChild(div);
+desktop.appendChild(d);
 });
-
-desktop.style.display="grid";
 }
 
 if(state==="list"){
-title.textContent=currentGroup;
+grid.style.display="grid";
 
 data.filter(t=>t.group===currentGroup).forEach(t=>{
-let div=document.createElement("div");
-div.className="card";
+let d=document.createElement("div");
+d.className="card";
 
-div.innerHTML=`
-<div class="icon">${t.icon}</div>
-<div class="label">${t.name}</div>
-`;
+d.innerHTML=`<div class="icon">${t.icon}</div><div class="label">${t.name}</div>`;
 
-div.onclick=()=>{
-window.open(t.file,"_self");
-};
+d.onclick=()=>window.open(t.file,"_self");
 
-grid.appendChild(div);
+grid.appendChild(d);
 });
-
-grid.style.display="grid";
 }
 }
 
-/* МОБИЛЬНЫЙ СВАЙП */
-let currentIndex=0;
+/* ================= MOBILE SWIPE ================= */
+let index=0;
 let startX=0;
 let moveX=0;
 let dragging=false;
 
 function renderMobile(){
 
-let list = state==="groups" ? groups : data.filter(t=>t.group===currentGroup);
-
-mobile.innerHTML="";
+let list=state==="groups"?groups:data.filter(t=>t.group===currentGroup);
 
 list.forEach((item,i)=>{
+let d=document.createElement("div");
+d.className="page";
 
-let div=document.createElement("div");
-div.className="page";
+d.style.transform=`translateX(${(i-index)*100}%)`;
 
-div.style.transform=`translateX(${(i-currentIndex)*100}%)`;
-
-div.innerHTML=`
+d.innerHTML=`
 <div class="cardFull">
 <div class="icon">${item.icon}</div>
 <div class="label">${item.name}</div>
 </div>
 `;
 
-div.onclick=()=>{
+d.onclick=()=>{
 if(state==="groups"){
 state="list";
 currentGroup=item.name;
-currentIndex=0;
+index=0;
 render();
 }else{
 window.open(item.file,"_self");
 }
 };
 
-mobile.appendChild(div);
-
+mobile.appendChild(d);
 });
 
-/* свайп */
 mobile.ontouchstart=(e)=>{
 startX=e.touches[0].clientX;
 dragging=true;
 };
 
 mobile.ontouchmove=(e)=>{
-if(!dragging) return;
+if(!dragging)return;
 
 moveX=e.touches[0].clientX;
 let diff=moveX-startX;
 
-Array.from(mobile.children).forEach((card,i)=>{
-card.style.transition="none";
-card.style.transform=`translateX(${(i-currentIndex)*100 + diff/3}%)`;
+Array.from(mobile.children).forEach((c,i)=>{
+c.style.transition="none";
+c.style.transform=`translateX(${(i-index)*100 + diff/3}%)`;
 });
-
 };
 
 mobile.ontouchend=()=>{
-
 dragging=false;
 
 let diff=moveX-startX;
 
-Array.from(mobile.children).forEach(card=>{
-card.style.transition="transform 0.4s ease";
+Array.from(mobile.children).forEach(c=>{
+c.style.transition="0.3s";
 });
 
-if(diff>70) currentIndex--;
-if(diff<-70) currentIndex++;
+if(diff>60) index--;
+if(diff<-60) index++;
 
-if(currentIndex<0) currentIndex=0;
+if(index<0) index=0;
 
-Array.from(mobile.children).forEach((card,i)=>{
-card.style.transform=`translateX(${(i-currentIndex)*100}%)`;
+Array.from(mobile.children).forEach((c,i)=>{
+c.style.transform=`translateX(${(i-index)*100}%)`;
 });
-
 };
-
 }
 
-/* back */
+/* BACK */
 document.getElementById("backBtn").onclick=()=>{
 if(state==="list"){
 state="groups";
