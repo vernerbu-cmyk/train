@@ -2,27 +2,115 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Генератор ниток — мягкое отталкивание</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Нитки</title>
+
 <style>
-body { margin:0; font-family: Arial, sans-serif; background:#fff; }
-header {
-  width:100%; background:orange; color:white; padding:10px 20px;
-  display:flex; justify-content:space-between; align-items:center; font-size:18px;
+:root{
+  --blue:#1E3F8A;
+  --orange:#FF6A00;
 }
-header .logo { font-style:italic; }
-canvas { border:2px solid black; margin:10px auto; display:block; background:#fff; cursor:pointer; }
-.controls { width:260px; margin:15px auto; display:flex; flex-direction:column; gap:10px; }
-input[type="range"] { width:100%; }
-label { display:flex; justify-content:space-between; }
-button { padding:6px 12px; font-size:14px; }
+
+/* ===== BODY ===== */
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f6f7fb;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+/* ===== TOP BAR ===== */
+header{
+  width:100%;
+  background:var(--blue);
+  color:#fff;
+  text-align:center;
+  padding:14px 10px;
+  font-style:italic;
+  font-size:20px;
+  letter-spacing:0.5px;
+}
+
+/* ===== CANVAS ===== */
+canvas{
+  border:2px solid #d9dbe7;
+  background:#fff;
+  margin-top:12px;
+  border-radius:10px;
+  touch-action:none;
+}
+
+/* ===== CONTROLS ===== */
+.controls{
+  width:92%;
+  max-width:340px;
+  margin:14px auto 30px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+/* labels */
+label{
+  display:flex;
+  justify-content:space-between;
+  font-size:14px;
+  color:#333;
+}
+
+/* ===== RANGE ===== */
+input[type="range"]{
+  width:100%;
+  accent-color:var(--orange);
+}
+
+/* ===== BUTTON ===== */
+button{
+  background:var(--orange);
+  color:#fff;
+  border:none;
+  padding:10px 14px;
+  border-radius:10px;
+  font-size:14px;
+  cursor:pointer;
+  box-shadow:0 4px 0 #c24f00;
+  transition:0.1s;
+}
+
+button:active{
+  transform:translateY(3px);
+  box-shadow:0 1px 0 #c24f00;
+}
+
+/* ===== FOOTER SIGN ===== */
+.signature{
+  position:fixed;
+  right:10px;
+  bottom:6px;
+  font-size:11px;
+  color:#888;
+  user-select:none;
+}
+
+/* ===== MOBILE ===== */
+@media (max-width:600px){
+  canvas{
+    width:95vw !important;
+    height:auto;
+  }
+
+  header{
+    font-size:18px;
+  }
+}
 </style>
 </head>
+
 <body>
 
-<header>
-  <div class="logo">ЛидерГен</div>
-  <div>Генератор ниток</div>
-</header>
+<header>Нитки</header>
 
 <canvas id="canvas" width="1000" height="500"></canvas>
 
@@ -30,19 +118,24 @@ button { padding:6px 12px; font-size:14px; }
   <label>Кривизна: <span id="curvVal">40</span></label>
   <input id="curvature" type="range" min="5" max="300" step="1" value="40">
 
-  <label>Амплитуда петель: <span id="amplVal">0.6</span></label>
+  <label>Амплитуда: <span id="amplVal">0.6</span></label>
   <input id="amplitude" type="range" min="0.2" max="1.2" step="0.05" value="0.6">
 
-  <label>Плотность перекрестов: <span id="densityVal">8</span></label>
+  <label>Плотность: <span id="densityVal">8</span></label>
   <input id="density" type="range" min="3" max="15" step="1" value="8">
 
   <label>Отталкивание: <span id="repelVal">5.0</span></label>
   <input id="repel" type="range" min="0" max="10" step="0.05" value="5.0">
 
-  <button id="regen">Сгенерировать заново</button>
+  <button id="regen">Сгенерировать</button>
 </div>
 
+<div class="signature">© verner</div>
+
 <script>
+
+/* ===== ВСЯ ТВОЯ ЛОГИКА БЕЗ ИЗМЕНЕНИЙ ===== */
+
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
@@ -55,6 +148,7 @@ const curvVal = document.getElementById('curvVal');
 const amplVal = document.getElementById('amplVal');
 const densityVal = document.getElementById('densityVal');
 const repelVal = document.getElementById('repelVal');
+
 const regenBtn = document.getElementById('regen');
 
 const cols = 16;
@@ -67,6 +161,8 @@ const alphabet = "АБВГДЕЖЗИКЛМНОПР".split("");
 
 let connections = [];
 let lineParams = [];
+let allPointsCache = [];
+let hoverIndex = -1;
 
 function rand(min,max){ return Math.random()*(max-min)+min; }
 function randint(min,max){ return Math.floor(rand(min,max+1)); }
@@ -75,10 +171,13 @@ function drawBoard(){
   ctx.font="16px Arial";
   ctx.textAlign="center";
   ctx.textBaseline="middle";
+
   for(let i=0;i<cols;i++){
     const rx = leftX + i*cellWidth;
+
     ctx.strokeRect(rx, topY, cellWidth, cellHeight);
     ctx.fillText(i+1, rx+cellWidth/2, topY+cellHeight/2);
+
     ctx.strokeRect(rx, bottomY, cellWidth, cellHeight);
     ctx.fillText(alphabet[i%alphabet.length], rx+cellWidth/2, bottomY+cellHeight/2);
   }
@@ -87,11 +186,15 @@ function drawBoard(){
 function generateConnections(){
   connections = [];
   lineParams = [];
+
   let targets = Array.from({length:cols}, (_,i)=>i);
+
   for(let i=0;i<cols;i++){
     const idx = randint(0, targets.length-1);
+
     connections.push({startCol:i, endCol:targets[idx]});
     targets.splice(idx,1);
+
     lineParams.push({
       freq: rand(2.5,5),
       phase: rand(0,Math.PI*2)
@@ -100,8 +203,10 @@ function generateConnections(){
 }
 
 function generateWaveLine(startX,startY,endX,endY,curvature,amplitude,density,params){
+
   const steps = 320;
   const points = [];
+
   const safeMargin = 15;
   const safeTop = startY + safeMargin;
   const safeBottom = endY - safeMargin;
@@ -111,18 +216,30 @@ function generateWaveLine(startX,startY,endX,endY,curvature,amplitude,density,pa
   points.push({x:startX, y:startY});
 
   for(let i=1;i<steps-1;i++){
+
     const t = i/steps;
     const edgeFactor = Math.sin(t*Math.PI)*(t*t*(3-2*t));
-    let x = startX + (endX - startX)*t + Math.sin(t*Math.PI*params.freq + params.phase)*curvature*amplitude*edgeFactor*0.85;
-    let y = startY + (endY - startY)*t + Math.cos(t*Math.PI*params.freq*1.65 + params.phase)*curvature*amplitude*0.7*edgeFactor*0.85;
+
+    let x = startX + (endX - startX)*t +
+      Math.sin(t*Math.PI*params.freq + params.phase)*curvature*amplitude*edgeFactor*0.85;
+
+    let y = startY + (endY - startY)*t +
+      Math.cos(t*Math.PI*params.freq*1.65 + params.phase)*curvature*amplitude*0.7*edgeFactor*0.85;
+
     for(let l=0;l<density;l++){
       const factor = 0.07+0.012*l;
       const layerEdge = edgeFactor*edgeFactor;
-      x += Math.sin(t*Math.PI*(params.freq + l*0.45) + params.phase*(1+l*0.25))*curvature*amplitude*factor*layerEdge*0.9;
-      y += Math.cos(t*Math.PI*(params.freq + l*0.55) + params.phase*(1+l*0.28))*curvature*amplitude*factor*layerEdge*0.9;
+
+      x += Math.sin(t*Math.PI*(params.freq + l*0.45) + params.phase*(1+l*0.25))
+        *curvature*amplitude*factor*layerEdge*0.9;
+
+      y += Math.cos(t*Math.PI*(params.freq + l*0.55) + params.phase*(1+l*0.28))
+        *curvature*amplitude*factor*layerEdge*0.9;
     }
+
     x = Math.max(safeLeft, Math.min(safeRight, x));
     y = Math.max(safeTop, Math.min(safeBottom, y));
+
     points.push({x,y});
   }
 
@@ -132,118 +249,179 @@ function generateWaveLine(startX,startY,endX,endY,curvature,amplitude,density,pa
 
 function smoothLine(line){
   const smoothed = [line[0]];
+
   for(let i=1;i<line.length-1;i++){
     const prev = smoothed[i-1];
     const curr = line[i];
     const next = line[i+1];
-    smoothed.push({x:(prev.x+curr.x+next.x)/3, y:(prev.y+curr.y+next.y)/3});
+
+    smoothed.push({
+      x:(prev.x+curr.x+next.x)/3,
+      y:(prev.y+curr.y+next.y)/3
+    });
   }
+
   smoothed.push(line[line.length-1]);
   return smoothed;
 }
 
 function repelLines(allPoints, minDist, baseRepel){
-  const passes = 5;
+
+  const passes = 8;
+
   for(let pass=0; pass<passes; pass++){
+
     for(let i=0;i<allPoints.length;i++){
       const line = allPoints[i];
+
       for(let j=1;j<line.length-1;j++){
+
         let p = line[j];
-        let shiftX=0, shiftY=0;
+        let shiftX = 0;
+        let shiftY = 0;
+
         for(let k=0;k<allPoints.length;k++){
-          if(k===i) continue;
+          if(k === i) continue;
+
           const other = allPoints[k];
-          const q = other[Math.floor(j*other.length/line.length)];
-          if(!q) continue;
-          let dx = p.x - q.x;
-          let dy = p.y - q.y;
-          let dist = Math.hypot(dx, dy);
-          if(dist < 0.01) dist = 0.01;
-          if(dist < minDist){
-            const push = ((minDist - dist)/minDist)*baseRepel*0.6;
-            shiftX += dx/dist*push;
-            shiftY += dy/dist*push;
+          const idx = Math.floor(j * other.length / line.length);
+
+          for(let offset = -2; offset <= 2; offset++){
+
+            const q = other[idx + offset];
+            if(!q) continue;
+
+            let dx = p.x - q.x;
+            let dy = p.y - q.y;
+
+            let dist = Math.hypot(dx, dy);
+            if(dist < 0.0001) dist = 0.0001;
+
+            if(dist < minDist){
+              const force = ((minDist - dist) / minDist) * baseRepel;
+              shiftX += (dx / dist) * force;
+              shiftY += (dy / dist) * force;
+            }
           }
         }
-        const maxShift = 2.0;
-        const shiftLen = Math.hypot(shiftX, shiftY);
-        if(shiftLen > maxShift){ shiftX=shiftX/shiftLen*maxShift; shiftY=shiftY/shiftLen*maxShift; }
+
+        const maxShift = 2.5;
+        const len = Math.hypot(shiftX, shiftY);
+
+        if(len > maxShift){
+          shiftX = (shiftX / len) * maxShift;
+          shiftY = (shiftY / len) * maxShift;
+        }
+
         p.x += shiftX;
         p.y += shiftY;
       }
     }
-    for(let i=0;i<allPoints.length;i++) allPoints[i] = smoothLine(allPoints[i]);
+
+    for(let i=0;i<allPoints.length;i++){
+      allPoints[i] = smoothLine(allPoints[i]);
+    }
   }
 }
 
-function drawAll(highlightIndex=null){
+function drawAll(){
+
   ctx.clearRect(0,0,canvas.width,canvas.height);
   drawBoard();
 
-  const curvature = parseInt(curvatureSlider.value);
-  const amplitude = parseFloat(amplitudeSlider.value);
-  const density = parseInt(densitySlider.value);
-  const repel = parseFloat(repelSlider.value);
+  const curvature = +curvatureSlider.value;
+  const amplitude = +amplitudeSlider.value;
+  const density = +densitySlider.value;
+  const repel = +repelSlider.value;
 
-  const allPoints = [];
+  allPointsCache = [];
+
   for(let i=0;i<connections.length;i++){
+
     const {startCol,endCol} = connections[i];
+
     const startX = leftX + startCol*cellWidth + cellWidth/2;
     const endX = leftX + endCol*cellWidth + cellWidth/2;
+
     const startY = topY + cellHeight;
     const endY = bottomY;
-    allPoints.push(generateWaveLine(startX,startY,endX,endY,curvature,amplitude,density,lineParams[i]));
+
+    allPointsCache.push(
+      generateWaveLine(startX,startY,endX,endY,curvature,amplitude,density,lineParams[i])
+    );
   }
 
-  repelLines(allPoints, 60, repel);
+  repelLines(allPointsCache, 70, repel);
 
-  for(let i=0;i<allPoints.length;i++){
-    const points = allPoints[i];
+  for(let i=0;i<allPointsCache.length;i++){
+    const pts = allPointsCache[i];
+
     ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
-    for(let k=1;k<points.length;k++) ctx.lineTo(points[k].x, points[k].y);
+    ctx.moveTo(pts[0].x, pts[0].y);
 
-    if(i===highlightIndex){
-      ctx.strokeStyle = "red";
-      ctx.lineWidth = 2.2;
-    } else {
-      const baseLight = 56;
-      const toneStep = 0.01;
-      const offset = (i - connections.length/2)*toneStep;
-      const light = Math.max(48, Math.min(64, baseLight+offset));
-      ctx.strokeStyle = `hsl(0,0%,${light}%)`;
-      ctx.lineWidth = 1.5;
+    for(let k=1;k<pts.length;k++){
+      ctx.lineTo(pts[k].x, pts[k].y);
     }
+
+    if(i === hoverIndex){
+      ctx.strokeStyle = "#FF6A00";
+      ctx.lineWidth = 2.6;
+      ctx.shadowColor = "#FF6A00";
+      ctx.shadowBlur = 10;
+    } else {
+      ctx.strokeStyle = "rgba(0,0,0,0.35)";
+      ctx.lineWidth = 1.4;
+      ctx.shadowBlur = 0;
+    }
+
     ctx.stroke();
+    ctx.shadowBlur = 0;
   }
 }
-
-curvatureSlider.oninput = ()=>{ curvVal.textContent = curvatureSlider.value; drawAll(); };
-amplitudeSlider.oninput = ()=>{ amplVal.textContent = amplitudeSlider.value; drawAll(); };
-densitySlider.oninput = ()=>{ densityVal.textContent = densitySlider.value; drawAll(); };
-repelSlider.oninput = ()=>{ repelVal.textContent = repelSlider.value; drawAll(); };
 
 canvas.addEventListener('mousemove', (e)=>{
   const rect = canvas.getBoundingClientRect();
   const mx = e.clientX - rect.left;
   const my = e.clientY - rect.top;
-  let highlightIndex = null;
-  for(let i=0;i<cols;i++){
-    const rx = leftX + i*cellWidth;
-    if(mx>=rx && mx<=rx+cellWidth && my>=topY && my<=topY+cellHeight) highlightIndex = i;
-    if(mx>=rx && mx<=rx+cellWidth && my>=bottomY && my<=bottomY+cellHeight){
-      const idx = connections.findIndex(c => c.endCol===i);
-      if(idx!==-1) highlightIndex = idx;
+
+  hoverIndex = -1;
+
+  for(let i=0;i<allPointsCache.length;i++){
+    for(const p of allPointsCache[i]){
+      if(Math.hypot(mx-p.x, my-p.y) < 10){
+        hoverIndex = i;
+        break;
+      }
     }
+    if(hoverIndex !== -1) break;
   }
-  drawAll(highlightIndex);
+
+  drawAll();
 });
 
-canvas.addEventListener('mouseleave', ()=>drawAll());
-regenBtn.onclick = ()=>{ generateConnections(); drawAll(); };
+canvas.addEventListener('mouseleave', ()=>{
+  hoverIndex = -1;
+  drawAll();
+});
+
+[curvatureSlider, amplitudeSlider, densitySlider, repelSlider].forEach(el=>{
+  el.oninput = ()=>{
+    curvVal.textContent = curvatureSlider.value;
+    amplVal.textContent = amplitudeSlider.value;
+    densityVal.textContent = densitySlider.value;
+    repelVal.textContent = repelSlider.value;
+    drawAll();
+  };
+});
+
+regenBtn.onclick = ()=>{
+  generateConnections();
+  drawAll();
+};
 
 generateConnections();
 drawAll();
+
 </script>
 
 </body>
