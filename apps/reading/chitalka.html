@@ -30,11 +30,6 @@ header{
     gap:8px;
     box-sizing:border-box;
     z-index:1000;
-    transition:transform 0.3s ease;
-}
-
-header.hidden-panel{
-    transform:translateY(-100%);
 }
 
 header h1{
@@ -58,29 +53,6 @@ button{
     padding:6px 10px;
     border-radius:6px;
     cursor:pointer;
-}
-
-/* ===== MOBILE UI FIX ===== */
-@media(max-width:600px){
-
-header{
-    font-size:16px;
-}
-
-button,
-select,
-input{
-    font-size:16px;
-}
-
-textarea{
-    font-size:16px;
-    height:90px;
-}
-
-#textContainer{
-    font-size:18px;
-}
 }
 
 input[type="range"]{
@@ -150,31 +122,25 @@ input[type="range"]{
     opacity:0.5;
 }
 
-/* toggle button */
-#toggleBtn{
-    position:fixed;
-    right:10px;
-    top:10px;
-    z-index:2000;
-    background:#00000033;
-    color:white;
-    border:none;
-    padding:6px 10px;
-    border-radius:8px;
-    backdrop-filter:blur(4px);
+/* mobile */
+@media(max-width:600px){
+    #textContainer{
+        margin:240px 10px 60px;
+        font-size:18px;
+    }
 }
 </style>
 </head>
 
 <body>
 
-<button id="toggleBtn">⚙</button>
-
-<header id="panel">
+<header>
 
 <h1>Скорочтение +</h1>
 
 <textarea id="textInput">Жили-были дед да баба.</textarea>
+
+<input type="file" id="fileInput">
 
 <label>
 Сохранённые:
@@ -226,16 +192,143 @@ input[type="range"]{
 
 <script>
 
-const panel=document.getElementById("panel");
-const toggleBtn=document.getElementById("toggleBtn");
+const textInput=document.getElementById("textInput");
+const container=document.getElementById("textContainer");
 
-toggleBtn.onclick=()=>{
-panel.classList.toggle("hidden-panel");
+const noiseSelect=document.getElementById("noiseSelect");
+const intensity=document.getElementById("intensity");
+const tilt=document.getElementById("tiltStrength");
+
+const intensityBlock=document.getElementById("intensityBlock");
+const tiltBlock=document.getElementById("tiltBlock");
+
+const fontSize=document.getElementById("fontSize");
+const fontSelect=document.getElementById("fontSelect");
+
+const savedSelect=document.getElementById("savedTexts");
+
+let savedTexts=[];
+
+/* ===== JSON ===== */
+fetch("texts.json")
+.then(r=>r.json())
+.then(data=>{
+    if(Array.isArray(data)){
+        savedTexts=data;
+        updateSavedSelect();
+    }
+});
+
+function updateSavedSelect(){
+    savedSelect.innerHTML='<option value="">— выбрать —</option>';
+    savedTexts.forEach((t,i)=>{
+        let opt=document.createElement("option");
+        opt.value=i;
+        opt.textContent=t.length>30 ? t.slice(0,30)+"..." : t;
+        savedSelect.appendChild(opt);
+    });
+}
+
+savedSelect.onchange=function(){
+    if(!this.value) return;
+    textInput.value=savedTexts[this.value];
+    renderText();
 };
 
-</script>
+/* ===== CONTROL VISIBILITY FIX ===== */
+function updateControls(){
 
-<!-- (остальной JS у тебя остаётся БЕЗ изменений, я его не дублирую чтобы не ломать структуру) -->
+intensityBlock.classList.add("hidden");
+tiltBlock.classList.add("hidden");
+
+if(noiseSelect.value==="tilt"){
+    tiltBlock.classList.remove("hidden");
+}
+
+if(["maskTop","maskBottom","shutter"].includes(noiseSelect.value)){
+    intensityBlock.classList.remove("hidden");
+}
+}
+
+/* ===== RENDER ===== */
+function renderText(){
+
+let text=textInput.value;
+let e=noiseSelect.value;
+
+container.style.fontFamily=fontSelect.value;
+container.style.fontSize=fontSize.value+"px";
+
+container.className="";
+container.innerHTML=text;
+
+if(e==="none"){
+container.innerText=text;
+return;
+}
+
+if(e==="tilt"){
+container.innerHTML=wrap(text);
+container.querySelectorAll("span").forEach(s=>{
+let a=Math.random()*tilt.value*2-tilt.value;
+s.style.display="inline-block";
+s.style.transform=`rotate(${a}deg)`;
+});
+}
+
+if(e==="maskTop"){
+container.innerHTML=wrap(text);
+container.style.setProperty("--mask-percent",intensity.value+"%");
+container.classList.add("mask-top");
+}
+
+if(e==="maskBottom"){
+container.innerHTML=wrap(text);
+container.style.setProperty("--mask-percent",intensity.value+"%");
+container.classList.add("mask-bottom");
+}
+
+if(e==="flip"){
+container.innerText=text;
+container.classList.add("flip");
+}
+
+if(e==="shutter"){
+container.innerText=text;
+
+let v=40-intensity.value/2;
+let h=4+intensity.value/5;
+
+container.style.setProperty("--visible-width",v+"px");
+container.style.setProperty("--hide-width",h+"px");
+
+container.classList.add("shutter");
+}
+}
+
+function wrap(t){
+return t.split("").map(c=>c===" "||c==="\n"?c:`<span>${c}</span>`).join("");
+}
+
+/* ===== EVENTS FIX ===== */
+textInput.oninput=renderText;
+
+noiseSelect.onchange=function(){
+updateControls();
+renderText();
+};
+
+intensity.oninput=renderText;
+tilt.oninput=renderText;
+
+fontSize.oninput=renderText;
+fontSelect.onchange=renderText;
+
+/* INIT */
+updateControls();
+renderText();
+
+</script>
 
 </body>
 </html>
