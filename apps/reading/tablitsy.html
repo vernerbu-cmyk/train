@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Тренажёр слов</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #f2f2f2;
+  padding: 20px;
+}
+
+h1 { text-align: center; }
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+table {
+  border-collapse: collapse;
+  margin: 0 auto;
+}
+
+td {
+  border: 1px solid #444;
+  padding: 12px 16px;
+  min-width: 90px;
+  text-align: center;
+  cursor: pointer;
+}
+
+td.hidden {
+  background: #999;
+  color: transparent;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Тренажёр слов</h1>
+
+<div class="controls">
+  <label>Строки <input id="rows" type="number" value="5"></label>
+  <label>Столбцы <input id="cols" type="number" value="5"></label>
+
+  <label><input id="v1" type="checkbox" checked> 1 гласная</label>
+  <label><input id="v2" type="checkbox" checked> 2 гласные</label>
+  <label><input id="v3" type="checkbox" checked> 3 гласные</label>
+  <label><input id="v4" type="checkbox" checked> 4 гласные</label>
+  <label><input id="v5" type="checkbox" checked> 5+ гласных</label>
+
+  <button onclick="generate()">Сгенерировать</button>
+</div>
+
+<table id="table"></table>
+
+<script>
+let words = [];
+const table = document.getElementById("table");
+
+const vowels = "аеёиоуыэюя";
+
+/* ===== загрузка ===== */
+async function load(){
+  const res = await fetch("words.json");
+  words = await res.json();
+}
+
+/* ===== считаем гласные ===== */
+function vowelCount(w){
+  return [...w.toLowerCase()]
+    .filter(c => vowels.includes(c)).length;
+}
+
+/* ===== генерация ===== */
+function generate(){
+  const r = +rows.value;
+  const c = +cols.value;
+  const need = r * c;
+
+  const groups = {
+    1: [],
+    2: [],
+    3: [],
+    4: [],
+    5: []
+  };
+
+  words.forEach(w => {
+    const v = vowelCount(w);
+
+    if (v >= 5) groups[5].push(w);
+    else groups[v]?.push(w);
+  });
+
+  let pool = [];
+
+  if (v1.checked) pool.push(...groups[1]);
+  if (v2.checked) pool.push(...groups[2]);
+  if (v3.checked) pool.push(...groups[3]);
+  if (v4.checked) pool.push(...groups[4]);
+  if (v5.checked) pool.push(...groups[5]);
+
+  // защита от пустоты
+  if (pool.length < need) {
+    pool = [...pool, ...words];
+  }
+
+  pool = pool.sort(() => Math.random() - 0.5).slice(0, need);
+
+  render(pool, r, c);
+}
+
+/* ===== render ===== */
+function render(pool, r, c){
+  table.innerHTML = "";
+
+  let i = 0;
+
+  for (let y=0;y<r;y++){
+    const tr = document.createElement("tr");
+
+    for (let x=0;x<c;x++){
+      const td = document.createElement("td");
+
+      td.textContent = pool[i++] || "—";
+
+      td.onclick = () => td.classList.toggle("hidden");
+
+      tr.appendChild(td);
+    }
+
+    table.appendChild(tr);
+  }
+}
+
+load().then(generate);
+</script>
+
+</body>
+</html>
