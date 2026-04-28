@@ -12,23 +12,21 @@
 
 body{
   margin:0;
-  font-family: Arial, sans-serif;
+  font-family:Arial,sans-serif;
   background:#f4f6fb;
 }
 
-/* ===== ШАПКА ===== */
+/* ===== HEADER ===== */
 .header{
   background:var(--blue);
   color:#fff;
   text-align:center;
   font-style:italic;
   font-size:24px;
-  padding:14px 10px;
-  position:sticky;
-  top:0;
+  padding:14px;
 }
 
-/* ===== КОНТРОЛЫ ===== */
+/* ===== CONTROLS ===== */
 .controls{
   display:flex;
   flex-wrap:wrap;
@@ -37,81 +35,62 @@ body{
   padding:12px;
 }
 
-label{
-  font-size:15px;
-}
-
-/* ===== КНОПКИ ===== */
+/* ===== BUTTONS ===== */
 button{
   background:var(--orange);
   color:#fff;
   border:none;
   padding:10px 14px;
   border-radius:10px;
-  cursor:pointer;
   font-weight:600;
+  cursor:pointer;
   box-shadow:0 4px 0 #b84a00;
-  transition:0.1s;
 }
 
 button:active{
-  transform:translateY(3px);
-  box-shadow:0 1px 0 #b84a00;
+  transform:translateY(2px);
+  box-shadow:0 2px 0 #b84a00;
 }
 
-/* ===== ТАБЛИЦА ===== */
-table{
-  margin:20px auto;
-  width:95%;
+/* ===== GRID ===== */
+#grid{
+  display:grid;
+  gap:10px;
   max-width:900px;
-  border-collapse:separate;
-  table-layout:fixed;
+  margin:20px auto;
+  padding:0 10px;
 }
 
-/* ===== ЯЧЕЙКИ ===== */
-td{
+/* CELL */
+.cell{
   background:#fff;
   border-radius:14px;
   padding:16px;
   text-align:center;
-  font-size:24px;
-  cursor:pointer;
+  font-size:22px;
   user-select:none;
-
+  cursor:pointer;
   box-shadow:0 6px 18px rgba(0,0,0,0.08);
-  word-break:break-word;
-  transition:0.15s;
 }
 
-td.hidden{
+.cell.hidden{
   background:var(--orange);
   color:transparent;
-  transform:scale(0.96);
 }
 
-/* ===== МОБИЛЬНАЯ ===== */
+/* ===== MOBILE ===== */
 @media (max-width:600px){
-
-  .header{
-    font-size:18px;
-  }
-
-  td{
+  .cell{
     font-size:18px;
     padding:12px;
   }
 
-  .controls{
-    gap:6px;
-  }
-
-  button{
-    width:100%;
-    max-width:220px;
+  .header{
+    font-size:18px;
   }
 }
 
-/* ===== КОПИРАЙТ ===== */
+/* ===== FOOTER ===== */
 .footer{
   position:fixed;
   bottom:8px;
@@ -139,86 +118,93 @@ td.hidden{
   <button onclick="generate()">Сгенерировать</button>
 </div>
 
-<table id="table"></table>
+<div id="grid"></div>
 
 <div class="footer">© verner</div>
 
 <script>
 let words = [];
-const table = document.getElementById("table");
+const grid = document.getElementById("grid");
 
 const vowels = "аеёиоуыэюя";
 
-/* ===== ЗАГРУЗКА ===== */
+/* ===== ЗАГРУЗКА JSON ===== */
 async function load(){
-  const res = await fetch("./words.json");
-  words = await res.json();
+  try{
+    const res = await fetch("./words.json");
+    const data = await res.json();
+
+    words = Array.isArray(data) ? data : (data.words || []);
+
+    console.log("WORDS LOADED:", words.length);
+  }catch(e){
+    console.error("JSON ERROR:", e);
+    words = [];
+  }
 }
 
 /* ===== ГЛАСНЫЕ ===== */
-function vowelCount(w){
-  return [...w.toLowerCase()].filter(c=>vowels.includes(c)).length;
+function vowelCount(word){
+  return [...word.toLowerCase()].filter(c => vowels.includes(c)).length;
 }
 
 /* ===== ГЕНЕРАЦИЯ ===== */
 function generate(){
 
-  const r = +rows.value || 5;
-  const c = +cols.value || 5;
+  if(!words.length){
+    console.warn("NO WORDS LOADED");
+    return;
+  }
+
+  const r = parseInt(rows.value) || 5;
+  const c = parseInt(cols.value) || 5;
   const need = r * c;
 
-  const groups = {1:[],2:[],3:[],4:[],5:[]};
-
-  words.forEach(w=>{
+  let filtered = words.filter(w=>{
     const v = vowelCount(w);
-    if(v>=5) groups[5].push(w);
-    else groups[v]?.push(w);
+
+    return (
+      (v1.checked && v === 1) ||
+      (v2.checked && v === 2) ||
+      (v3.checked && v === 3) ||
+      (v4.checked && v === 4) ||
+      (v5.checked && v >= 5)
+    );
   });
 
-  let pool = [];
-
-  if(v1.checked) pool.push(...groups[1]);
-  if(v2.checked) pool.push(...groups[2]);
-  if(v3.checked) pool.push(...groups[3]);
-  if(v4.checked) pool.push(...groups[4]);
-  if(v5.checked) pool.push(...groups[5]);
-
-  if(pool.length < need){
-    pool = [...pool, ...words];
+  if(filtered.length < need){
+    filtered = [...filtered, ...words];
   }
 
-  pool = pool.sort(()=>Math.random()-0.5).slice(0, need);
+  filtered = filtered
+    .sort(() => Math.random() - 0.5)
+    .slice(0, need);
 
-  render(pool, r, c);
+  render(filtered, c);
 }
 
-/* ===== РЕНДЕР ===== */
-function render(pool, r, c){
+/* ===== RENDER ===== */
+function render(list, cols){
 
-  table.innerHTML = "";
+  grid.innerHTML = "";
 
-  let i = 0;
+  grid.style.gridTemplateColumns =
+    `repeat(${cols}, minmax(80px, 1fr))`;
 
-  for(let y = 0; y < r; y++){
-    const tr = document.createElement("tr");
+  list.forEach(word=>{
+    const div = document.createElement("div");
+    div.className = "cell";
+    div.textContent = word;
 
-    for(let x = 0; x < c; x++){
-      const td = document.createElement("td");
+    div.onclick = () => div.classList.toggle("hidden");
 
-      td.textContent = pool[i++] || "—";
-
-      td.onclick = ()=>td.classList.toggle("hidden");
-
-      tr.appendChild(td);
-    }
-
-    table.appendChild(tr);
-  }
+    grid.appendChild(div);
+  });
 }
 
-/* ===== СТАРТ ===== */
+/* ===== START ===== */
 load().then(()=>{
-  setTimeout(generate, 80);
+  setTimeout(generate, 100);
 });
 </script>
 
