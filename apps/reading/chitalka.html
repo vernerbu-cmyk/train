@@ -2,77 +2,143 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Скорочтение +</title>
 
 <style>
 :root{
     --blue:#1E3F8A;
     --accent:#FF6A00;
+    --btn:#2f5fb3;
 }
+
+*{box-sizing:border-box;}
 
 body{
     margin:0;
-    font-family:Arial;
+    font-family:Arial,sans-serif;
     background:#f4f6fb;
+    color:#111;
 }
 
-/* ===== HEADER ===== */
+/* ===== PANEL ===== */
 header{
     position:fixed;
     top:0;
     left:0;
     width:100%;
     background:var(--blue);
-    color:white;
+    color:#fff;
     padding:10px;
     display:flex;
     flex-wrap:wrap;
     gap:8px;
-    box-sizing:border-box;
     z-index:1000;
+    box-shadow:0 4px 12px rgba(0,0,0,.18);
+    transition:transform .25s ease;
+}
+
+header.hide-panel{
+    transform:translateY(-100%);
 }
 
 header h1{
     width:100%;
+    margin:0 0 2px 0;
     text-align:center;
+    font-size:22px;
     font-style:italic;
-    margin:0;
-    font-size:20px;
+    font-weight:700;
 }
 
-/* inputs */
-textarea{
+.row{
     width:100%;
-    height:70px;
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+}
+
+.block{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    min-width:120px;
+    flex:1;
+}
+
+label{
+    font-size:14px;
+}
+
+textarea,
+select,
+input[type="file"],
+button{
+    width:100%;
+    font-size:16px;
+    border-radius:8px;
+    border:none;
+}
+
+textarea{
+    padding:8px;
+    height:90px;
+    resize:vertical;
+}
+
+select,
+input[type="file"]{
+    padding:8px;
 }
 
 button{
-    background:#2f5fb3;
-    color:white;
-    border:none;
-    padding:6px 10px;
-    border-radius:6px;
+    padding:10px;
+    background:var(--btn);
+    color:#fff;
+    font-weight:700;
+    box-shadow:0 4px 0 rgba(0,0,0,.25);
     cursor:pointer;
 }
 
+button:active{
+    transform:translateY(2px);
+    box-shadow:0 2px 0 rgba(0,0,0,.25);
+}
+
 input[type="range"]{
+    width:100%;
     accent-color:var(--accent);
+}
+
+/* ===== TOGGLE ===== */
+#togglePanel{
+    position:fixed;
+    right:10px;
+    top:10px;
+    z-index:1200;
+    width:auto;
+    padding:8px 12px;
 }
 
 /* ===== TEXT ===== */
 #textContainer{
-    margin:220px 10px 40px;
+    margin:410px 10px 45px;
     padding:16px;
-    background:white;
-    border-radius:10px;
+    background:#fff;
+    border-radius:14px;
     min-height:320px;
-    line-height:1.6;
-    position:relative;
+    line-height:1.65;
     font-size:28px;
+    position:relative;
+    overflow:hidden;
+    box-shadow:0 4px 14px rgba(0,0,0,.08);
+    word-break:break-word;
 }
 
 /* ===== EFFECTS ===== */
-.flip{ transform:rotate(180deg); }
+.flip{
+    transform:rotate(180deg);
+}
 
 .shutter::after{
     content:"";
@@ -89,7 +155,9 @@ input[type="range"]{
 }
 
 .mask-top span,
-.mask-bottom span{ position:relative; }
+.mask-bottom span{
+    position:relative;
+}
 
 .mask-top span::after{
     content:"";
@@ -98,91 +166,132 @@ input[type="range"]{
     left:0;
     width:100%;
     height:var(--mask-percent);
-    background:white;
+    background:#fff;
 }
 
 .mask-bottom span::after{
     content:"";
     position:absolute;
-    bottom:0;
     left:0;
+    bottom:0;
     width:100%;
     height:var(--mask-percent);
-    background:white;
+    background:#fff;
 }
 
-.hidden{ display:none; }
+.hidden{
+    display:none !important;
+}
 
-/* verner */
+/* ===== FOOTER ===== */
 #verner{
     position:fixed;
     right:10px;
     bottom:6px;
     font-size:11px;
-    opacity:0.5;
+    opacity:.55;
 }
 
-/* mobile */
-@media(max-width:600px){
-    #textContainer{
-        margin:240px 10px 60px;
-        font-size:18px;
-    }
+/* ===== MOBILE ===== */
+@media(max-width:700px){
+
+header h1{
+    font-size:20px;
+}
+
+label{
+    font-size:15px;
+}
+
+textarea,
+select,
+button,
+input[type="file"]{
+    font-size:16px;
+}
+
+.block{
+    min-width:100%;
+}
+
+#textContainer{
+    margin-top:640px;
+    font-size:22px;
+    padding:14px;
+}
 }
 </style>
 </head>
 
 <body>
 
-<header>
+<button id="togglePanel">⚙</button>
+
+<header id="panel">
 
 <h1>Скорочтение +</h1>
 
+<div class="row">
+<div class="block">
+<label>Текст</label>
 <textarea id="textInput">Жили-были дед да баба.</textarea>
+</div>
+</div>
 
-<input type="file" id="fileInput">
+<div class="row">
+<div class="block">
+<label>Файл .txt</label>
+<input type="file" id="fileInput" accept=".txt">
+</div>
 
-<label>
-Сохранённые:
+<div class="block">
+<label>Сохранённые</label>
 <select id="savedTexts">
 <option value="">— выбрать —</option>
 </select>
-</label>
-
-<label>
-Шрифт:
-<select id="fontSelect">
-<option value="Arial">Arial</option>
-<option value="Georgia">Georgia</option>
-<option value="Verdana">Verdana</option>
-<option value="Times New Roman">Times</option>
-<option value="Courier New, monospace">Mono</option>
-</select>
-</label>
-
-<label>
-Размер:
-<input type="range" id="fontSize" min="16" max="60" value="28">
-</label>
-
-<label>
-Помеха:
-<select id="noiseSelect">
-<option value="none">Без</option>
-<option value="tilt">Наклон</option>
-<option value="maskTop">Верх</option>
-<option value="maskBottom">Низ</option>
-<option value="flip">180</option>
-<option value="shutter">Шторка</option>
-</select>
-</label>
-
-<div id="intensityBlock" class="hidden">
-<input type="range" id="intensity" min="10" max="80" value="50">
+</div>
 </div>
 
-<div id="tiltBlock" class="hidden">
+<div class="row">
+<div class="block">
+<label>Шрифт</label>
+<select id="fontSelect">
+<option value="Arial">Arial</option>
+<option value="Verdana">Verdana</option>
+<option value="Georgia">Georgia</option>
+<option value="'Times New Roman'">Times</option>
+<option value="'Courier New',monospace">Mono</option>
+</select>
+</div>
+
+<div class="block">
+<label>Размер</label>
+<input type="range" id="fontSize" min="16" max="60" value="28">
+</div>
+</div>
+
+<div class="row">
+<div class="block">
+<label>Помеха</label>
+<select id="noiseSelect">
+<option value="none">Без</option>
+<option value="tilt">Наклон букв</option>
+<option value="maskTop">Закрыт верх</option>
+<option value="maskBottom">Закрыт низ</option>
+<option value="flip">180°</option>
+<option value="shutter">Шторка</option>
+</select>
+</div>
+
+<div class="block hidden" id="tiltBlock">
+<label>Наклон: <span id="tiltVal">15°</span></label>
 <input type="range" id="tiltStrength" min="0" max="45" value="15">
+</div>
+
+<div class="block hidden" id="intensityBlock">
+<label>Интенсивность: <span id="intensityVal">50%</span></label>
+<input type="range" id="intensity" min="10" max="80" value="50">
+</div>
 </div>
 
 </header>
@@ -191,143 +300,224 @@ input[type="range"]{
 <div id="verner">verner</div>
 
 <script>
+const textInput = document.getElementById("textInput");
+const fileInput = document.getElementById("fileInput");
+const savedSelect = document.getElementById("savedTexts");
 
-const textInput=document.getElementById("textInput");
-const container=document.getElementById("textContainer");
+const fontSelect = document.getElementById("fontSelect");
+const fontSize = document.getElementById("fontSize");
 
-const noiseSelect=document.getElementById("noiseSelect");
-const intensity=document.getElementById("intensity");
-const tilt=document.getElementById("tiltStrength");
+const noiseSelect = document.getElementById("noiseSelect");
+const tiltStrength = document.getElementById("tiltStrength");
+const intensity = document.getElementById("intensity");
 
-const intensityBlock=document.getElementById("intensityBlock");
-const tiltBlock=document.getElementById("tiltBlock");
+const tiltBlock = document.getElementById("tiltBlock");
+const intensityBlock = document.getElementById("intensityBlock");
 
-const fontSize=document.getElementById("fontSize");
-const fontSelect=document.getElementById("fontSelect");
+const tiltVal = document.getElementById("tiltVal");
+const intensityVal = document.getElementById("intensityVal");
 
-const savedSelect=document.getElementById("savedTexts");
+const panel = document.getElementById("panel");
+const togglePanel = document.getElementById("togglePanel");
 
-let savedTexts=[];
+const container = document.getElementById("textContainer");
+
+let savedTexts = [];
+
+/* ===== PANEL ===== */
+togglePanel.onclick = () => {
+    panel.classList.toggle("hide-panel");
+};
 
 /* ===== JSON ===== */
-fetch("./texts.json")
-.then(r=>r.json())
+fetch("./texts.json?v=" + Date.now())
+.then(r=>{
+    if(!r.ok) throw new Error("Ошибка " + r.status);
+    return r.json();
+})
 .then(data=>{
     if(Array.isArray(data)){
-        savedTexts=data;
+        savedTexts = data;
         updateSavedSelect();
+
+        if(savedTexts.length){
+            textInput.value = savedTexts[0];
+            renderText();
+        }
     }
+})
+.catch(err=>{
+    console.log(err);
 });
 
+/* ===== SELECT ===== */
 function updateSavedSelect(){
-    savedSelect.innerHTML='<option value="">— выбрать —</option>';
-    savedTexts.forEach((t,i)=>{
-        let opt=document.createElement("option");
-        opt.value=i;
-        opt.textContent=t.length>30 ? t.slice(0,30)+"..." : t;
+    savedSelect.innerHTML = '<option value="">— выбрать —</option>';
+
+    savedTexts.forEach((text,index)=>{
+        const opt = document.createElement("option");
+        opt.value = index;
+        opt.textContent = text.length > 34
+            ? text.slice(0,34) + "..."
+            : text;
+
         savedSelect.appendChild(opt);
     });
 }
 
-savedSelect.onchange=function(){
-    if(!this.value) return;
-    textInput.value=savedTexts[this.value];
-    renderText();
-};
-
-/* ===== CONTROL VISIBILITY FIX ===== */
+/* ===== CONTROL VISIBILITY ===== */
 function updateControls(){
+    tiltBlock.classList.add("hidden");
+    intensityBlock.classList.add("hidden");
 
-intensityBlock.classList.add("hidden");
-tiltBlock.classList.add("hidden");
+    if(noiseSelect.value === "tilt"){
+        tiltBlock.classList.remove("hidden");
+    }
 
-if(noiseSelect.value==="tilt"){
-    tiltBlock.classList.remove("hidden");
+    if(
+        noiseSelect.value === "maskTop" ||
+        noiseSelect.value === "maskBottom" ||
+        noiseSelect.value === "shutter"
+    ){
+        intensityBlock.classList.remove("hidden");
+    }
+
+    tiltVal.textContent = tiltStrength.value + "°";
+    intensityVal.textContent = intensity.value + "%";
 }
 
-if(["maskTop","maskBottom","shutter"].includes(noiseSelect.value)){
-    intensityBlock.classList.remove("hidden");
-}
+/* ===== HELPERS ===== */
+function wrapLetters(text){
+    return text.split("").map(ch=>{
+        if(ch === " ") return " ";
+        if(ch === "\n") return "<br>";
+        return "<span>" + ch + "</span>";
+    }).join("");
 }
 
 /* ===== RENDER ===== */
 function renderText(){
 
-let text=textInput.value;
-let e=noiseSelect.value;
+const text = textInput.value;
+const mode = noiseSelect.value;
 
-container.style.fontFamily=fontSelect.value;
-container.style.fontSize=fontSize.value+"px";
+container.className = "";
+container.style.fontFamily = fontSelect.value;
+container.style.fontSize = fontSize.value + "px";
+container.innerHTML = text;
 
-container.className="";
-container.innerHTML=text;
-
-if(e==="none"){
-container.innerText=text;
-return;
+/* none */
+if(mode === "none"){
+    container.innerText = text;
+    return;
 }
 
-if(e==="tilt"){
-container.innerHTML=wrap(text);
-container.querySelectorAll("span").forEach(s=>{
-let a=Math.random()*tilt.value*2-tilt.value;
-s.style.display="inline-block";
-s.style.transform=`rotate(${a}deg)`;
-});
+/* tilt */
+if(mode === "tilt"){
+    container.innerHTML = wrapLetters(text);
+
+    container.querySelectorAll("span").forEach(el=>{
+        const angle =
+            Math.random() * tiltStrength.value * 2
+            - tiltStrength.value;
+
+        el.style.display = "inline-block";
+        el.style.transform = "rotate(" + angle + "deg)";
+    });
 }
 
-if(e==="maskTop"){
-container.innerHTML=wrap(text);
-container.style.setProperty("--mask-percent",intensity.value+"%");
-container.classList.add("mask-top");
+/* top */
+if(mode === "maskTop"){
+    container.innerHTML = wrapLetters(text);
+    container.style.setProperty(
+        "--mask-percent",
+        intensity.value + "%"
+    );
+    container.classList.add("mask-top");
 }
 
-if(e==="maskBottom"){
-container.innerHTML=wrap(text);
-container.style.setProperty("--mask-percent",intensity.value+"%");
-container.classList.add("mask-bottom");
+/* bottom */
+if(mode === "maskBottom"){
+    container.innerHTML = wrapLetters(text);
+    container.style.setProperty(
+        "--mask-percent",
+        intensity.value + "%"
+    );
+    container.classList.add("mask-bottom");
 }
 
-if(e==="flip"){
-container.innerText=text;
-container.classList.add("flip");
+/* flip */
+if(mode === "flip"){
+    container.innerText = text;
+    container.classList.add("flip");
 }
 
-if(e==="shutter"){
-container.innerText=text;
+/* shutter */
+if(mode === "shutter"){
+    container.innerText = text;
 
-let v=40-intensity.value/2;
-let h=4+intensity.value/5;
+    const visible = 40 - intensity.value / 2;
+    const hidden = 4 + intensity.value / 5;
 
-container.style.setProperty("--visible-width",v+"px");
-container.style.setProperty("--hide-width",h+"px");
+    container.style.setProperty(
+        "--visible-width",
+        visible + "px"
+    );
 
-container.classList.add("shutter");
+    container.style.setProperty(
+        "--hide-width",
+        hidden + "px"
+    );
+
+    container.classList.add("shutter");
 }
 }
 
-function wrap(t){
-return t.split("").map(c=>c===" "||c==="\n"?c:`<span>${c}</span>`).join("");
-}
+/* ===== EVENTS ===== */
+textInput.oninput = renderText;
 
-/* ===== EVENTS FIX ===== */
-textInput.oninput=renderText;
+savedSelect.onchange = function(){
+    if(this.value === "") return;
 
-noiseSelect.onchange=function(){
-updateControls();
-renderText();
+    textInput.value = savedTexts[Number(this.value)];
+    renderText();
 };
 
-intensity.oninput=renderText;
-tilt.oninput=renderText;
+fontSelect.onchange = renderText;
+fontSize.oninput = renderText;
 
-fontSize.oninput=renderText;
-fontSelect.onchange=renderText;
+noiseSelect.onchange = ()=>{
+    updateControls();
+    renderText();
+};
 
-/* INIT */
+tiltStrength.oninput = ()=>{
+    updateControls();
+    renderText();
+};
+
+intensity.oninput = ()=>{
+    updateControls();
+    renderText();
+};
+
+fileInput.onchange = function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function(ev){
+        textInput.value = ev.target.result;
+        renderText();
+    };
+
+    reader.readAsText(file);
+};
+
+/* ===== START ===== */
 updateControls();
 renderText();
-
 </script>
 
 </body>
