@@ -163,7 +163,7 @@ input[type=range]{
   background:#fff;
 }
 
-/* ===== BUTTON SETTINGS ===== */
+/* ===== TOGGLE BUTTON (ШЕСТЁРЕНКА) ===== */
 #toggleBtn{
   position:fixed;
   right:10px;
@@ -171,6 +171,17 @@ input[type=range]{
   z-index:1200;
   width:auto;
   padding:8px 12px;
+  background:var(--orange);   /* 👈 ОРАНЖЕВЫЙ ЦВЕТ */
+  color:#fff;
+  font-weight:700;
+  border:none;
+  border-radius:10px;
+  box-shadow:0 4px 0 rgba(0,0,0,.25);
+}
+
+#toggleBtn:active{
+  transform:translateY(2px);
+  box-shadow:0 2px 0 rgba(0,0,0,.25);
 }
 
 /* ===== AUTHOR ===== */
@@ -278,7 +289,6 @@ input[type=file]{
 <div id="verner">verner</div>
 
 <script>
-/* ===== ELEMENTS ===== */
 const panel = document.getElementById("panel");
 const toggleBtn = document.getElementById("toggleBtn");
 
@@ -303,41 +313,36 @@ const container = document.getElementById("textContainer");
 
 let savedTexts = [];
 
-/* ===== PANEL ===== */
-toggleBtn.onclick = function(){
+/* panel */
+toggleBtn.onclick = () => {
   panel.classList.toggle("hiddenPanel");
 };
 
-/* ===== JSON ===== */
+/* json */
 fetch("./texts.json?v=" + Date.now())
 .then(r => r.json())
 .then(data => {
   if(Array.isArray(data)){
     savedTexts = data;
-    fillSelect();
 
-    if(savedTexts.length > 0){
+    savedSelect.innerHTML = '<option value="">— выбрать —</option>';
+
+    savedTexts.forEach((t,i)=>{
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = t.length > 36 ? t.slice(0,36) + "..." : t;
+      savedSelect.appendChild(opt);
+    });
+
+    if(savedTexts.length){
       textInput.value = savedTexts[0];
       renderText();
     }
   }
-})
-.catch(err => console.log(err));
+});
 
-function fillSelect(){
-  savedSelect.innerHTML = '<option value="">— выбрать —</option>';
-
-  savedTexts.forEach((txt,index)=>{
-    const opt = document.createElement("option");
-    opt.value = index;
-    opt.textContent = txt.length > 36 ? txt.slice(0,36) + "..." : txt;
-    savedSelect.appendChild(opt);
-  });
-}
-
-/* ===== CONTROLS ===== */
+/* controls */
 function updateControls(){
-
   tiltBlock.classList.add("hidden");
   intensityBlock.classList.add("hidden");
 
@@ -345,11 +350,7 @@ function updateControls(){
     tiltBlock.classList.remove("hidden");
   }
 
-  if(
-    noiseSelect.value === "maskTop" ||
-    noiseSelect.value === "maskBottom" ||
-    noiseSelect.value === "shutter"
-  ){
+  if(["maskTop","maskBottom","shutter"].includes(noiseSelect.value)){
     intensityBlock.classList.remove("hidden");
   }
 
@@ -357,7 +358,6 @@ function updateControls(){
   intensityVal.textContent = intensity.value + "%";
 }
 
-/* ===== HELPERS ===== */
 function wrapLetters(text){
   return text.split("").map(ch=>{
     if(ch === " ") return " ";
@@ -366,9 +366,8 @@ function wrapLetters(text){
   }).join("");
 }
 
-/* ===== RENDER ===== */
+/* render */
 function renderText(){
-
   const text = textInput.value;
   const mode = noiseSelect.value;
 
@@ -385,14 +384,10 @@ function renderText(){
     container.innerHTML = wrapLetters(text);
 
     container.querySelectorAll("span").forEach(el=>{
-      const angle =
-        Math.random() * tiltStrength.value * 2
-        - tiltStrength.value;
-
+      const angle = Math.random() * tiltStrength.value * 2 - tiltStrength.value;
       el.style.display = "inline-block";
       el.style.transform = "rotate(" + angle + "deg)";
     });
-
     return;
   }
 
@@ -428,55 +423,48 @@ function renderText(){
     container.classList.add("shutter");
     return;
   }
-
-  container.innerText = text;
 }
 
-/* ===== EVENTS ===== */
-textInput.addEventListener("input", renderText);
+/* events */
+textInput.oninput = renderText;
 
-savedSelect.addEventListener("change", function(){
-  const index = parseInt(this.value,10);
-  if(isNaN(index)) return;
-
-  textInput.value = savedTexts[index];
+savedSelect.onchange = function(){
+  const i = parseInt(this.value,10);
+  if(isNaN(i)) return;
+  textInput.value = savedTexts[i];
   renderText();
-});
+};
 
-fontSelect.addEventListener("change", renderText);
-fontSize.addEventListener("input", renderText);
+fontSelect.onchange = renderText;
+fontSize.oninput = renderText;
 
-noiseSelect.addEventListener("change", ()=>{
+noiseSelect.onchange = () => {
   updateControls();
   renderText();
-});
+};
 
-tiltStrength.addEventListener("input", ()=>{
+tiltStrength.oninput = () => {
   updateControls();
   renderText();
-});
+};
 
-intensity.addEventListener("input", ()=>{
+intensity.oninput = () => {
   updateControls();
   renderText();
-});
+};
 
-fileInput.addEventListener("change", function(e){
-
+fileInput.onchange = function(e){
   const file = e.target.files[0];
   if(!file) return;
 
-  const reader = new FileReader();
-
-  reader.onload = function(ev){
+  const r = new FileReader();
+  r.onload = ev => {
     textInput.value = ev.target.result;
     renderText();
   };
+  r.readAsText(file);
+};
 
-  reader.readAsText(file);
-});
-
-/* ===== START ===== */
 updateControls();
 renderText();
 </script>
