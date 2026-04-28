@@ -2,191 +2,191 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Домик состава числа</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Домики</title>
 
 <style>
+:root{
+--blue:#1E3F8A;
+--orange:#FF6A00;
+}
+
 body{
 margin:0;
 font-family:Arial,sans-serif;
-background:#eef4ff;
+background:#f5f7fb;
 text-align:center;
 user-select:none;
 }
 
-h1{
-font-size:40px;
-font-weight:900;
-color:#ff4d6d;
+.topbar{
+background:var(--blue);
+padding:14px;
+}
+
+.topbar h1{
+margin:0;
+color:#fff;
+font-style:italic;
+font-size:22px;
 }
 
 .controls{
-margin-bottom:10px;
+display:flex;
+flex-wrap:wrap;
+justify-content:center;
+gap:6px;
+padding:10px;
 }
 
 select,button{
-font-size:18px;
-padding:6px 12px;
-margin:5px;
+font-size:16px;
+padding:10px 12px;
+border-radius:10px;
+border:none;
 }
 
-#instruction{
-font-size:20px;
-font-weight:700;
-margin:10px 0;
-color:#444;
+button{
+background:var(--orange);
+color:#fff;
+box-shadow:0 4px 0 #c94f00;
+font-weight:600;
 }
 
-#houseContainer{
-position:relative;
-display:flex;
-justify-content:center;
-margin-top:10px;
+button:active{
+transform:translateY(2px);
+box-shadow:0 1px 0 #c94f00;
 }
 
-#board{
-position:absolute;
-top:0;
-left:0;
-width:100%;
-height:100%;
-z-index:0;
+select{
+border:2px solid var(--orange);
 }
 
-#house{
-position:relative;
-z-index:1;
-}
-
+/* HOUSE */
 .house{
 display:flex;
 flex-direction:column;
 align-items:center;
+margin-top:10px;
 }
 
 .roof{
-height:110px;
-background:#ffb703;
-clip-path:polygon(50% 0%,0% 100%,100% 100%);
+background:var(--orange);
+color:#fff;
+font-size:28px;
+font-weight:bold;
+height:70px;
 display:flex;
 align-items:flex-end;
 justify-content:center;
-font-size:40px;
-font-weight:bold;
-padding-bottom:12px;
+clip-path:polygon(50% 0%,0% 100%,100% 100%);
+width:90%;
+max-width:420px;
 }
 
 .floors{
 display:flex;
 flex-direction:column-reverse;
-gap:10px;
+gap:8px;
+width:100%;
+align-items:center;
 }
 
 .floor{
 display:flex;
+width:100%;
 justify-content:center;
-align-items:flex-end;
-min-height:110px;
 }
 
 .part{
+flex:1;
+max-width:180px;
+min-height:70px;
+background:#fff;
+border:2px solid #ddd;
 display:flex;
 align-items:center;
 justify-content:center;
-gap:6px;
-min-height:110px;
-padding:10px;
-border:3px solid #333;
-background:#ffffff;
-box-sizing:border-box;
 position:relative;
-font-size:28px;
-font-weight:bold;
+font-size:18px;
 }
 
 .part span{
 position:absolute;
-top:6px;
-left:10px;
-font-size:24px;
-opacity:.15;
+top:4px;
+left:6px;
+opacity:.25;
+font-size:14px;
 font-weight:bold;
 }
 
-input.num{
-width:60px;
-height:60px;
-font-size:26px;
-text-align:center;
-border:2px solid #999;
-border-radius:8px;
+/* TOKENS */
+.token{
+width:40px;
+height:40px;
+touch-action:none;
+user-select:none;
+cursor:grab;
+position:relative;
 }
 
-#checkBtn{
-margin-top:10px;
-}
-
-@keyframes bounce{
-0%{transform:translateY(0);}
-25%{transform:translateY(-20px);}
-50%{transform:translateY(0);}
-75%{transform:translateY(-10px);}
-100%{transform:translateY(0);}
-}
-
-.bounce{
-animation:bounce .6s ease;
+.dragging{
+position:fixed;
+z-index:9999;
+pointer-events:none;
 }
 </style>
 </head>
 
 <body>
 
-<h1>СОСТАВ ЧИСЛА</h1>
+<div class="topbar">
+<h1>Домики</h1>
+</div>
 
 <div class="controls">
 
-Число:
 <select id="numberSelect">
 <option>3</option>
-<option selected>4</option>
+<option>4</option>
 <option>5</option>
 <option>6</option>
 <option>7</option>
 <option>8</option>
 <option>9</option>
-<option>10</option>
+<option selected>10</option>
 </select>
 
-Режим:
+<!-- ✔️ РЕЖИМЫ ВЕРНУЛИСЬ -->
 <select id="modeSelect">
-<option value="limited">С лимитом</option>
-<option value="unlimited">Без лимита</option>
+<option value="labubu">Лабубу</option>
+<option value="digits">Цифры</option>
 <option value="fill">Заполни пропуск</option>
 <option value="fix">Исправь домик</option>
-<option value="digits">Цифры</option>
+</select>
+
+<select id="limitMode">
+<option value="limited">С лимитом</option>
+<option value="unlimited">Без лимита</option>
 </select>
 
 <button onclick="startGame()">Старт</button>
 
 </div>
 
-<div id="instruction"></div>
-
-<div id="houseContainer">
-<canvas id="board"></canvas>
 <div id="house"></div>
-</div>
 
-<button id="checkBtn" onclick="checkHouse()" style="display:none;">
-Проверить
-</button>
+<button onclick="checkHouse()">Проверить</button>
 
 <script>
 
-function baseWidth(n){
-return Math.max(260,n*60);
-}
+const imgSrc="https://catalog-cdn.detmir.st/media/M5ixUcmGflIrqy2RW3fyx1ZTxhssvWvb8UWwZeiKjIo=.jpeg";
 
+let dragged=null;
+let offsetX=0;
+let offsetY=0;
+
+/* ===== START ===== */
 function startGame(){
 
 const N=parseInt(numberSelect.value);
@@ -194,145 +194,241 @@ const mode=modeSelect.value;
 
 house.innerHTML="";
 
-if(mode==="digits"){
-instruction.innerText="ВПИШИ ЦИФРЫ В ДОМИК!";
-createDigitHouse(N);
-checkBtn.style.display="inline-block";
-return;
+if(mode==="labubu"){
+createLabubu(N);
 }
-
-instruction.innerText="СОСТАВ ЧИСЛА";
+else if(mode==="digits"){
+createDigits(N);
+}
+else{
 createHouse(N,mode);
-checkBtn.style.display="inline-block";
+}
 
 }
 
-function createDigitHouse(N){
+/* ===== LABUBU ===== */
+function createLabubu(N){
 
-const totalWidth=baseWidth(N);
-
-const houseDiv=document.createElement("div");
-houseDiv.className="house";
+const div=document.createElement("div");
+div.className="house";
 
 const roof=document.createElement("div");
 roof.className="roof";
-roof.style.width=totalWidth+"px";
+roof.dataset.value=N;
 roof.innerText=N;
 
 const floors=document.createElement("div");
 floors.className="floors";
 
-for(let i=0;i<=N;i++){
+/* ✔️ 0–10 ВСЕГДА ЕСТЬ */
+for(let i=0;i<=10;i++){
 
-const floor=document.createElement("div");
-floor.className="floor";
-floor.style.width=totalWidth+"px";
+const f=document.createElement("div");
+f.className="floor";
 
-const left=document.createElement("div");
-const right=document.createElement("div");
+const l=document.createElement("div");
+const r=document.createElement("div");
 
-left.className="part";
-right.className="part";
+l.className="part";
+r.className="part";
 
-left.style.width=totalWidth/2+"px";
-right.style.width=totalWidth/2+"px";
+/* лимит */
+l.dataset.limit=i;
+r.dataset.limit=N-i;
 
-left.innerHTML=`<span></span><input class="num" data-val="${i}">`;
-right.innerHTML=`<span></span><input class="num" data-val="${N-i}">`;
+/* подписи лимита */
+l.innerHTML=`<span>${i}</span>`;
+r.innerHTML=`<span>${N-i}</span>`;
 
-floor.appendChild(left);
-floor.appendChild(right);
-floors.appendChild(floor);
+f.appendChild(l);
+f.appendChild(r);
 
-}
-
-houseDiv.appendChild(roof);
-houseDiv.appendChild(floors);
-house.appendChild(houseDiv);
+floors.appendChild(f);
 
 }
 
+div.appendChild(roof);
+div.appendChild(floors);
+house.appendChild(div);
+
+createTokens(N*(N+1));
+
+}
+
+/* ===== DIGITS ===== */
+function createDigits(N){
+
+const div=document.createElement("div");
+div.className="house";
+
+const roof=document.createElement("div");
+roof.className="roof";
+roof.innerText=N;
+
+const floors=document.createElement("div");
+floors.className="floors";
+
+for(let i=0;i<=10;i++){
+
+const f=document.createElement("div");
+f.className="floor";
+
+const l=document.createElement("div");
+const r=document.createElement("div");
+
+l.className="part";
+r.className="part";
+
+l.innerHTML=`<input>`;
+r.innerHTML=`<input>`;
+
+f.appendChild(l);
+f.appendChild(r);
+
+floors.appendChild(f);
+
+}
+
+div.appendChild(roof);
+div.appendChild(floors);
+house.appendChild(div);
+
+}
+
+/* ===== HOUSE ===== */
 function createHouse(N,mode){
 
-const totalWidth=baseWidth(N);
-
-const houseDiv=document.createElement("div");
-houseDiv.className="house";
+const div=document.createElement("div");
+div.className="house";
 
 const roof=document.createElement("div");
 roof.className="roof";
-roof.style.width=totalWidth+"px";
+roof.dataset.value=N;
 roof.innerText=N;
 
 const floors=document.createElement("div");
 floors.className="floors";
 
-for(let i=0;i<=N;i++){
+/* ✔️ ВАЖНО: 0–10 */
+for(let i=0;i<=10;i++){
 
-const floor=document.createElement("div");
-floor.className="floor";
-floor.style.width=totalWidth+"px";
+const f=document.createElement("div");
+f.className="floor";
 
-const left=document.createElement("div");
-const right=document.createElement("div");
+const l=document.createElement("div");
+const r=document.createElement("div");
 
-left.className="part";
-right.className="part";
+l.className="part";
+r.className="part";
 
-left.style.width=totalWidth/2+"px";
-right.style.width=totalWidth/2+"px";
+l.innerText=i;
+r.innerText=N-i;
 
-if(mode==="limited"){
-left.innerHTML=`<span>${i}</span>`;
-right.innerHTML=`<span>${N-i}</span>`;
+f.appendChild(l);
+f.appendChild(r);
+
+floors.appendChild(f);
+
+}
+
+div.appendChild(roof);
+div.appendChild(floors);
+house.appendChild(div);
+
+}
+
+/* ===== TOKENS ===== */
+function createTokens(count){
+
+for(let i=0;i<count;i++){
+const img=document.createElement("img");
+img.src=imgSrc;
+img.className="token";
+img.onpointerdown=dragStart;
+document.body.appendChild(img);
+}
+
+}
+
+/* ===== DRAG ===== */
+function dragStart(e){
+
+dragged=e.target;
+
+const rect=dragged.getBoundingClientRect();
+
+offsetX=e.clientX-rect.left;
+offsetY=e.clientY-rect.top;
+
+dragged.classList.add("dragging");
+
+document.body.appendChild(dragged);
+
+move(e);
+
+document.addEventListener("pointermove",move);
+document.addEventListener("pointerup",drop,{once:true});
+
+}
+
+function move(e){
+
+if(!dragged)return;
+
+dragged.style.position="fixed";
+dragged.style.left=(e.clientX-offsetX)+"px";
+dragged.style.top=(e.clientY-offsetY)+"px";
+
+}
+
+function drop(e){
+
+document.removeEventListener("pointermove",move);
+
+if(!dragged)return;
+
+const el=document.elementFromPoint(e.clientX,e.clientY);
+const part=el?.closest(".part");
+
+const mode=document.getElementById("limitMode").value;
+
+if(part){
+
+const limit=parseInt(part.dataset.limit||999);
+const count=part.querySelectorAll(".token").length;
+
+if(mode==="unlimited" || count<limit){
+part.appendChild(dragged);
+}
+
 }else{
-left.innerHTML="";
-right.innerHTML="";
+document.body.appendChild(dragged);
 }
 
-floor.appendChild(left);
-floor.appendChild(right);
-floors.appendChild(floor);
+dragged.classList.remove("dragging");
+dragged.style.position="";
+dragged.style.left="";
+dragged.style.top="";
 
-}
-
-houseDiv.appendChild(roof);
-houseDiv.appendChild(floors);
-house.appendChild(houseDiv);
+dragged=null;
 
 }
 
+/* ===== CHECK (СТАБИЛЬНО) ===== */
 function checkHouse(){
 
-const N=parseInt(document.querySelector(".roof").innerText);
+const N=parseInt(document.querySelector(".roof").dataset.value);
 
 document.querySelectorAll(".floor").forEach(floor=>{
 
-const inputs=floor.querySelectorAll("input");
+const left=floor.children[0];
+const right=floor.children[1];
 
-if(inputs.length===0){
-const leftCount=floor.querySelector(".left")?.querySelectorAll(".token")?.length||0;
-const rightCount=floor.querySelector(".right")?.querySelectorAll(".token")?.length||0;
-if(leftCount+rightCount===N){
-floor.style.borderColor="green";
-floor.classList.add("bounce");
-setTimeout(()=>floor.classList.remove("bounce"),600);
-}else{
-floor.style.borderColor="red";
-}
-return;
-}
+const sum=
+left.querySelectorAll(".token").length +
+right.querySelectorAll(".token").length;
 
-const leftVal=parseInt(inputs[0].value||-1);
-const rightVal=parseInt(inputs[1].value||-1);
-
-if(leftVal+rightVal===N){
-floor.style.borderColor="green";
-floor.classList.add("bounce");
-setTimeout(()=>floor.classList.remove("bounce"),600);
-}else{
-floor.style.borderColor="red";
-}
+floor.style.borderColor=(sum===N)?"green":"red";
 
 });
 
