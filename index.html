@@ -12,9 +12,9 @@ font-family:Arial;
 background:linear-gradient(135deg,#0f172a,#1e293b);
 color:white;
 min-height:100vh;
-overflow:hidden;
 -webkit-tap-highlight-color:transparent;
 touch-action:manipulation;
+overflow:auto; /* ✔ было hidden — стало auto */
 }
 
 /* TOP */
@@ -51,8 +51,13 @@ display:none;
 padding:80px 14px;
 }
 
-#desktop{grid-template-columns:1fr;gap:16px;}
-#grid{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;}
+#desktop,#grid{
+display:none;
+height:100vh;        /* ✔ добавили */
+overflow-y:auto;     /* ✔ скролл внутри */
+padding:80px 14px 20px;
+box-sizing:border-box;
+}
 
 .bigCard{
 height:38vh;
