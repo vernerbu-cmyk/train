@@ -42,13 +42,13 @@ cursor:pointer;
 user-select:none;
 }
 
-/* ===== PC ===== */
+/* PC */
 
 #desktop{
 display:none;
 padding:90px 20px;
-grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-gap:24px;
+grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+gap:22px;
 height:100vh;
 overflow:auto;
 box-sizing:border-box;
@@ -57,7 +57,7 @@ box-sizing:border-box;
 #grid{
 display:none;
 padding:90px 20px;
-grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
 gap:18px;
 height:100vh;
 overflow:auto;
@@ -65,7 +65,7 @@ box-sizing:border-box;
 }
 
 .bigCard{
-height:360px;
+height:340px;
 border-radius:28px;
 display:flex;
 flex-direction:column;
@@ -73,13 +73,10 @@ justify-content:center;
 align-items:center;
 background:rgba(255,255,255,0.08);
 cursor:pointer;
-transition:0.2s;
 }
 
-.bigCard:active{transform:scale(0.97);}
-
-.bigCard .icon{font-size:130px;}
-.bigCard .label{font-size:36px;font-weight:bold;}
+.bigCard .icon{font-size:120px;}
+.bigCard .label{font-size:34px;font-weight:bold;}
 
 .card{
 aspect-ratio:1/1;
@@ -90,35 +87,24 @@ justify-content:center;
 align-items:center;
 background:rgba(255,255,255,0.08);
 cursor:pointer;
-transition:0.2s;
 }
 
-.card:active{transform:scale(0.96);}
-
-.card .icon{font-size:70px;}
+.card .icon{font-size:65px;}
 .card .label{font-size:16px;font-weight:bold;text-align:center;}
 
-/* ===== MOBILE (НОВАЯ ЛОГИКА) ===== */
+/* MOBILE */
 
 #mobile{
 display:none;
 position:fixed;
-top:60px;
-left:0;
-right:0;
-bottom:0;
+top:60px;left:0;right:0;bottom:0;
 overflow:hidden;
-}
-
-#track{
-display:flex;
-height:100%;
-transition:transform 0.35s ease;
+touch-action:pan-y;
 }
 
 .page{
-min-width:100%;
-height:100%;
+position:absolute;
+inset:0;
 display:flex;
 justify-content:center;
 align-items:center;
@@ -133,17 +119,10 @@ display:flex;
 flex-direction:column;
 justify-content:center;
 align-items:center;
-transition:0.2s;
 }
 
-.cardFull:active{
-transform:scale(0.97);
-background:rgba(255,255,255,0.14);
-}
-
-.cardFull .icon{font-size:92px;}
-.cardFull .label{font-size:26px;font-weight:bold;text-align:center;}
-
+.cardFull .icon{font-size:85px;}
+.cardFull .label{font-size:24px;font-weight:bold;text-align:center;}
 </style>
 </head>
 
@@ -157,10 +136,7 @@ background:rgba(255,255,255,0.14);
 
 <div id="desktop"></div>
 <div id="grid"></div>
-
-<div id="mobile">
-<div id="track"></div>
-</div>
+<div id="mobile"></div>
 
 <script>
 
@@ -172,7 +148,6 @@ let index=0;
 const desktop=document.getElementById("desktop");
 const grid=document.getElementById("grid");
 const mobile=document.getElementById("mobile");
-const track=document.getElementById("track");
 const backBtn=document.getElementById("backBtn");
 const fsBtn=document.getElementById("fsBtn");
 
@@ -214,21 +189,20 @@ document.exitFullscreen?.();
 }
 };
 
-/* ===== RENDER ===== */
-
+/* RENDER */
 function render(){
-
-desktop.innerHTML="";
-grid.innerHTML="";
-track.innerHTML="";
 
 desktop.style.display="none";
 grid.style.display="none";
 mobile.style.display="none";
 
+desktop.innerHTML="";
+grid.innerHTML="";
+mobile.innerHTML="";
+
 const isMobile = window.innerWidth < 768;
 
-/* ===== MOBILE ===== */
+/* MOBILE */
 if(isMobile){
 mobile.style.display="block";
 
@@ -237,18 +211,18 @@ let list = state==="groups"
 : data.filter(x=>x.group===currentGroup);
 
 list.forEach((item,i)=>{
+let d=document.createElement("div");
+d.className="page";
+d.style.transform=`translateX(${(i-index)*100}%)`;
 
-let page=document.createElement("div");
-page.className="page";
-
-page.innerHTML=`
+d.innerHTML=`
 <div class="cardFull">
 <div class="icon">${item.icon}</div>
 <div class="label">${item.name}</div>
 </div>
 `;
 
-page.onclick=()=>{
+d.onclick=()=>{
 if(state==="groups"){
 state="list";
 currentGroup=item.name;
@@ -259,15 +233,14 @@ location.href=item.file;
 }
 };
 
-track.appendChild(page);
+mobile.appendChild(d);
 });
 
-updateTrack();
 setupSwipe();
 return;
 }
 
-/* ===== PC GROUPS ===== */
+/* PC GROUPS */
 if(state==="groups"){
 desktop.style.display="grid";
 
@@ -288,7 +261,7 @@ desktop.appendChild(d);
 return;
 }
 
-/* ===== PC LIST ===== */
+/* PC LIST */
 grid.style.display="grid";
 
 data.filter(x=>x.group===currentGroup).forEach(t=>{
@@ -301,55 +274,48 @@ grid.appendChild(d);
 
 }
 
-/* ===== SWIPE (НОВЫЙ СТАБИЛЬНЫЙ) ===== */
-
-let startX=0;
-let moveX=0;
-let dragging=false;
-
+/* SWIPE */
 function setupSwipe(){
 
-track.onpointerdown=(e)=>{
+let startX=0,moveX=0,drag=false;
+
+mobile.onpointerdown=(e)=>{
 startX=e.clientX;
 moveX=e.clientX;
-dragging=true;
-track.style.transition="none";
+drag=true;
 };
 
-track.onpointermove=(e)=>{
-if(!dragging)return;
+mobile.onpointermove=(e)=>{
+if(!drag)return;
 
 moveX=e.clientX;
 let diff=moveX-startX;
 
-track.style.transform=`translateX(calc(${-index*100}% + ${diff}px))`;
+[...mobile.children].forEach((c,i)=>{
+c.style.transition="none";
+c.style.transform=`translateX(${(i-index)*100 + diff/3}%)`;
+});
 };
 
-track.onpointerup=()=>{
-if(!dragging)return;
-dragging=false;
+mobile.onpointerup=()=>{
+drag=false;
 
 let diff=moveX-startX;
 
-if(diff>80) index--;
-if(diff<-80) index++;
+if(diff>60) index--;
+if(diff<-60) index++;
 
-limitIndex();
-updateTrack(true);
+if(index<0) index=0;
+if(index>mobile.children.length-1)
+index=mobile.children.length-1;
+
+[...mobile.children].forEach((c,i)=>{
+c.style.transition="0.3s";
+c.style.transform=`translateX(${(i-index)*100}%)`;
+});
 };
 
-track.onpointercancel=()=>track.onpointerup();
-}
-
-function limitIndex(){
-const max = track.children.length - 1;
-if(index<0) index=0;
-if(index>max) index=max;
-}
-
-function updateTrack(anim=false){
-track.style.transition = anim ? "transform 0.35s ease" : "none";
-track.style.transform = `translateX(${-index*100}%)`;
+mobile.onpointercancel=mobile.onpointerup;
 }
 
 /* BACK */
