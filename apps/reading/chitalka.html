@@ -7,217 +7,200 @@
 
 <style>
 :root{
-    --blue:#1E3F8A;
-    --accent:#FF6A00;
-    --btn:#2f5fb3;
+  --blue:#1E3F8A;
+  --orange:#FF6A00;
+  --btn:#2f5fb3;
 }
 
 *{box-sizing:border-box;}
 
 body{
-    margin:0;
-    font-family:Arial,sans-serif;
-    background:#f4f6fb;
-    color:#111;
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f4f6fb;
 }
 
 /* ===== PANEL ===== */
 header{
-    position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    background:var(--blue);
-    color:#fff;
-    padding:10px;
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    z-index:1000;
-    box-shadow:0 4px 12px rgba(0,0,0,.18);
-    transition:transform .25s ease;
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  background:var(--blue);
+  color:#fff;
+  padding:10px;
+  z-index:1000;
+  box-shadow:0 4px 12px rgba(0,0,0,.18);
+  transition:.25s;
 }
 
-header.hide-panel{
-    transform:translateY(-100%);
+header.hiddenPanel{
+  transform:translateY(-100%);
 }
 
 header h1{
-    width:100%;
-    margin:0 0 2px 0;
-    text-align:center;
-    font-size:22px;
-    font-style:italic;
-    font-weight:700;
+  margin:0 0 10px;
+  text-align:center;
+  font-size:22px;
+  font-style:italic;
 }
 
-.row{
-    width:100%;
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:8px;
 }
 
 .block{
-    display:flex;
-    flex-direction:column;
-    gap:4px;
-    min-width:120px;
-    flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
 }
 
 label{
-    font-size:14px;
+  font-size:14px;
 }
 
 textarea,
 select,
-input[type="file"],
-button{
-    width:100%;
-    font-size:16px;
-    border-radius:8px;
-    border:none;
+button,
+input[type=file]{
+  width:100%;
+  border:none;
+  border-radius:8px;
+  font-size:16px;
 }
 
 textarea{
-    padding:8px;
-    height:90px;
-    resize:vertical;
+  padding:8px;
+  min-height:90px;
+  resize:vertical;
 }
 
 select,
-input[type="file"]{
-    padding:8px;
+input[type=file]{
+  padding:8px;
 }
 
 button{
-    padding:10px;
-    background:var(--btn);
-    color:#fff;
-    font-weight:700;
-    box-shadow:0 4px 0 rgba(0,0,0,.25);
-    cursor:pointer;
+  padding:10px;
+  background:var(--btn);
+  color:#fff;
+  font-weight:700;
+  box-shadow:0 4px 0 rgba(0,0,0,.25);
 }
 
 button:active{
-    transform:translateY(2px);
-    box-shadow:0 2px 0 rgba(0,0,0,.25);
+  transform:translateY(2px);
+  box-shadow:0 2px 0 rgba(0,0,0,.25);
 }
 
-input[type="range"]{
-    width:100%;
-    accent-color:var(--accent);
+input[type=range]{
+  width:100%;
+  accent-color:var(--orange);
 }
 
-/* ===== TOGGLE ===== */
-#togglePanel{
-    position:fixed;
-    right:10px;
-    top:10px;
-    z-index:1200;
-    width:auto;
-    padding:8px 12px;
+.hidden{
+  display:none !important;
 }
 
 /* ===== TEXT ===== */
 #textContainer{
-    margin:410px 10px 45px;
-    padding:16px;
-    background:#fff;
-    border-radius:14px;
-    min-height:320px;
-    line-height:1.65;
-    font-size:28px;
-    position:relative;
-    overflow:hidden;
-    box-shadow:0 4px 14px rgba(0,0,0,.08);
-    word-break:break-word;
+  margin:470px 10px 40px;
+  background:#fff;
+  border-radius:14px;
+  min-height:320px;
+  padding:16px;
+  font-size:28px;
+  line-height:1.65;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 4px 14px rgba(0,0,0,.08);
+  word-break:break-word;
 }
 
 /* ===== EFFECTS ===== */
 .flip{
-    transform:rotate(180deg);
+  transform:rotate(180deg);
 }
 
 .shutter::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    pointer-events:none;
-    background:repeating-linear-gradient(
-        to right,
-        transparent 0,
-        transparent var(--visible-width),
-        white var(--visible-width),
-        white calc(var(--visible-width) + var(--hide-width))
-    );
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent var(--visible-width),
+    white var(--visible-width),
+    white calc(var(--visible-width) + var(--hide-width))
+  );
 }
 
 .mask-top span,
 .mask-bottom span{
-    position:relative;
+  position:relative;
 }
 
 .mask-top span::after{
-    content:"";
-    position:absolute;
-    top:0;
-    left:0;
-    width:100%;
-    height:var(--mask-percent);
-    background:#fff;
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:var(--mask-percent);
+  background:#fff;
 }
 
 .mask-bottom span::after{
-    content:"";
-    position:absolute;
-    left:0;
-    bottom:0;
-    width:100%;
-    height:var(--mask-percent);
-    background:#fff;
+  content:"";
+  position:absolute;
+  left:0;
+  bottom:0;
+  width:100%;
+  height:var(--mask-percent);
+  background:#fff;
 }
 
-.hidden{
-    display:none !important;
+/* ===== BUTTON SETTINGS ===== */
+#toggleBtn{
+  position:fixed;
+  right:10px;
+  top:10px;
+  z-index:1200;
+  width:auto;
+  padding:8px 12px;
 }
 
-/* ===== FOOTER ===== */
+/* ===== AUTHOR ===== */
 #verner{
-    position:fixed;
-    right:10px;
-    bottom:6px;
-    font-size:11px;
-    opacity:.55;
+  position:fixed;
+  right:10px;
+  bottom:6px;
+  font-size:11px;
+  opacity:.55;
 }
 
 /* ===== MOBILE ===== */
 @media(max-width:700px){
 
 header h1{
-    font-size:20px;
+  font-size:20px;
 }
 
-label{
-    font-size:15px;
-}
-
-textarea,
+label,
 select,
 button,
-input[type="file"]{
-    font-size:16px;
-}
-
-.block{
-    min-width:100%;
+textarea,
+input[type=file]{
+  font-size:16px;
 }
 
 #textContainer{
-    margin-top:640px;
-    font-size:22px;
-    padding:14px;
+  margin-top:690px;
+  font-size:22px;
+  padding:14px;
 }
 }
 </style>
@@ -225,34 +208,31 @@ input[type="file"]{
 
 <body>
 
-<button id="togglePanel">⚙</button>
+<button id="toggleBtn">⚙</button>
 
 <header id="panel">
 
 <h1>Скорочтение +</h1>
 
-<div class="row">
-<div class="block">
+<div class="grid">
+
+<div class="block" style="grid-column:1/-1;">
 <label>Текст</label>
 <textarea id="textInput">Жили-были дед да баба.</textarea>
 </div>
-</div>
 
-<div class="row">
 <div class="block">
 <label>Файл .txt</label>
 <input type="file" id="fileInput" accept=".txt">
 </div>
 
 <div class="block">
-<label>Сохранённые</label>
+<label>Тексты</label>
 <select id="savedTexts">
 <option value="">— выбрать —</option>
 </select>
 </div>
-</div>
 
-<div class="row">
 <div class="block">
 <label>Шрифт</label>
 <select id="fontSelect">
@@ -268,14 +248,12 @@ input[type="file"]{
 <label>Размер</label>
 <input type="range" id="fontSize" min="16" max="60" value="28">
 </div>
-</div>
 
-<div class="row">
 <div class="block">
 <label>Помеха</label>
 <select id="noiseSelect">
 <option value="none">Без</option>
-<option value="tilt">Наклон букв</option>
+<option value="tilt">Наклон</option>
 <option value="maskTop">Закрыт верх</option>
 <option value="maskBottom">Закрыт низ</option>
 <option value="flip">180°</option>
@@ -284,22 +262,26 @@ input[type="file"]{
 </div>
 
 <div class="block hidden" id="tiltBlock">
-<label>Наклон: <span id="tiltVal">15°</span></label>
+<label>Наклон <span id="tiltVal">15°</span></label>
 <input type="range" id="tiltStrength" min="0" max="45" value="15">
 </div>
 
 <div class="block hidden" id="intensityBlock">
-<label>Интенсивность: <span id="intensityVal">50%</span></label>
+<label>Интенсивность <span id="intensityVal">50%</span></label>
 <input type="range" id="intensity" min="10" max="80" value="50">
 </div>
-</div>
 
+</div>
 </header>
 
 <div id="textContainer"></div>
 <div id="verner">verner</div>
 
 <script>
+/* ===== ELEMENTS ===== */
+const panel = document.getElementById("panel");
+const toggleBtn = document.getElementById("toggleBtn");
+
 const textInput = document.getElementById("textInput");
 const fileInput = document.getElementById("fileInput");
 const savedSelect = document.getElementById("savedTexts");
@@ -317,203 +299,182 @@ const intensityBlock = document.getElementById("intensityBlock");
 const tiltVal = document.getElementById("tiltVal");
 const intensityVal = document.getElementById("intensityVal");
 
-const panel = document.getElementById("panel");
-const togglePanel = document.getElementById("togglePanel");
-
 const container = document.getElementById("textContainer");
 
 let savedTexts = [];
 
 /* ===== PANEL ===== */
-togglePanel.onclick = () => {
-    panel.classList.toggle("hide-panel");
+toggleBtn.onclick = function(){
+  panel.classList.toggle("hiddenPanel");
 };
 
 /* ===== JSON ===== */
 fetch("./texts.json?v=" + Date.now())
-.then(r=>{
-    if(!r.ok) throw new Error("Ошибка " + r.status);
-    return r.json();
-})
-.then(data=>{
-    if(Array.isArray(data)){
-        savedTexts = data;
-        updateSavedSelect();
+.then(r => r.json())
+.then(data => {
+  if(Array.isArray(data)){
+    savedTexts = data;
+    fillSelect();
 
-        if(savedTexts.length){
-            textInput.value = savedTexts[0];
-            renderText();
-        }
+    if(savedTexts.length > 0){
+      textInput.value = savedTexts[0];
+      renderText();
     }
+  }
 })
-.catch(err=>{
-    console.log(err);
-});
+.catch(err => console.log(err));
 
-/* ===== SELECT ===== */
-function updateSavedSelect(){
-    savedSelect.innerHTML = '<option value="">— выбрать —</option>';
+function fillSelect(){
+  savedSelect.innerHTML = '<option value="">— выбрать —</option>';
 
-    savedTexts.forEach((text,index)=>{
-        const opt = document.createElement("option");
-        opt.value = index;
-        opt.textContent = text.length > 34
-            ? text.slice(0,34) + "..."
-            : text;
-
-        savedSelect.appendChild(opt);
-    });
+  savedTexts.forEach((txt,index)=>{
+    const opt = document.createElement("option");
+    opt.value = index;
+    opt.textContent = txt.length > 36 ? txt.slice(0,36) + "..." : txt;
+    savedSelect.appendChild(opt);
+  });
 }
 
-/* ===== CONTROL VISIBILITY ===== */
+/* ===== CONTROLS ===== */
 function updateControls(){
-    tiltBlock.classList.add("hidden");
-    intensityBlock.classList.add("hidden");
 
-    if(noiseSelect.value === "tilt"){
-        tiltBlock.classList.remove("hidden");
-    }
+  tiltBlock.classList.add("hidden");
+  intensityBlock.classList.add("hidden");
 
-    if(
-        noiseSelect.value === "maskTop" ||
-        noiseSelect.value === "maskBottom" ||
-        noiseSelect.value === "shutter"
-    ){
-        intensityBlock.classList.remove("hidden");
-    }
+  if(noiseSelect.value === "tilt"){
+    tiltBlock.classList.remove("hidden");
+  }
 
-    tiltVal.textContent = tiltStrength.value + "°";
-    intensityVal.textContent = intensity.value + "%";
+  if(
+    noiseSelect.value === "maskTop" ||
+    noiseSelect.value === "maskBottom" ||
+    noiseSelect.value === "shutter"
+  ){
+    intensityBlock.classList.remove("hidden");
+  }
+
+  tiltVal.textContent = tiltStrength.value + "°";
+  intensityVal.textContent = intensity.value + "%";
 }
 
 /* ===== HELPERS ===== */
 function wrapLetters(text){
-    return text.split("").map(ch=>{
-        if(ch === " ") return " ";
-        if(ch === "\n") return "<br>";
-        return "<span>" + ch + "</span>";
-    }).join("");
+  return text.split("").map(ch=>{
+    if(ch === " ") return " ";
+    if(ch === "\n") return "<br>";
+    return "<span>" + ch + "</span>";
+  }).join("");
 }
 
 /* ===== RENDER ===== */
 function renderText(){
 
-const text = textInput.value;
-const mode = noiseSelect.value;
+  const text = textInput.value;
+  const mode = noiseSelect.value;
 
-container.className = "";
-container.style.fontFamily = fontSelect.value;
-container.style.fontSize = fontSize.value + "px";
-container.innerHTML = text;
+  container.className = "";
+  container.style.fontFamily = fontSelect.value;
+  container.style.fontSize = fontSize.value + "px";
 
-/* none */
-if(mode === "none"){
+  if(mode === "none"){
     container.innerText = text;
     return;
-}
+  }
 
-/* tilt */
-if(mode === "tilt"){
+  if(mode === "tilt"){
     container.innerHTML = wrapLetters(text);
 
     container.querySelectorAll("span").forEach(el=>{
-        const angle =
-            Math.random() * tiltStrength.value * 2
-            - tiltStrength.value;
+      const angle =
+        Math.random() * tiltStrength.value * 2
+        - tiltStrength.value;
 
-        el.style.display = "inline-block";
-        el.style.transform = "rotate(" + angle + "deg)";
+      el.style.display = "inline-block";
+      el.style.transform = "rotate(" + angle + "deg)";
     });
-}
 
-/* top */
-if(mode === "maskTop"){
+    return;
+  }
+
+  if(mode === "maskTop"){
     container.innerHTML = wrapLetters(text);
-    container.style.setProperty(
-        "--mask-percent",
-        intensity.value + "%"
-    );
+    container.style.setProperty("--mask-percent", intensity.value + "%");
     container.classList.add("mask-top");
-}
+    return;
+  }
 
-/* bottom */
-if(mode === "maskBottom"){
+  if(mode === "maskBottom"){
     container.innerHTML = wrapLetters(text);
-    container.style.setProperty(
-        "--mask-percent",
-        intensity.value + "%"
-    );
+    container.style.setProperty("--mask-percent", intensity.value + "%");
     container.classList.add("mask-bottom");
-}
+    return;
+  }
 
-/* flip */
-if(mode === "flip"){
+  if(mode === "flip"){
     container.innerText = text;
     container.classList.add("flip");
-}
+    return;
+  }
 
-/* shutter */
-if(mode === "shutter"){
+  if(mode === "shutter"){
     container.innerText = text;
 
     const visible = 40 - intensity.value / 2;
     const hidden = 4 + intensity.value / 5;
 
-    container.style.setProperty(
-        "--visible-width",
-        visible + "px"
-    );
-
-    container.style.setProperty(
-        "--hide-width",
-        hidden + "px"
-    );
+    container.style.setProperty("--visible-width", visible + "px");
+    container.style.setProperty("--hide-width", hidden + "px");
 
     container.classList.add("shutter");
-}
+    return;
+  }
+
+  container.innerText = text;
 }
 
 /* ===== EVENTS ===== */
-textInput.oninput = renderText;
+textInput.addEventListener("input", renderText);
 
-savedSelect.onchange = function(){
-    if(this.value === "") return;
+savedSelect.addEventListener("change", function(){
+  const index = parseInt(this.value,10);
+  if(isNaN(index)) return;
 
-    textInput.value = savedTexts[Number(this.value)];
+  textInput.value = savedTexts[index];
+  renderText();
+});
+
+fontSelect.addEventListener("change", renderText);
+fontSize.addEventListener("input", renderText);
+
+noiseSelect.addEventListener("change", ()=>{
+  updateControls();
+  renderText();
+});
+
+tiltStrength.addEventListener("input", ()=>{
+  updateControls();
+  renderText();
+});
+
+intensity.addEventListener("input", ()=>{
+  updateControls();
+  renderText();
+});
+
+fileInput.addEventListener("change", function(e){
+
+  const file = e.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = function(ev){
+    textInput.value = ev.target.result;
     renderText();
-};
+  };
 
-fontSelect.onchange = renderText;
-fontSize.oninput = renderText;
-
-noiseSelect.onchange = ()=>{
-    updateControls();
-    renderText();
-};
-
-tiltStrength.oninput = ()=>{
-    updateControls();
-    renderText();
-};
-
-intensity.oninput = ()=>{
-    updateControls();
-    renderText();
-};
-
-fileInput.onchange = function(e){
-    const file = e.target.files[0];
-    if(!file) return;
-
-    const reader = new FileReader();
-
-    reader.onload = function(ev){
-        textInput.value = ev.target.result;
-        renderText();
-    };
-
-    reader.readAsText(file);
-};
+  reader.readAsText(file);
+});
 
 /* ===== START ===== */
 updateControls();
