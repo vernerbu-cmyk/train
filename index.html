@@ -42,13 +42,13 @@ cursor:pointer;
 user-select:none;
 }
 
-/* ===== ПК ===== */
+/* ===== PC ===== */
 
 #desktop{
 display:none;
 padding:90px 20px;
-grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-gap:22px;
+grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+gap:24px;
 height:100vh;
 overflow:auto;
 box-sizing:border-box;
@@ -57,7 +57,7 @@ box-sizing:border-box;
 #grid{
 display:none;
 padding:90px 20px;
-grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
 gap:18px;
 height:100vh;
 overflow:auto;
@@ -65,7 +65,7 @@ box-sizing:border-box;
 }
 
 .bigCard{
-height:340px;
+height:360px;
 border-radius:28px;
 display:flex;
 flex-direction:column;
@@ -73,10 +73,13 @@ justify-content:center;
 align-items:center;
 background:rgba(255,255,255,0.08);
 cursor:pointer;
+transition:0.2s;
 }
 
-.bigCard .icon{font-size:120px;}
-.bigCard .label{font-size:34px;font-weight:bold;}
+.bigCard:active{transform:scale(0.97);}
+
+.bigCard .icon{font-size:130px;}
+.bigCard .label{font-size:36px;font-weight:bold;}
 
 .card{
 aspect-ratio:1/1;
@@ -87,24 +90,35 @@ justify-content:center;
 align-items:center;
 background:rgba(255,255,255,0.08);
 cursor:pointer;
+transition:0.2s;
 }
 
-.card .icon{font-size:65px;}
+.card:active{transform:scale(0.96);}
+
+.card .icon{font-size:70px;}
 .card .label{font-size:16px;font-weight:bold;text-align:center;}
 
-/* ===== МОБИЛКА ===== */
+/* ===== MOBILE (НОВАЯ ЛОГИКА) ===== */
 
 #mobile{
 display:none;
 position:fixed;
-top:60px;left:0;right:0;bottom:0;
+top:60px;
+left:0;
+right:0;
+bottom:0;
 overflow:hidden;
-touch-action:pan-y;
+}
+
+#track{
+display:flex;
+height:100%;
+transition:transform 0.35s ease;
 }
 
 .page{
-position:absolute;
-inset:0;
+min-width:100%;
+height:100%;
 display:flex;
 justify-content:center;
 align-items:center;
@@ -119,10 +133,16 @@ display:flex;
 flex-direction:column;
 justify-content:center;
 align-items:center;
+transition:0.2s;
 }
 
-.cardFull .icon{font-size:85px;}
-.cardFull .label{font-size:24px;font-weight:bold;text-align:center;}
+.cardFull:active{
+transform:scale(0.97);
+background:rgba(255,255,255,0.14);
+}
+
+.cardFull .icon{font-size:92px;}
+.cardFull .label{font-size:26px;font-weight:bold;text-align:center;}
 
 </style>
 </head>
@@ -137,7 +157,10 @@ align-items:center;
 
 <div id="desktop"></div>
 <div id="grid"></div>
-<div id="mobile"></div>
+
+<div id="mobile">
+<div id="track"></div>
+</div>
 
 <script>
 
@@ -149,6 +172,7 @@ let index=0;
 const desktop=document.getElementById("desktop");
 const grid=document.getElementById("grid");
 const mobile=document.getElementById("mobile");
+const track=document.getElementById("track");
 const backBtn=document.getElementById("backBtn");
 const fsBtn=document.getElementById("fsBtn");
 
@@ -169,7 +193,7 @@ const data=[
 {name:"Радуга",icon:"🌈",group:"Чтение",file:"apps/reading/raduga.html"},
 {name:"Слоги",icon:"🔤",group:"Чтение",file:"apps/reading/slogi.html"},
 {name:"Столбики",icon:"🐌",group:"Чтение",file:"apps/reading/stolby.html"},
-{name:"Таблицы", icon:"📋", group:"Чтение", file:"apps/reading/tablitsy.html"},
+{name:"Таблицы",icon:"📋",group:"Чтение",file:"apps/reading/tablitsy.html"},
 
 {name:"Домики",icon:"🏠",group:"Математика",file:"apps/math/domiky.html"},
 {name:"Магия",icon:"✨",group:"Математика",file:"apps/math/magia.html"},
@@ -190,16 +214,17 @@ document.exitFullscreen?.();
 }
 };
 
-/* RENDER (ЕДИНЫЙ И ПРАВИЛЬНЫЙ) */
+/* ===== RENDER ===== */
+
 function render(){
+
+desktop.innerHTML="";
+grid.innerHTML="";
+track.innerHTML="";
 
 desktop.style.display="none";
 grid.style.display="none";
 mobile.style.display="none";
-
-desktop.innerHTML="";
-grid.innerHTML="";
-mobile.innerHTML="";
 
 const isMobile = window.innerWidth < 768;
 
@@ -212,18 +237,18 @@ let list = state==="groups"
 : data.filter(x=>x.group===currentGroup);
 
 list.forEach((item,i)=>{
-let d=document.createElement("div");
-d.className="page";
-d.style.transform=`translateX(${(i-index)*100}%)`;
 
-d.innerHTML=`
+let page=document.createElement("div");
+page.className="page";
+
+page.innerHTML=`
 <div class="cardFull">
 <div class="icon">${item.icon}</div>
 <div class="label">${item.name}</div>
 </div>
 `;
 
-d.onclick=()=>{
+page.onclick=()=>{
 if(state==="groups"){
 state="list";
 currentGroup=item.name;
@@ -234,9 +259,10 @@ location.href=item.file;
 }
 };
 
-mobile.appendChild(d);
+track.appendChild(page);
 });
 
+updateTrack();
 setupSwipe();
 return;
 }
@@ -275,48 +301,55 @@ grid.appendChild(d);
 
 }
 
-/* SWIPE */
+/* ===== SWIPE (НОВЫЙ СТАБИЛЬНЫЙ) ===== */
+
+let startX=0;
+let moveX=0;
+let dragging=false;
+
 function setupSwipe(){
 
-let startX=0,moveX=0,drag=false;
-
-mobile.onpointerdown=(e)=>{
+track.onpointerdown=(e)=>{
 startX=e.clientX;
 moveX=e.clientX;
-drag=true;
+dragging=true;
+track.style.transition="none";
 };
 
-mobile.onpointermove=(e)=>{
-if(!drag)return;
+track.onpointermove=(e)=>{
+if(!dragging)return;
 
 moveX=e.clientX;
 let diff=moveX-startX;
 
-[...mobile.children].forEach((c,i)=>{
-c.style.transition="none";
-c.style.transform=`translateX(${(i-index)*100 + diff/3}%)`;
-});
+track.style.transform=`translateX(calc(${-index*100}% + ${diff}px))`;
 };
 
-mobile.onpointerup=()=>{
-drag=false;
+track.onpointerup=()=>{
+if(!dragging)return;
+dragging=false;
 
 let diff=moveX-startX;
 
-if(diff>60) index--;
-if(diff<-60) index++;
+if(diff>80) index--;
+if(diff<-80) index++;
 
-if(index<0) index=0;
-if(index>mobile.children.length-1)
-index=mobile.children.length-1;
-
-[...mobile.children].forEach((c,i)=>{
-c.style.transition="0.3s";
-c.style.transform=`translateX(${(i-index)*100}%)`;
-});
+limitIndex();
+updateTrack(true);
 };
 
-mobile.onpointercancel=mobile.onpointerup;
+track.onpointercancel=()=>track.onpointerup();
+}
+
+function limitIndex(){
+const max = track.children.length - 1;
+if(index<0) index=0;
+if(index>max) index=max;
+}
+
+function updateTrack(anim=false){
+track.style.transition = anim ? "transform 0.35s ease" : "none";
+track.style.transform = `translateX(${-index*100}%)`;
 }
 
 /* BACK */
