@@ -2,48 +2,124 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Тренажёр слов</title>
+<title>Таблицы</title>
 
 <style>
-body {
-  font-family: Arial;
-  background: #f2f2f2;
-  padding: 20px;
+:root{
+  --blue:#1E3F8A;
+  --orange:#FF6A00;
 }
 
-h1 { text-align: center; }
-
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  margin-bottom: 10px;
+/* ===== ОБЩЕЕ ===== */
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f4f6fb;
 }
 
-table {
-  border-collapse: collapse;
-  margin: 0 auto;
+/* ===== ШАПКА ===== */
+.header{
+  background:var(--blue);
+  color:#fff;
+  text-align:center;
+  font-style:italic;
+  font-size:24px;
+  padding:14px 10px;
+  position:sticky;
+  top:0;
+  z-index:10;
 }
 
-td {
-  border: 1px solid #444;
-  padding: 12px 16px;
-  min-width: 90px;
-  text-align: center;
-  cursor: pointer;
+/* ===== КОНТРОЛЫ ===== */
+.controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  justify-content:center;
+  padding:12px;
 }
 
-td.hidden {
-  background: #999;
-  color: transparent;
+label{
+  font-size:16px;
+}
+
+/* ===== КНОПКИ (ОРАНЖЕВЫЕ) ===== */
+button{
+  background:var(--orange);
+  color:#fff;
+  border:none;
+  padding:10px 14px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:600;
+
+  /* объём */
+  box-shadow:0 4px 0 #b84a00;
+  transition:0.1s;
+}
+
+button:hover{
+  filter:brightness(1.05);
+}
+
+button:active{
+  transform:translateY(3px);
+  box-shadow:0 1px 0 #b84a00;
+}
+
+/* ===== ТАБЛИЦА ===== */
+table{
+  margin:20px auto;
+  border-spacing:10px;
+}
+
+/* карточки */
+td{
+  background:#fff;
+  border-radius:14px;
+  padding:18px 22px;
+  text-align:center;
+  font-size:28px; /* увеличили */
+  cursor:pointer;
+  user-select:none;
+
+  box-shadow:0 6px 18px rgba(0,0,0,0.08);
+  transition:0.15s;
+}
+
+/* скрытие */
+td.hidden{
+  background:var(--orange);
+  color:transparent;
+  transform:scale(0.97);
+}
+
+/* ===== МОБИЛЬНАЯ ===== */
+@media (max-width:600px){
+  td{
+    font-size:20px;
+    padding:14px 16px;
+  }
+
+  .header{
+    font-size:18px;
+  }
+}
+
+/* ===== КОПИРАЙТ ===== */
+.footer{
+  position:fixed;
+  bottom:8px;
+  right:10px;
+  font-size:11px;
+  color:#888;
 }
 </style>
 </head>
 
 <body>
 
-<h1>Тренажёр слов</h1>
+<div class="header">Таблицы</div>
 
 <div class="controls">
   <label>Строки <input id="rows" type="number" value="5"></label>
@@ -60,22 +136,23 @@ td.hidden {
 
 <table id="table"></table>
 
+<div class="footer">© verner</div>
+
 <script>
 let words = [];
 const table = document.getElementById("table");
 
 const vowels = "аеёиоуыэюя";
 
-/* ===== загрузка ===== */
+/* ===== загрузка JSON ===== */
 async function load(){
   const res = await fetch("./words.json");
   words = await res.json();
 }
 
-/* ===== считаем гласные ===== */
+/* ===== гласные ===== */
 function vowelCount(w){
-  return [...w.toLowerCase()]
-    .filter(c => vowels.includes(c)).length;
+  return [...w.toLowerCase()].filter(c => vowels.includes(c)).length;
 }
 
 /* ===== генерация ===== */
@@ -84,54 +161,45 @@ function generate(){
   const c = +cols.value;
   const need = r * c;
 
-  const groups = {
-    1: [],
-    2: [],
-    3: [],
-    4: [],
-    5: []
-  };
+  const groups = {1:[],2:[],3:[],4:[],5:[]};
 
-  words.forEach(w => {
+  words.forEach(w=>{
     const v = vowelCount(w);
-
-    if (v >= 5) groups[5].push(w);
+    if(v>=5) groups[5].push(w);
     else groups[v]?.push(w);
   });
 
   let pool = [];
 
-  if (v1.checked) pool.push(...groups[1]);
-  if (v2.checked) pool.push(...groups[2]);
-  if (v3.checked) pool.push(...groups[3]);
-  if (v4.checked) pool.push(...groups[4]);
-  if (v5.checked) pool.push(...groups[5]);
+  if(v1.checked) pool.push(...groups[1]);
+  if(v2.checked) pool.push(...groups[2]);
+  if(v3.checked) pool.push(...groups[3]);
+  if(v4.checked) pool.push(...groups[4]);
+  if(v5.checked) pool.push(...groups[5]);
 
-  // защита от пустоты
-  if (pool.length < need) {
+  if(pool.length < need){
     pool = [...pool, ...words];
   }
 
-  pool = pool.sort(() => Math.random() - 0.5).slice(0, need);
+  pool = pool.sort(()=>Math.random()-0.5).slice(0,need);
 
-  render(pool, r, c);
+  render(pool,r,c);
 }
 
-/* ===== render ===== */
-function render(pool, r, c){
-  table.innerHTML = "";
+/* ===== рендер ===== */
+function render(pool,r,c){
+  table.innerHTML="";
+  let i=0;
 
-  let i = 0;
+  for(let y=0;y<r;y++){
+    const tr=document.createElement("tr");
 
-  for (let y=0;y<r;y++){
-    const tr = document.createElement("tr");
-
-    for (let x=0;x<c;x++){
-      const td = document.createElement("td");
+    for(let x=0;x<c;x++){
+      const td=document.createElement("td");
 
       td.textContent = pool[i++] || "—";
 
-      td.onclick = () => td.classList.toggle("hidden");
+      td.onclick = ()=>td.classList.toggle("hidden");
 
       tr.appendChild(td);
     }
