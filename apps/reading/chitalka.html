@@ -210,7 +210,7 @@ const savedSelect=document.getElementById("savedTexts");
 let savedTexts=[];
 
 /* ===== JSON ===== */
-fetch("texts.json")
+fetch("./texts.json")
 .then(r=>r.json())
 .then(data=>{
     if(Array.isArray(data)){
