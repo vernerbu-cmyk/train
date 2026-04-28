@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Тренажёры</title>
 
-<!-- PWA -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
+<!-- 🔥 АНТИ-КЭШ -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 
 <style>
 body{
@@ -145,18 +146,23 @@ align-items:center;
 
 <script>
 
+/* 🔥 АНТИ-КЭШ SW (без версий) */
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+
+/* ===== ЛОГИКА ===== */
+
 let state="groups";
 let currentGroup=null;
 let index=0;
 
-/* DOM */
 const desktop=document.getElementById("desktop");
 const grid=document.getElementById("grid");
 const mobile=document.getElementById("mobile");
 const backBtn=document.getElementById("backBtn");
 const fsBtn=document.getElementById("fsBtn");
 
-/* DATA */
 const groups=[
 {name:"Чтение",icon:"📘"},
 {name:"Математика",icon:"🧮"},
@@ -173,7 +179,7 @@ const data=[
 {name:"Радуга",icon:"🌈",group:"Чтение",file:"apps/reading/raduga.html"},
 {name:"Слоги",icon:"🔤",group:"Чтение",file:"apps/reading/slogi.html"},
 {name:"Столбики",icon:"🐌",group:"Чтение",file:"apps/reading/stolby.html"},
-{name:"Таблицы", icon:"📋", group:"Чтение", file:"apps/reading/tablitsy.html"},
+{name:"Таблицы",icon:"📋",group:"Чтение",file:"apps/reading/tablitsy.html"},
 
 {name:"Домики",icon:"🏠",group:"Математика",file:"apps/math/domiky.html"},
 {name:"Магия",icon:"✨",group:"Математика",file:"apps/math/magia.html"},
@@ -185,7 +191,6 @@ const data=[
 {name:"Что изменилось",icon:"👀",group:"Разное",file:"apps/other/chto_izmenilos.html"}
 ];
 
-/* FULLSCREEN */
 fsBtn.onclick=()=>{
 if(!document.fullscreenElement){
 document.documentElement.requestFullscreen?.();
@@ -194,20 +199,14 @@ document.exitFullscreen?.();
 }
 };
 
-/* RENDER */
 function render(){
-
-desktop.style.display="none";
-grid.style.display="none";
-mobile.style.display="none";
-
 desktop.innerHTML="";
 grid.innerHTML="";
 mobile.innerHTML="";
 
 const isMobile = window.innerWidth < 768;
 
-/* ===== MOBILE ===== */
+/* MOBILE */
 if(isMobile){
 mobile.style.display="block";
 
@@ -245,7 +244,7 @@ setupSwipe();
 return;
 }
 
-/* ===== PC GROUPS ===== */
+/* PC GROUPS */
 if(state==="groups"){
 desktop.style.display="grid";
 
@@ -253,20 +252,17 @@ groups.forEach(g=>{
 let d=document.createElement("div");
 d.className="bigCard";
 d.innerHTML=`<div class="icon">${g.icon}</div><div class="label">${g.name}</div>`;
-
 d.onclick=()=>{
 state="list";
 currentGroup=g.name;
 render();
 };
-
 desktop.appendChild(d);
 });
-
 return;
 }
 
-/* ===== PC LIST ===== */
+/* PC LIST */
 grid.style.display="grid";
 
 data.filter(x=>x.group===currentGroup).forEach(t=>{
@@ -276,12 +272,9 @@ d.innerHTML=`<div class="icon">${t.icon}</div><div class="label">${t.name}</div>
 d.onclick=()=>location.href=t.file;
 grid.appendChild(d);
 });
-
 }
 
-/* SWIPE */
 function setupSwipe(){
-
 let startX=0,moveX=0,drag=false;
 
 mobile.onpointerdown=(e)=>{
@@ -292,7 +285,6 @@ drag=true;
 
 mobile.onpointermove=(e)=>{
 if(!drag)return;
-
 moveX=e.clientX;
 let diff=moveX-startX;
 
@@ -323,7 +315,6 @@ c.style.transform=`translateX(${(i-index)*100}%)`;
 mobile.onpointercancel=mobile.onpointerup;
 }
 
-/* BACK */
 backBtn.onclick=()=>{
 if(state==="list"){
 state="groups";
@@ -336,13 +327,6 @@ render();
 render();
 window.onresize=render;
 
-</script>
-
-<!-- PWA REGISTER -->
-<script>
-if ("serviceWorker" in navigator) {
-navigator.serviceWorker.register("sw.js");
-}
 </script>
 
 </body>
