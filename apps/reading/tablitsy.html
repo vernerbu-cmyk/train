@@ -10,7 +10,6 @@
   --orange:#FF6A00;
 }
 
-/* ===== ОБЩЕЕ ===== */
 body{
   margin:0;
   font-family: Arial, sans-serif;
@@ -27,7 +26,6 @@ body{
   padding:14px 10px;
   position:sticky;
   top:0;
-  z-index:10;
 }
 
 /* ===== КОНТРОЛЫ ===== */
@@ -40,10 +38,10 @@ body{
 }
 
 label{
-  font-size:16px;
+  font-size:15px;
 }
 
-/* ===== КНОПКИ (ОРАНЖЕВЫЕ) ===== */
+/* ===== КНОПКИ ===== */
 button{
   background:var(--orange);
   color:#fff;
@@ -52,14 +50,8 @@ button{
   border-radius:10px;
   cursor:pointer;
   font-weight:600;
-
-  /* объём */
   box-shadow:0 4px 0 #b84a00;
   transition:0.1s;
-}
-
-button:hover{
-  filter:brightness(1.05);
 }
 
 button:active{
@@ -70,39 +62,52 @@ button:active{
 /* ===== ТАБЛИЦА ===== */
 table{
   margin:20px auto;
-  border-spacing:10px;
+  width:95%;
+  max-width:900px;
+  border-collapse:separate;
+  table-layout:fixed;
 }
 
-/* карточки */
+/* ===== ЯЧЕЙКИ ===== */
 td{
   background:#fff;
   border-radius:14px;
-  padding:18px 22px;
+  padding:16px;
   text-align:center;
-  font-size:28px; /* увеличили */
+  font-size:24px;
   cursor:pointer;
   user-select:none;
 
   box-shadow:0 6px 18px rgba(0,0,0,0.08);
+  word-break:break-word;
   transition:0.15s;
 }
 
-/* скрытие */
 td.hidden{
   background:var(--orange);
   color:transparent;
-  transform:scale(0.97);
+  transform:scale(0.96);
 }
 
 /* ===== МОБИЛЬНАЯ ===== */
 @media (max-width:600px){
-  td{
-    font-size:20px;
-    padding:14px 16px;
-  }
 
   .header{
     font-size:18px;
+  }
+
+  td{
+    font-size:18px;
+    padding:12px;
+  }
+
+  .controls{
+    gap:6px;
+  }
+
+  button{
+    width:100%;
+    max-width:220px;
   }
 }
 
@@ -125,11 +130,11 @@ td.hidden{
   <label>Строки <input id="rows" type="number" value="5"></label>
   <label>Столбцы <input id="cols" type="number" value="5"></label>
 
-  <label><input id="v1" type="checkbox" checked> 1 гласная</label>
-  <label><input id="v2" type="checkbox" checked> 2 гласные</label>
-  <label><input id="v3" type="checkbox" checked> 3 гласные</label>
-  <label><input id="v4" type="checkbox" checked> 4 гласные</label>
-  <label><input id="v5" type="checkbox" checked> 5+ гласных</label>
+  <label><input id="v1" type="checkbox" checked> 1</label>
+  <label><input id="v2" type="checkbox" checked> 2</label>
+  <label><input id="v3" type="checkbox" checked> 3</label>
+  <label><input id="v4" type="checkbox" checked> 4</label>
+  <label><input id="v5" type="checkbox" checked> 5+</label>
 
   <button onclick="generate()">Сгенерировать</button>
 </div>
@@ -144,21 +149,22 @@ const table = document.getElementById("table");
 
 const vowels = "аеёиоуыэюя";
 
-/* ===== загрузка JSON ===== */
+/* ===== ЗАГРУЗКА ===== */
 async function load(){
   const res = await fetch("./words.json");
   words = await res.json();
 }
 
-/* ===== гласные ===== */
+/* ===== ГЛАСНЫЕ ===== */
 function vowelCount(w){
-  return [...w.toLowerCase()].filter(c => vowels.includes(c)).length;
+  return [...w.toLowerCase()].filter(c=>vowels.includes(c)).length;
 }
 
-/* ===== генерация ===== */
+/* ===== ГЕНЕРАЦИЯ ===== */
 function generate(){
-  const r = +rows.value;
-  const c = +cols.value;
+
+  const r = +rows.value || 5;
+  const c = +cols.value || 5;
   const need = r * c;
 
   const groups = {1:[],2:[],3:[],4:[],5:[]};
@@ -181,21 +187,23 @@ function generate(){
     pool = [...pool, ...words];
   }
 
-  pool = pool.sort(()=>Math.random()-0.5).slice(0,need);
+  pool = pool.sort(()=>Math.random()-0.5).slice(0, need);
 
-  render(pool,r,c);
+  render(pool, r, c);
 }
 
-/* ===== рендер ===== */
-function render(pool,r,c){
-  table.innerHTML="";
-  let i=0;
+/* ===== РЕНДЕР ===== */
+function render(pool, r, c){
 
-  for(let y=0;y<r;y++){
-    const tr=document.createElement("tr");
+  table.innerHTML = "";
 
-    for(let x=0;x<c;x++){
-      const td=document.createElement("td");
+  let i = 0;
+
+  for(let y = 0; y < r; y++){
+    const tr = document.createElement("tr");
+
+    for(let x = 0; x < c; x++){
+      const td = document.createElement("td");
 
       td.textContent = pool[i++] || "—";
 
@@ -208,7 +216,10 @@ function render(pool,r,c){
   }
 }
 
-load().then(generate);
+/* ===== СТАРТ ===== */
+load().then(()=>{
+  setTimeout(generate, 80);
+});
 </script>
 
 </body>
