@@ -26,6 +26,14 @@ body{
   padding:14px;
 }
 
+/* ===== STATUS ===== */
+#status{
+  text-align:center;
+  padding:6px;
+  font-weight:600;
+  font-size:14px;
+}
+
 /* ===== CONTROLS ===== */
 .controls{
   display:flex;
@@ -92,6 +100,34 @@ button:active{
   }
 }
 
+/* ===== PRINT FIX ===== */
+@media print {
+  body{
+    background:#fff;
+  }
+
+  .header,
+  .controls,
+  #status{
+    display:none !important;
+  }
+
+  #grid{
+    max-width:none;
+    margin:0;
+    padding:0;
+    gap:12px;
+  }
+
+  .cell{
+    font-size:28px !important;
+    padding:28px;
+    border:2px solid #000;
+    box-shadow:none;
+    break-inside:avoid;
+  }
+}
+
 /* ===== FOOTER ===== */
 .footer{
   position:fixed;
@@ -107,6 +143,8 @@ button:active{
 
 <div class="header">Таблицы</div>
 
+<div id="status">⏳ ожидание загрузки...</div>
+
 <div class="controls">
   <label>Строки <input id="rows" type="number" value="5"></label>
   <label>Столбцы <input id="cols" type="number" value="5"></label>
@@ -118,30 +156,52 @@ button:active{
   <label><input id="v5" type="checkbox" checked> 5+</label>
 
   <button onclick="generate()">Сгенерировать</button>
-  <button onclick="printTable()">🖨 Печать</button>
-  <button onclick="exportPNG()">🖼 PNG</button>
+  <button onclick="window.print()">🖨 Печать</button>
 </div>
 
 <div id="grid"></div>
 
 <div class="footer">© verner</div>
 
-<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-
 <script>
 let words = [];
 const grid = document.getElementById("grid");
+const status = document.getElementById("status");
 
 const vowels = "аеёиоуыэюя";
 
-/* ===== LOAD JSON ===== */
+/* ===== LOAD JSON (СТАБИЛЬНО) ===== */
 async function load(){
+
   try{
-    const res = await fetch("./words.json");
-    const data = await res.json();
+    status.textContent = "⏳ загрузка JSON...";
+
+    const res = await fetch("./words.json", { cache:"no-store" });
+
+    if(!res.ok){
+      throw new Error("HTTP " + res.status);
+    }
+
+    const text = await res.text();
+
+    let data;
+    try{
+      data = JSON.parse(text);
+    }catch(e){
+      throw new Error("JSON сломан");
+    }
+
     words = Array.isArray(data) ? data : (data.words || []);
+
+    if(!words.length){
+      throw new Error("пустой список слов");
+    }
+
+    status.textContent = "✔ слов загружено: " + words.length;
+
   }catch(e){
-    console.error("JSON error:", e);
+    console.error(e);
+    status.textContent = "❌ JSON не загрузился";
     words = [];
   }
 }
@@ -150,26 +210,6 @@ async function load(){
 function vowelCount(word){
   return [...word.toLowerCase()]
     .filter(c => vowels.includes(c)).length;
-}
-
-/* ===== RENDER ===== */
-function render(list, cols){
-
-  grid.innerHTML = "";
-
-  const isMobile = window.innerWidth < 600;
-  const finalCols = isMobile ? Math.min(cols, 2) : cols;
-
-  grid.style.gridTemplateColumns =
-    `repeat(${finalCols}, minmax(120px, 1fr))`;
-
-  list.forEach(word=>{
-    const div = document.createElement("div");
-    div.className = "cell";
-    div.textContent = word;
-    div.onclick = ()=>div.classList.toggle("hidden");
-    grid.appendChild(div);
-  });
 }
 
 /* ===== GENERATE ===== */
@@ -207,52 +247,28 @@ function generate(){
   render(pool, c);
 }
 
-/* ===== PRINT ===== */
-function printTable(){
-  const win = window.open("");
-  win.document.write(`
-    <html>
-    <head>
-    <style>
-      body{font-family:Arial;padding:20px;}
-      .grid{
-        display:grid;
-        grid-template-columns:repeat(${cols.value},1fr);
-        gap:10px;
-      }
-      .cell{
-        border:1px solid #000;
-        padding:10px;
-        text-align:center;
-        font-size:18px;
-      }
-    </style>
-    </head>
-    <body>
-    <div class="grid">
-      ${[...grid.children].map(c=>`
-        <div class="cell">${c.textContent}</div>
-      `).join("")}
-    </div>
-    </body>
-    </html>
-  `);
-  win.print();
-}
+/* ===== RENDER ===== */
+function render(list, cols){
 
-/* ===== PNG EXPORT ===== */
-function exportPNG(){
-  html2canvas(grid).then(canvas=>{
-    const link = document.createElement("a");
-    link.download = "table.png";
-    link.href = canvas.toDataURL();
-    link.click();
+  grid.innerHTML = "";
+
+  const isMobile = window.innerWidth < 600;
+  const finalCols = isMobile ? Math.min(cols, 2) : cols;
+
+  grid.style.gridTemplateColumns =
+    `repeat(${finalCols}, minmax(120px, 1fr))`;
+
+  list.forEach(word=>{
+    const div = document.createElement("div");
+    div.className = "cell";
+    div.textContent = word;
+    div.onclick = ()=>div.classList.toggle("hidden");
+    grid.appendChild(div);
   });
 }
 
 /* ===== START ===== */
 load();
-
 </script>
 
 </body>
