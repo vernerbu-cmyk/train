@@ -33,6 +33,11 @@ body{
   gap:10px;
   justify-content:center;
   padding:12px;
+  align-items:center;
+}
+
+label{
+  font-size:14px;
 }
 
 /* ===== BUTTONS ===== */
@@ -56,18 +61,19 @@ button:active{
 #grid{
   display:grid;
   gap:10px;
-  max-width:900px;
+  max-width:1000px;
   margin:20px auto;
   padding:0 10px;
 }
 
-/* CELL */
+/* ===== CELL ===== */
 .cell{
   background:#fff;
-  border-radius:14px;
-  padding:16px;
+  border-radius:16px;
+  padding:22px;
   text-align:center;
-  font-size:22px;
+  font-size:26px;
+  font-weight:500;
   user-select:none;
   cursor:pointer;
   box-shadow:0 6px 18px rgba(0,0,0,0.08);
@@ -81,12 +87,8 @@ button:active{
 /* ===== MOBILE ===== */
 @media (max-width:600px){
   .cell{
-    font-size:18px;
-    padding:12px;
-  }
-
-  .header{
-    font-size:18px;
+    font-size:22px;
+    padding:26px 12px;
   }
 }
 
@@ -116,11 +118,15 @@ button:active{
   <label><input id="v5" type="checkbox" checked> 5+</label>
 
   <button onclick="generate()">Сгенерировать</button>
+  <button onclick="printTable()">🖨 Печать</button>
+  <button onclick="exportPNG()">🖼 PNG</button>
 </div>
 
 <div id="grid"></div>
 
 <div class="footer">© verner</div>
+
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 <script>
 let words = [];
@@ -128,39 +134,57 @@ const grid = document.getElementById("grid");
 
 const vowels = "аеёиоуыэюя";
 
-/* ===== ЗАГРУЗКА JSON ===== */
+/* ===== LOAD JSON ===== */
 async function load(){
   try{
     const res = await fetch("./words.json");
     const data = await res.json();
-
     words = Array.isArray(data) ? data : (data.words || []);
-
-    console.log("WORDS LOADED:", words.length);
   }catch(e){
-    console.error("JSON ERROR:", e);
+    console.error("JSON error:", e);
     words = [];
   }
 }
 
 /* ===== ГЛАСНЫЕ ===== */
 function vowelCount(word){
-  return [...word.toLowerCase()].filter(c => vowels.includes(c)).length;
+  return [...word.toLowerCase()]
+    .filter(c => vowels.includes(c)).length;
 }
 
-/* ===== ГЕНЕРАЦИЯ ===== */
+/* ===== RENDER ===== */
+function render(list, cols){
+
+  grid.innerHTML = "";
+
+  const isMobile = window.innerWidth < 600;
+  const finalCols = isMobile ? Math.min(cols, 2) : cols;
+
+  grid.style.gridTemplateColumns =
+    `repeat(${finalCols}, minmax(120px, 1fr))`;
+
+  list.forEach(word=>{
+    const div = document.createElement("div");
+    div.className = "cell";
+    div.textContent = word;
+    div.onclick = ()=>div.classList.toggle("hidden");
+    grid.appendChild(div);
+  });
+}
+
+/* ===== GENERATE ===== */
 function generate(){
 
   if(!words.length){
-    console.warn("NO WORDS LOADED");
+    grid.innerHTML = "<div style='text-align:center'>Нет слов</div>";
     return;
   }
 
-  const r = parseInt(rows.value) || 5;
-  const c = parseInt(cols.value) || 5;
+  const r = +rows.value || 5;
+  const c = +cols.value || 5;
   const need = r * c;
 
-  let filtered = words.filter(w=>{
+  let pool = words.filter(w=>{
     const v = vowelCount(w);
 
     return (
@@ -172,40 +196,63 @@ function generate(){
     );
   });
 
-  if(filtered.length < need){
-    filtered = [...filtered, ...words];
+  if(pool.length < need){
+    pool = [...pool, ...words];
   }
 
-  filtered = filtered
-    .sort(() => Math.random() - 0.5)
+  pool = pool
+    .sort(()=>Math.random()-0.5)
     .slice(0, need);
 
-  render(filtered, c);
+  render(pool, c);
 }
 
-/* ===== RENDER ===== */
-function render(list, cols){
+/* ===== PRINT ===== */
+function printTable(){
+  const win = window.open("");
+  win.document.write(`
+    <html>
+    <head>
+    <style>
+      body{font-family:Arial;padding:20px;}
+      .grid{
+        display:grid;
+        grid-template-columns:repeat(${cols.value},1fr);
+        gap:10px;
+      }
+      .cell{
+        border:1px solid #000;
+        padding:10px;
+        text-align:center;
+        font-size:18px;
+      }
+    </style>
+    </head>
+    <body>
+    <div class="grid">
+      ${[...grid.children].map(c=>`
+        <div class="cell">${c.textContent}</div>
+      `).join("")}
+    </div>
+    </body>
+    </html>
+  `);
+  win.print();
+}
 
-  grid.innerHTML = "";
-
-  grid.style.gridTemplateColumns =
-    `repeat(${cols}, minmax(80px, 1fr))`;
-
-  list.forEach(word=>{
-    const div = document.createElement("div");
-    div.className = "cell";
-    div.textContent = word;
-
-    div.onclick = () => div.classList.toggle("hidden");
-
-    grid.appendChild(div);
+/* ===== PNG EXPORT ===== */
+function exportPNG(){
+  html2canvas(grid).then(canvas=>{
+    const link = document.createElement("a");
+    link.download = "table.png";
+    link.href = canvas.toDataURL();
+    link.click();
   });
 }
 
 /* ===== START ===== */
-load().then(()=>{
-  setTimeout(generate, 100);
-});
+load();
+
 </script>
 
 </body>
