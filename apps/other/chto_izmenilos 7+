@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRO MEMORY</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0f1b3d;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+header {
+    width: 100%;
+    background: #1E3F8A;
+    padding: 16px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+/* НАСТРОЙКИ */
+#panel {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+select, button {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: none;
+    font-weight: bold;
+}
+
+button {
+    background: orange;
+    cursor: pointer;
+}
+
+button:active {
+    transform: scale(0.95);
+}
+
+/* СТАТЫ */
+#stats {
+    margin-top: 10px;
+    font-size: 15px;
+    opacity: 0.9;
+}
+
+/* ФИДБЭК */
+#feedback {
+    margin-top: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    min-height: 24px;
+}
+
+/* ИГРОВОЕ ПОЛЕ */
+#game {
+    margin-top: 20px;
+    display: grid;
+    gap: 10px;
+}
+
+.cell {
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+    background: #2c3e70;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.cell:hover {
+    transform: scale(1.05);
+}
+
+.correct { background: #2ecc71 !important; }
+.wrong { background: #e74c3c !important; }
+</style>
+</head>
+
+<body>
+
+<header>🧠 PRO MEMORY</header>
+
+<div id="panel">
+    📦
+    <select id="size">
+        <option value="9">3×3</option>
+        <option value="16" selected>4×4</option>
+        <option value="25">5×5</option>
+    </select>
+
+    🔀
+    <select id="changes">
+        <option value="1">1 изменение</option>
+        <option value="2" selected>2 изменения</option>
+        <option value="3">3 изменения</option>
+        <option value="4">4 изменения</option>
+    </select>
+
+    ⏱
+    <select id="speed">
+        <option value="3200">Медленно</option>
+        <option value="2500" selected>Средне</option>
+        <option value="1700">Быстро</option>
+    </select>
+
+    <button onclick="startGame()">Старт</button>
+</div>
+
+<div id="stats">
+Уровень: <span id="level">1</span> |
+Очки: <span id="score">0</span> |
+Найдено: <span id="found">0</span>/<span id="total">0</span>
+</div>
+
+<div id="feedback"></div>
+
+<div id="game"></div>
+
+<script>
+const symbols = ["🔵","🟡","🟢","🔺","⬛","⭐","🍎","⚪"];
+
+let baseState = [];
+let changedState = [];
+let changedIndices = [];
+
+let showing = false;
+
+let level = 1;
+let score = 0;
+let found = 0;
+let total = 0;
+let streak = 0;
+
+const game = document.getElementById("game");
+
+function randomSymbol() {
+    return symbols[Math.floor(Math.random() * symbols.length)];
+}
+
+function updateStats() {
+    document.getElementById("level").textContent = level;
+    document.getElementById("score").textContent = score;
+    document.getElementById("found").textContent = found;
+    document.getElementById("total").textContent = total;
+}
+
+function showFeedback(text) {
+    document.getElementById("feedback").textContent = text;
+}
+
+function createGrid(state, size) {
+    game.style.gridTemplateColumns = `repeat(${Math.sqrt(size)}, 60px)`;
+
+    game.innerHTML = "";
+    state.forEach((s, i) => {
+        const div = document.createElement("div");
+        div.className = "cell";
+        div.textContent = s;
+        div.onclick = () => checkAnswer(i, div);
+        game.appendChild(div);
+    });
+}
+
+function generateLevel() {
+    const size = parseInt(document.getElementById("size").value);
+    const changeCount = parseInt(document.getElementById("changes").value);
+    const speed = parseInt(document.getElementById("speed").value);
+
+    total = changeCount;
+    found = 0;
+
+    baseState = [];
+    for (let i = 0; i < size; i++) {
+        baseState.push(randomSymbol());
+    }
+
+    changedState = [...baseState];
+    changedIndices = [];
+
+    while (changedIndices.length < changeCount) {
+        let idx = Math.floor(Math.random() * size);
+        if (!changedIndices.includes(idx)) {
+            changedIndices.push(idx);
+        }
+    }
+
+    changedIndices.forEach(i => {
+        changedState[i] = randomSymbol();
+    });
+
+    showing = true;
+    createGrid(baseState, size);
+
+    setTimeout(() => {
+        showing = false;
+        createGrid(changedState, size);
+    }, speed);
+}
+
+function startGame() {
+    level = 1;
+    score = 0;
+    streak = 0;
+    updateStats();
+    nextLevel();
+}
+
+function nextLevel() {
+    generateLevel();
+}
+
+function checkAnswer(index, el) {
+    if (showing) return;
+
+    if (changedIndices.includes(index)) {
+        if (!el.classList.contains("correct")) {
+            el.classList.add("correct");
+
+            found++;
+            streak++;
+
+            score += 10 + (streak >= 3 ? 2 : 0);
+
+            showFeedback("✅ Верно!");
+        }
+    } else {
+        el.classList.add("wrong");
+
+        streak = 0;
+        score -= 1;
+
+        showFeedback("❌ Ошибка");
+    }
+
+    updateStats();
+
+    if (found >= total) {
+        showFeedback("⚡ Уровень пройден!");
+        level++;
+        setTimeout(nextLevel, 800);
+    }
+}
+</script>
+
+</body>
+</html>
