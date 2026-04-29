@@ -8,72 +8,91 @@
 <style>
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f4f6fb;
+    font-family: "Arial", sans-serif;
+    background: radial-gradient(circle at top, #f4f6fb, #e8edff);
     display: flex;
     flex-direction: column;
     align-items: center;
+    color: #1E3F8A;
 }
 
-/* HEADER */
 .header {
     width: 100%;
-    background: #1E3F8A;
+    background: linear-gradient(135deg, #1E3F8A, #274db0);
     color: white;
     text-align: center;
-    padding: 14px;
+    padding: 16px;
     font-size: 20px;
-    font-weight: bold;
+    font-weight: 700;
+    letter-spacing: 0.5px;
 }
 
-/* START */
 .start-screen {
-    margin-top: 40px;
+    margin-top: 50px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
     align-items: center;
 }
 
 .big-btn {
-    padding: 22px 40px;
+    padding: 22px 46px;
     font-size: 22px;
-    background: #FF8C00;
+    background: linear-gradient(135deg, #FF8C00, #ff6a00);
     color: white;
     border: none;
-    border-radius: 16px;
+    border-radius: 18px;
     cursor: pointer;
+    box-shadow: 0 10px 20px rgba(255,140,0,0.25);
 }
 
-/* WARNING */
-.warning {
-    color: #d9534f;
-    font-size: 13px;
-    display: none;
+.timer-box {
+    width: min(92vw, 720px);
+    margin: 14px 0;
+    text-align: center;
 }
 
-/* GRID */
+.timer-text {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.timer-wrap {
+    width: 100%;
+    height: 12px;
+    background: #e6e9f2;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.timer-bar {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #1E3F8A, #3b82f6);
+    transition: width 1s linear;
+}
+
+.hidden { display:none; }
+
 .grid {
     display: grid;
-    gap: 10px;
+    gap: 12px;
     width: min(92vw, 720px);
     margin-bottom: 90px;
 }
 
-/* CARD */
 .card {
     aspect-ratio: 1 / 1;
     width: 100%;
-    min-width: 44px;
-    min-height: 44px;
-    perspective: 800px;
+    perspective: 900px;
     cursor: pointer;
 }
 
 .inner {
     width: 100%;
     height: 100%;
-    transition: transform 0.55s;
+    transition: transform 0.55s ease;
     transform-style: preserve-3d;
     position: relative;
 }
@@ -85,7 +104,7 @@ body {
 .face {
     position: absolute;
     inset: 0;
-    border-radius: 14px;
+    border-radius: 16px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -93,34 +112,16 @@ body {
 }
 
 .front {
-    background: linear-gradient(145deg, #1E3F8A, #274db0);
+    background: linear-gradient(145deg, #1E3F8A, #2a56c6);
     color: white;
-    font-size: clamp(14px, 2vw, 22px);
+    font-size: 18px;
     font-weight: 600;
 }
 
 .back {
     background: white;
     transform: rotateY(180deg);
-    border: 2px solid rgba(30,63,138,0.25);
-    font-size: clamp(26px, 6vw, 52px);
-}
-
-/* MOBILE SMART */
-@media (max-width: 600px) {
-
-    .grid {
-        gap: 6px;
-        width: 96vw;
-    }
-
-    .back {
-        font-size: 38px;
-    }
-
-    .front {
-        font-size: 14px;
-    }
+    font-size: 42px;
 }
 </style>
 </head>
@@ -129,11 +130,11 @@ body {
 
 <div class="header">MEMO тренажёр памяти</div>
 
-<div class="start-screen">
+<div class="start-screen" id="startScreen">
 
     <label>
         Сетка:
-        <select id="size" onchange="checkMobile()">
+        <select id="size">
             <option value="4">4×4</option>
             <option value="6">6×6</option>
             <option value="8">8×8</option>
@@ -143,68 +144,93 @@ body {
     <label>
         Запоминание:
         <select id="preview">
-            <option value="2">2с</option>
-            <option value="4" selected>4с</option>
-            <option value="6">6с</option>
+            <option value="5">5 сек</option>
+            <option value="8" selected>8 сек</option>
+            <option value="12">12 сек</option>
+            <option value="20">20 сек</option>
+            <option value="30">30 сек</option>
+            <option value="60">60 сек</option>
         </select>
     </label>
-
-    <div class="warning" id="warning">
-        ⚠ На телефоне 8×8 может быть слишком мелко
-    </div>
 
     <button class="big-btn" onclick="startGame()">▶ НАЧАТЬ</button>
 </div>
 
 <div id="game" class="hidden">
 
-    <div class="grid" id="grid"></div>
+    <div class="timer-box">
+        <div class="timer-text" id="timerText">Запоминание...</div>
+        <div class="timer-wrap">
+            <div class="timer-bar" id="timerBar"></div>
+        </div>
+    </div>
 
+    <div class="grid" id="grid"></div>
 </div>
 
 <script>
+
 const icons = [
 "🍎","🚗","🐶","⚽","🌙","🎲","🎧","🔥",
 "🐱","🐸","🦊","🐼","🍕","🍉","🚀","🎈",
 "🏀","🎮","📚","✏️","🎯","🧠","⚡","🌈",
-"🐝","🦁","🐙","🍩","🧩","🚁","🏆","🎲"
+"🐝","🦁","🐙","🍩","🧩","🚁","🏆","💡"
 ];
+
+/* 🔥 Фишер-Йейтс (правильный shuffle) */
+function shuffle(a){
+    for(let i=a.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [a[i],a[j]]=[a[j],a[i]];
+    }
+    return a;
+}
 
 let cards=[], first=null, lock=false;
 
-/* 📱 DETECT MOBILE */
-function isMobile(){
-    return window.innerWidth < 600;
+/* TIMER */
+function runTimer(sec,cb){
+    const bar=document.getElementById("timerBar");
+    const text=document.getElementById("timerText");
+
+    let t=sec;
+    const total=sec;
+
+    const int=setInterval(()=>{
+
+        text.textContent=`Запоминание: ${t} сек`;
+        bar.style.width=(t/total)*100+"%";
+
+        if(t<=0){
+            clearInterval(int);
+            cb();
+        }
+
+        t--;
+    },1000);
 }
-
-/* ⚠ CHECK */
-function checkMobile(){
-    const size=document.getElementById("size").value;
-    const warn=document.getElementById("warning");
-
-    if(isMobile() && size=="8"){
-        warn.style.display="block";
-    } else {
-        warn.style.display="none";
-    }
-}
-
-window.addEventListener("resize", checkMobile);
-
-/* SHUFFLE */
-function shuffle(a){return a.sort(()=>Math.random()-0.5);}
 
 /* START */
 function startGame(){
-    document.getElementById("game").classList.remove("hidden");
 
     const size=+document.getElementById("size").value;
     const preview=+document.getElementById("preview").value;
 
+    document.getElementById("startScreen").classList.add("hidden");
+    document.getElementById("game").classList.remove("hidden");
+
     const total=size*size;
     const pairs=total/2;
 
-    const pick=shuffle([...icons]).slice(0,pairs);
+    /* 🔥 УНИКАЛЬНЫЙ ВЫБОР БЕЗ ДУБЛЕЙ */
+    const pool=[...icons];
+    const pick=[];
+
+    for(let i=0;i<pairs;i++){
+        const idx=Math.floor(Math.random()*pool.length);
+        pick.push(pool.splice(idx,1)[0]);
+    }
+
     cards=shuffle([...pick,...pick]);
 
     const grid=document.getElementById("grid");
@@ -215,7 +241,7 @@ function startGame(){
 
     cards.forEach((ic,i)=>{
         const c=document.createElement("div");
-        c.className="card";
+        c.className="card flipped";
         c.dataset.icon=ic;
 
         c.innerHTML=`
@@ -228,17 +254,17 @@ function startGame(){
         grid.appendChild(c);
     });
 
-    document.querySelectorAll(".card").forEach(c=>c.classList.add("flipped"));
-
-    setTimeout(()=>{
-        document.querySelectorAll(".card").forEach(c=>c.classList.remove("flipped"));
+    runTimer(preview,()=>{
+        document.querySelectorAll(".card").forEach(c=>{
+            c.classList.remove("flipped");
+        });
         lock=false;
-    },preview*1000);
+    });
 }
 
 /* FLIP */
 function flip(card){
-    if(lock||card.classList.contains("flipped")) return;
+    if(lock || card.classList.contains("flipped")) return;
 
     card.classList.add("flipped");
 
@@ -260,7 +286,6 @@ function flip(card){
     }
 }
 
-checkMobile();
 </script>
 
 </body>
