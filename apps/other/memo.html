@@ -8,7 +8,7 @@
 <style>
 body {
     margin: 0;
-    font-family: "Arial", sans-serif;
+    font-family: Arial, sans-serif;
     background: radial-gradient(circle at top, #f4f6fb, #e8edff);
     display: flex;
     flex-direction: column;
@@ -16,6 +16,7 @@ body {
     color: #1E3F8A;
 }
 
+/* HEADER */
 .header {
     width: 100%;
     background: linear-gradient(135deg, #1E3F8A, #274db0);
@@ -24,9 +25,9 @@ body {
     padding: 16px;
     font-size: 20px;
     font-weight: 700;
-    letter-spacing: 0.5px;
 }
 
+/* START */
 .start-screen {
     margin-top: 50px;
     display: flex;
@@ -43,38 +44,19 @@ body {
     border: none;
     border-radius: 18px;
     cursor: pointer;
-    box-shadow: 0 10px 20px rgba(255,140,0,0.25);
 }
 
-.timer-box {
-    width: min(92vw, 720px);
-    margin: 14px 0;
-    text-align: center;
-}
-
-.timer-text {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 6px;
-}
-
-.timer-wrap {
-    width: 100%;
-    height: 12px;
-    background: #e6e9f2;
-    border-radius: 999px;
-    overflow: hidden;
-}
-
+/* TIMER */
 .timer-bar {
-    height: 100%;
-    width: 100%;
+    width: min(92vw, 720px);
+    height: 10px;
     background: linear-gradient(90deg, #1E3F8A, #3b82f6);
+    border-radius: 999px;
+    margin: 14px 0;
     transition: width 1s linear;
 }
 
-.hidden { display:none; }
-
+/* GRID */
 .grid {
     display: grid;
     gap: 12px;
@@ -82,8 +64,9 @@ body {
     margin-bottom: 90px;
 }
 
+/* CARD */
 .card {
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 1/1;
     width: 100%;
     perspective: 900px;
     cursor: pointer;
@@ -101,6 +84,7 @@ body {
     transform: rotateY(180deg);
 }
 
+/* FACES */
 .face {
     position: absolute;
     inset: 0;
@@ -122,6 +106,32 @@ body {
     background: white;
     transform: rotateY(180deg);
     font-size: 42px;
+    border: 1px solid rgba(30,63,138,0.2);
+}
+
+/* MATCH ANIMATION */
+.card.matching {
+    animation: match 1s ease forwards;
+}
+
+@keyframes match {
+    0% { transform: scale(1); opacity: 1; }
+    40% { transform: scale(1.2) rotate(4deg); }
+    100% { transform: scale(0); opacity: 0; }
+}
+
+/* RESULT */
+.result-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 30px;
+    text-align: center;
+}
+
+#resultGrade {
+    font-size: 52px;
+    font-weight: bold;
 }
 </style>
 </head>
@@ -132,8 +142,7 @@ body {
 
 <div class="start-screen" id="startScreen">
 
-    <label>
-        Сетка:
+    <label>Сетка:
         <select id="size">
             <option value="4">4×4</option>
             <option value="6">6×6</option>
@@ -141,14 +150,12 @@ body {
         </select>
     </label>
 
-    <label>
-        Запоминание:
+    <label>Запоминание:
         <select id="preview">
             <option value="5">5 сек</option>
             <option value="8" selected>8 сек</option>
             <option value="12">12 сек</option>
             <option value="20">20 сек</option>
-            <option value="30">30 сек</option>
             <option value="60">60 сек</option>
         </select>
     </label>
@@ -158,55 +165,74 @@ body {
 
 <div id="game" class="hidden">
 
-    <div class="timer-box">
-        <div class="timer-text" id="timerText">Запоминание...</div>
-        <div class="timer-wrap">
-            <div class="timer-bar" id="timerBar"></div>
-        </div>
-    </div>
-
+    <div class="timer-bar" id="timerBar"></div>
     <div class="grid" id="grid"></div>
+
+</div>
+
+<div class="result-screen" id="resultScreen">
+    <h2 id="resultGrade"></h2>
+    <div id="resultText"></div>
+    <button class="big-btn" onclick="location.reload()">ЗАНОВО</button>
 </div>
 
 <script>
 
-const icons = [
+/* 🔊 ЗВУК (ДОБАВЛЕНО) */
+function beep(freq){
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+
+    o.connect(g);
+    g.connect(ctx.destination);
+
+    o.frequency.value = freq;
+    o.type = "sine";
+
+    g.gain.value = 0.08;
+
+    o.start();
+    setTimeout(()=>{ o.stop(); ctx.close(); }, 120);
+}
+
+const icons=[
 "🍎","🚗","🐶","⚽","🌙","🎲","🎧","🔥",
 "🐱","🐸","🦊","🐼","🍕","🍉","🚀","🎈",
 "🏀","🎮","📚","✏️","🎯","🧠","⚡","🌈",
 "🐝","🦁","🐙","🍩","🧩","🚁","🏆","💡"
 ];
 
-/* 🔥 Фишер-Йейтс (правильный shuffle) */
+let cards=[], first=null, lock=false;
+let pairs=0, moves=0;
+
+/* shuffle */
 function shuffle(a){
     for(let i=a.length-1;i>0;i--){
-        const j=Math.floor(Math.random()*(i+1));
+        let j=Math.floor(Math.random()*(i+1));
         [a[i],a[j]]=[a[j],a[i]];
     }
     return a;
 }
 
-let cards=[], first=null, lock=false;
+/* TIMER — СТРОГО В ФАЗЕ ЗАПОМИНАНИЯ */
+function runTimer(sec){
 
-/* TIMER */
-function runTimer(sec,cb){
     const bar=document.getElementById("timerBar");
-    const text=document.getElementById("timerText");
-
     let t=sec;
-    const total=sec;
 
-    const int=setInterval(()=>{
+    bar.style.width="100%";
 
-        text.textContent=`Запоминание: ${t} сек`;
-        bar.style.width=(t/total)*100+"%";
-
-        if(t<=0){
-            clearInterval(int);
-            cb();
-        }
+    const interval=setInterval(()=>{
 
         t--;
+        bar.style.width=(t/sec)*100+"%";
+
+        if(t<=0){
+            clearInterval(interval);
+            bar.style.width="0%";
+        }
+
     },1000);
 }
 
@@ -216,17 +242,13 @@ function startGame(){
     const size=+document.getElementById("size").value;
     const preview=+document.getElementById("preview").value;
 
-    document.getElementById("startScreen").classList.add("hidden");
-    document.getElementById("game").classList.remove("hidden");
-
     const total=size*size;
-    const pairs=total/2;
+    const need=total/2;
 
-    /* 🔥 УНИКАЛЬНЫЙ ВЫБОР БЕЗ ДУБЛЕЙ */
     const pool=[...icons];
     const pick=[];
 
-    for(let i=0;i<pairs;i++){
+    for(let i=0;i<need;i++){
         const idx=Math.floor(Math.random()*pool.length);
         pick.push(pool.splice(idx,1)[0]);
     }
@@ -237,7 +259,13 @@ function startGame(){
     grid.innerHTML="";
     grid.style.gridTemplateColumns=`repeat(${size},1fr)`;
 
+    document.getElementById("startScreen").classList.add("hidden");
+    document.getElementById("game").classList.remove("hidden");
+
     lock=true;
+    first=null;
+    pairs=0;
+    moves=0;
 
     cards.forEach((ic,i)=>{
         const c=document.createElement("div");
@@ -254,16 +282,20 @@ function startGame(){
         grid.appendChild(c);
     });
 
-    runTimer(preview,()=>{
+    runTimer(preview);
+
+    setTimeout(()=>{
         document.querySelectorAll(".card").forEach(c=>{
             c.classList.remove("flipped");
         });
+
         lock=false;
-    });
+    }, preview*1000);
 }
 
 /* FLIP */
 function flip(card){
+
     if(lock || card.classList.contains("flipped")) return;
 
     card.classList.add("flipped");
@@ -273,17 +305,71 @@ function flip(card){
         return;
     }
 
+    moves++;
+    lock=true;
+
     if(first.dataset.icon===card.dataset.icon){
+
+        beep(600); // 🔊 совпадение
+
+        const a=first;
+        const b=card;
+
         first=null;
-    } else {
-        lock=true;
+
         setTimeout(()=>{
+            a.classList.add("matching");
+            b.classList.add("matching");
+        },150);
+
+        setTimeout(()=>{
+
+            a.style.visibility = "hidden";
+            b.style.visibility = "hidden";
+
+            pairs++;
+            lock=false;
+
+            if(pairs===cards.length/2){
+                finishGame();
+            }
+
+        },1000);
+
+    } else {
+
+        setTimeout(()=>{
+
             first.classList.remove("flipped");
             card.classList.remove("flipped");
+
             first=null;
             lock=false;
+
         },700);
     }
+}
+
+/* FINISH */
+function finishGame(){
+
+    beep(300); // 🔊 конец
+
+    const total=cards.length/2;
+    const acc=pairs/Math.max(1,moves);
+    const percent=Math.round(acc*100);
+
+    let grade="C";
+    if(percent>=90) grade="S";
+    else if(percent>=80) grade="A";
+    else if(percent>=60) grade="B";
+
+    document.getElementById("game").style.display="none";
+    document.getElementById("resultScreen").style.display="flex";
+
+    document.getElementById("resultGrade").textContent=grade;
+    document.getElementById("resultText").textContent=
+        `Пары: ${pairs}/${total} | Ходы: ${moves}`;
 }
 
 </script>
