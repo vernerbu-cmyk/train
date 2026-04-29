@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Что лишнее?</title>
+
+<style>
+/* ===== ОБЩИЙ СТИЛЬ ===== */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f6fb;
+  text-align: center;
+}
+
+/* ===== ВЕРХНЯЯ ПАНЕЛЬ ===== */
+.header {
+  background: #1E3F8A;
+  color: white;
+  padding: 18px 10px;
+  font-size: 26px;
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* ===== КОНТЕНТ ===== */
+.wrapper {
+  padding: 20px;
+}
+
+/* ===== СЕТКА ===== */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 120px);
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+/* ===== КАРТОЧКИ ===== */
+.card {
+  font-size: 50px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 16px;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.card:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* ===== КНОПКИ ===== */
+button, select {
+  margin-top: 15px;
+  padding: 10px 18px;
+  font-size: 16px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+}
+
+/* ОРАНЖЕВАЯ КНОПКА */
+button {
+  background: #FF6A00;
+  color: white;
+  box-shadow: 0 4px 0 #c84f00;
+  cursor: pointer;
+}
+
+button:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #c84f00;
+}
+
+/* SELECT */
+select {
+  border: 2px solid #FF6A00;
+  background: white;
+}
+
+/* ===== СООБЩЕНИЕ ===== */
+#msg {
+  margin-top: 18px;
+  font-size: 22px;
+  font-weight: bold;
+  color: #1E3F8A;
+}
+
+/* ===== ФУТЕР ===== */
+.footer {
+  position: fixed;
+  right: 10px;
+  bottom: 6px;
+  font-size: 11px;
+  color: rgba(0,0,0,0.4);
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">Что лишнее?</div>
+
+<div class="wrapper">
+
+  <select id="difficulty">
+    <option value="easy">Легко</option>
+    <option value="medium" selected>Средне</option>
+    <option value="hard">Сложно</option>
+    <option value="super">Супер сложно</option>
+  </select>
+
+  <br>
+
+  <button onclick="generate()">Новый уровень</button>
+
+  <div id="grid" class="grid"></div>
+  <div id="msg"></div>
+
+</div>
+
+<div class="footer">© verner</div>
+
+<script>
+
+/* ===== ЛОГИКА НЕ ТРОГАЛАСЬ ===== */
+
+const categories = [
+  { items: ["🐶","🐱","🐰","🦊","🐻","🐼","🐯","🦁","🐮","🐷","🐸","🐵","🐔","🦆","🦉","🐺","🐴","🐑","🐘","🐭","🐹"] },
+
+  { items: ["🐟","🐠","🐡","🐬","🐳","🐋","🐙","🦀","🦑","🐚","🐊","🐢","🦈","🦞","🦐"] },
+
+  { items: ["🚗","🚕","🚙","🚲","🚌","🚎","🚓","🚑","🚒","🚜","🚂","🚆","🚊","✈️","🚁","🚀","🚢","⛵","🛳️","🛥️","🛴"] },
+
+  { items: ["🍎","🍏","🍌","🍓","🍇","🍉","🍒","🍍","🥝","🍐","🍊","🍋","🍑","🥭","🍅","🥕","🥒","🌽","🥔","🧄","🧅"] },
+
+  { items: ["☀️","🌙","⭐","🌧️","❄️","🌈","🔥","🌊","🌿","🌳","🌲","🌴","🌵","🍀","🍁","🍂","🌸","🌼","🌻"] },
+
+  { items: ["⚽","🏀","🎾","🏐","🏈","🥊","🎯","🏓","🥅","🏆","🥇","🥈","🥉","🎳","⛳","🏸","🤸","🏊","🚴"] },
+
+  { items: ["🔴","🟠","🟡","🟢","🔵","🟣","⚫","⚪","🟥","🟧","🟨","🟩","🟦","🟪","⬛","⬜","⭐"] }
+];
+
+let correct = "";
+
+function rand(arr){
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+
+function shuffle(arr){
+  return arr.sort(()=>Math.random()-0.5);
+}
+
+function pickUnique(arr, count){
+  const copy = [...new Set(arr)];
+  const res = [];
+  while(res.length < count){
+    const i = Math.floor(Math.random()*copy.length);
+    res.push(copy.splice(i,1)[0]);
+  }
+  return res;
+}
+
+function generate(){
+
+  const grid = document.getElementById("grid");
+  const msg = document.getElementById("msg");
+  const difficulty = document.getElementById("difficulty").value;
+  msg.textContent = "";
+
+  let goodCat = rand(categories);
+  let badCat = rand(categories);
+
+  while(badCat === goodCat){
+    badCat = rand(categories);
+  }
+
+  let goodItems = [];
+  let badItem = "";
+
+  if(difficulty === "easy"){
+    goodItems = pickUnique(goodCat.items, 3);
+    badItem = rand(badCat.items);
+  }
+
+  if(difficulty === "medium"){
+    goodItems = pickUnique(goodCat.items, 3);
+    badItem = rand(goodCat.items);
+  }
+
+  if(difficulty === "hard"){
+    goodItems = pickUnique(goodCat.items, 3);
+    badItem = rand(goodCat.items);
+  }
+
+  if(difficulty === "super"){
+    goodItems = pickUnique(goodCat.items, 3);
+    badItem = rand(goodCat.items.filter(x => !goodItems.includes(x)));
+  }
+
+  const all = shuffle([...goodItems, badItem]);
+  correct = badItem;
+
+  grid.innerHTML = "";
+
+  all.forEach(el=>{
+    const div = document.createElement("div");
+    div.className = "card";
+    div.textContent = el;
+
+    div.onclick = ()=>{
+      msg.textContent = (el === correct) ? "🎉 Верно!" : "❌ Попробуй ещё";
+    };
+
+    grid.appendChild(div);
+  });
+}
+
+generate();
+
+</script>
+
+</body>
+</html>
