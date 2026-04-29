@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEMO тренажёр</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f6fb;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* HEADER */
+.header {
+    width: 100%;
+    background: #1E3F8A;
+    color: white;
+    text-align: center;
+    padding: 14px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* START */
+.start-screen {
+    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+}
+
+.big-btn {
+    padding: 22px 40px;
+    font-size: 22px;
+    background: #FF8C00;
+    color: white;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+}
+
+/* WARNING */
+.warning {
+    color: #d9534f;
+    font-size: 13px;
+    display: none;
+}
+
+/* GRID */
+.grid {
+    display: grid;
+    gap: 10px;
+    width: min(92vw, 720px);
+    margin-bottom: 90px;
+}
+
+/* CARD */
+.card {
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    min-width: 44px;
+    min-height: 44px;
+    perspective: 800px;
+    cursor: pointer;
+}
+
+.inner {
+    width: 100%;
+    height: 100%;
+    transition: transform 0.55s;
+    transform-style: preserve-3d;
+    position: relative;
+}
+
+.card.flipped .inner {
+    transform: rotateY(180deg);
+}
+
+.face {
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backface-visibility: hidden;
+}
+
+.front {
+    background: linear-gradient(145deg, #1E3F8A, #274db0);
+    color: white;
+    font-size: clamp(14px, 2vw, 22px);
+    font-weight: 600;
+}
+
+.back {
+    background: white;
+    transform: rotateY(180deg);
+    border: 2px solid rgba(30,63,138,0.25);
+    font-size: clamp(26px, 6vw, 52px);
+}
+
+/* MOBILE SMART */
+@media (max-width: 600px) {
+
+    .grid {
+        gap: 6px;
+        width: 96vw;
+    }
+
+    .back {
+        font-size: 38px;
+    }
+
+    .front {
+        font-size: 14px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">MEMO тренажёр памяти</div>
+
+<div class="start-screen">
+
+    <label>
+        Сетка:
+        <select id="size" onchange="checkMobile()">
+            <option value="4">4×4</option>
+            <option value="6">6×6</option>
+            <option value="8">8×8</option>
+        </select>
+    </label>
+
+    <label>
+        Запоминание:
+        <select id="preview">
+            <option value="2">2с</option>
+            <option value="4" selected>4с</option>
+            <option value="6">6с</option>
+        </select>
+    </label>
+
+    <div class="warning" id="warning">
+        ⚠ На телефоне 8×8 может быть слишком мелко
+    </div>
+
+    <button class="big-btn" onclick="startGame()">▶ НАЧАТЬ</button>
+</div>
+
+<div id="game" class="hidden">
+
+    <div class="grid" id="grid"></div>
+
+</div>
+
+<script>
+const icons = [
+"🍎","🚗","🐶","⚽","🌙","🎲","🎧","🔥",
+"🐱","🐸","🦊","🐼","🍕","🍉","🚀","🎈",
+"🏀","🎮","📚","✏️","🎯","🧠","⚡","🌈",
+"🐝","🦁","🐙","🍩","🧩","🚁","🏆","🎲"
+];
+
+let cards=[], first=null, lock=false;
+
+/* 📱 DETECT MOBILE */
+function isMobile(){
+    return window.innerWidth < 600;
+}
+
+/* ⚠ CHECK */
+function checkMobile(){
+    const size=document.getElementById("size").value;
+    const warn=document.getElementById("warning");
+
+    if(isMobile() && size=="8"){
+        warn.style.display="block";
+    } else {
+        warn.style.display="none";
+    }
+}
+
+window.addEventListener("resize", checkMobile);
+
+/* SHUFFLE */
+function shuffle(a){return a.sort(()=>Math.random()-0.5);}
+
+/* START */
+function startGame(){
+    document.getElementById("game").classList.remove("hidden");
+
+    const size=+document.getElementById("size").value;
+    const preview=+document.getElementById("preview").value;
+
+    const total=size*size;
+    const pairs=total/2;
+
+    const pick=shuffle([...icons]).slice(0,pairs);
+    cards=shuffle([...pick,...pick]);
+
+    const grid=document.getElementById("grid");
+    grid.innerHTML="";
+    grid.style.gridTemplateColumns=`repeat(${size},1fr)`;
+
+    lock=true;
+
+    cards.forEach((ic,i)=>{
+        const c=document.createElement("div");
+        c.className="card";
+        c.dataset.icon=ic;
+
+        c.innerHTML=`
+        <div class="inner">
+            <div class="face front">${i+1}</div>
+            <div class="face back">${ic}</div>
+        </div>`;
+
+        c.onclick=()=>flip(c);
+        grid.appendChild(c);
+    });
+
+    document.querySelectorAll(".card").forEach(c=>c.classList.add("flipped"));
+
+    setTimeout(()=>{
+        document.querySelectorAll(".card").forEach(c=>c.classList.remove("flipped"));
+        lock=false;
+    },preview*1000);
+}
+
+/* FLIP */
+function flip(card){
+    if(lock||card.classList.contains("flipped")) return;
+
+    card.classList.add("flipped");
+
+    if(!first){
+        first=card;
+        return;
+    }
+
+    if(first.dataset.icon===card.dataset.icon){
+        first=null;
+    } else {
+        lock=true;
+        setTimeout(()=>{
+            first.classList.remove("flipped");
+            card.classList.remove("flipped");
+            first=null;
+            lock=false;
+        },700);
+    }
+}
+
+checkMobile();
+</script>
+
+</body>
+</html>
