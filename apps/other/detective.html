@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Детектив</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0b1220;
+    color: white;
+    display: flex;
+    justify-content: center;
+}
+
+/* 🟦 TOP BAR */
+.topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: #1E3F8A;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-style: italic;
+    font-weight: bold;
+    font-size: 20px;
+    z-index: 10;
+}
+
+/* контейнер */
+.app {
+    width: 100%;
+    max-width: 560px;
+    padding: 80px 16px 40px;
+    text-align: center;
+}
+
+/* уровни */
+.levels {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.levelBtn {
+    background: #FF6A00;
+    border: none;
+    padding: 10px 0;
+    border-radius: 10px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #b94a00;
+    transition: 0.1s;
+}
+
+.levelBtn:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 #b94a00;
+}
+
+/* карточка */
+.card {
+    background: #1e293b;
+    padding: 18px;
+    border-radius: 14px;
+}
+
+/* задача */
+.task {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+/* кнопки ответов */
+.option {
+    width: 100%;
+    padding: 14px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 10px;
+    background: #334155;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.option:active {
+    transform: scale(0.98);
+}
+
+.correct { background: #22c55e !important; }
+.wrong { background: #ef4444 !important; }
+
+/* лампочка */
+.hintBtn {
+    width: 44px;
+    height: 44px;
+    margin-top: 10px;
+    border-radius: 10px;
+    border: none;
+    background: #FF6A00;
+    cursor: pointer;
+    font-size: 20px;
+}
+
+/* подсказка */
+.hintBox {
+    margin-top: 10px;
+    font-size: 14px;
+    background: #0f172a;
+    padding: 10px;
+    border-radius: 10px;
+    display: none;
+}
+
+/* автор */
+.author {
+    position: fixed;
+    right: 10px;
+    bottom: 6px;
+    font-size: 10px;
+    opacity: 0.5;
+}
+</style>
+</head>
+
+<body>
+
+<div class="topbar">Детектив</div>
+
+<div class="app">
+
+<!-- уровни -->
+<div class="levels">
+    <button class="levelBtn" onclick="startGame(1)">💤</button>
+    <button class="levelBtn" onclick="startGame(2)">✒️</button>
+    <button class="levelBtn" onclick="startGame(3)">⚖️</button>
+    <button class="levelBtn" onclick="startGame(4)">🔥</button>
+    <button class="levelBtn" onclick="startGame(5)">☠️</button>
+</div>
+
+<div class="card" id="game" style="display:none;">
+
+    <div class="task" id="task"></div>
+
+    <button class="hintBtn" onclick="showHint()">💡</button>
+
+    <div class="hintBox" id="hintBox"></div>
+
+    <div id="options"></div>
+
+    <div id="status"></div>
+
+</div>
+
+</div>
+
+<div class="author">© verner</div>
+
+<script>
+
+let correct = 0;
+let hintText = "";
+let difficulty = 1;
+
+function r(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function startGame(level) {
+    difficulty = level;
+    document.getElementById("game").style.display = "block";
+    generate();
+}
+
+function showHint() {
+    let box = document.getElementById("hintBox");
+    box.style.display = "block";
+    box.innerText = hintText;
+}
+
+/* 🧠 ЛОГИКА (НЕ МЕНЯЛ) */
+function generate() {
+
+    document.getElementById("status").innerText = "";
+    document.getElementById("hintBox").style.display = "none";
+
+    let len = 4 + difficulty;
+    let seq = [];
+    let type = r(0, 2);
+
+    hintText = "";
+
+    if (type === 0) {
+        for (let i = 1; i <= len; i++) seq.push(i * i);
+        correct = (len + 1) * (len + 1);
+        hintText = "Правило: квадраты чисел (n²)";
+    }
+
+    if (type === 1) {
+        let val = r(1, 5);
+        for (let i = 1; i <= len; i++) {
+            seq.push(val);
+            val += i + 1;
+        }
+        correct = seq[len - 1] + (len + 1);
+        hintText = "Правило: растущий шаг";
+    }
+
+    if (type === 2) {
+        let val = r(1, 4);
+        for (let i = 0; i < len; i++) {
+            seq.push(val);
+            val = (i % 2 === 0) ? val * 2 : val + 3;
+        }
+        correct = (len % 2 === 0) ? seq[len-1] + 3 : seq[len-1] * 2;
+        hintText = "Правило: чередование ×2 / +3";
+    }
+
+    document.getElementById("task").innerHTML =
+        seq.join(" → ") + " → ?";
+
+    let options = [
+        correct,
+        correct + r(1, 3),
+        correct - r(1, 3)
+    ].sort(() => Math.random() - 0.5);
+
+    let html = "";
+
+    options.forEach(o => {
+        html += `<button class="option" onclick="check(this, ${o})">${o}</button>`;
+    });
+
+    document.getElementById("options").innerHTML = html;
+}
+
+function check(btn, val) {
+    if (val === correct) {
+        btn.classList.add("correct");
+        document.getElementById("status").innerText = "✔ верно";
+        setTimeout(generate, 700);
+    } else {
+        btn.classList.add("wrong");
+        document.getElementById("status").innerText = "✖ неверно";
+    }
+}
+
+</script>
+
+</body>
+</html>
