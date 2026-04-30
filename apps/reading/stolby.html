@@ -266,8 +266,22 @@ textarea{
    SMART BACK (ДОБАВЛЕНО)
 ========================= */
 function smartBack(){
-  window.location.href = "index.html";
-}
+
+  // если сайт на GitHub Pages
+  const basePath = window.location.pathname.split("/").slice(0, -1).join("/");
+
+  // пробуем абсолютный путь
+  const menu = window.location.origin + basePath + "/index.html";
+
+  // защита: если вдруг index в корне
+  const fallback = window.location.origin + "/index.html";
+
+  // пробуем перейти
+  try {
+    window.location.href = menu;
+  } catch (e) {
+    window.location.href = fallback;
+  }
 /* =========================
    BASE LOAD (НЕ ТРОГАЕМ ЛОГИКУ)
 ========================= */
