@@ -116,13 +116,6 @@ button:active{
   font-weight:bold;
 }
 
-/* BACK BUTTON */
-.backBtn{
-  position:absolute;
-  left:10px;
-  top:10px;
-}
-
 /* AUTHOR */
 .author{
   position:fixed;
@@ -138,8 +131,6 @@ button:active{
 <body>
 
 <div class="top">
-
-  <button class="backBtn" onclick="window.location.href='index.html'">❮</button>
 
   <div class="top-title">Столбики</div>
 
@@ -197,9 +188,6 @@ button:active{
 
 <script>
 
-/* =========================
-   SAFE STATE
-========================= */
 let wordBase = {1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[]};
 let appReady = false;
 
@@ -210,84 +198,51 @@ const speedTable = [
 
 let timer;
 
-/* =========================
-   INIT
-========================= */
 document.addEventListener("DOMContentLoaded", () => {
   loadBase();
 });
 
-/* =========================
-   LOAD BASE (SAFE)
-========================= */
 async function loadBase(){
   try{
-
     const res = await fetch("./base.json", {cache:"no-cache"});
-    if(!res.ok) throw new Error("HTTP " + res.status);
+    if(!res.ok) throw new Error();
 
     let data = await res.json();
 
     wordBase = normalize(data);
-
     appReady = true;
 
     show();
     restart();
 
   } catch(e){
-
-    console.warn("BASE FAIL → fallback", e);
-
-    wordBase = {
-      1:["дом","кот"],
-      2:["мама","рама"],
-      3:["собака"],
-      4:[],
-      5:[],
-      6:[],
-      7:[],
-      8:[]
-    };
-
+    wordBase = {1:["дом"],2:["кот"],3:[],4:[],5:[],6:[],7:[],8:[]};
     appReady = true;
-
     show();
     restart();
-
-    wordDisplay.textContent = "База не загрузилась (fallback)";
   }
 }
 
-/* =========================
-   NORMALIZE
-========================= */
 function normalize(data){
-
-  const base = {1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[]};
+  const base={1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[]};
 
   if(Array.isArray(data)){
     data.forEach(w=>{
-      const lvl = detectLevel(w || "");
-      base[lvl].push(w);
+      base[detectLevel(w)].push(w);
     });
     return base;
   }
 
   for(let i=1;i<=8;i++){
-    base[i] = Array.isArray(data[i]) ? data[i] : [];
+    base[i]=data[i]||[];
   }
-
   return base;
 }
 
-/* =========================
-   LEVELS (ТВОЯ ЛОГИКА)
-========================= */
 function detectLevel(w){
-  let word = w.trim().toLowerCase();
-  let v = [...word].filter(c=>vowels.includes(c)).length;
-  let len = word.length;
+  let word=w.trim().toLowerCase();
+  let v=[...word].filter(c=>vowels.includes(c)).length;
+  let len=word.length;
 
   if(v===1) return 1;
   if(v===2 && len<=5) return 2;
@@ -301,38 +256,8 @@ function detectLevel(w){
   return 7;
 }
 
-/* =========================
-   SAFE SHOW
-========================= */
-function show(){
-
-  if(!appReady) return;
-
-  let pool = [];
-
-  if(level.value === "random"){
-    for(let i=1;i<=8;i++){
-      if(wordBase[i]) pool.push(...wordBase[i]);
-    }
-  } else {
-    pool = wordBase[level.value] || [];
-  }
-
-  if(!pool.length){
-    wordDisplay.textContent="—";
-    return;
-  }
-
-  let w = pool[Math.floor(Math.random()*pool.length)];
-
-  wordDisplay.innerHTML = decorate(w);
-  wordDisplay.style.fontSize = fontSize.value+"px";
-  wordDisplay.style.fontFamily = fontFamily.value;
-}
-
-/* ========================= */
 function split(word){
-  word = word.toLowerCase();
+  word=word.toLowerCase();
   let res=[],cur="";
 
   for(let i=0;i<word.length;i++){
@@ -350,24 +275,47 @@ function split(word){
 }
 
 function decorate(w){
-  let parts = split(w);
+  let parts=split(w);
 
   if(highlight.checked){
-    parts = parts.map(p=>"<span class='highlight'>"+p[0]+"</span>"+p.slice(1));
+    parts=parts.map(p=>"<span class='highlight'>"+p[0]+"</span>"+p.slice(1));
   }
 
   return syllables.checked ? parts.join("-") : parts.join("");
 }
 
-/* ========================= */
+function show(){
+  if(!appReady) return;
+
+  let pool=[];
+
+  if(level.value==="random"){
+    for(let i=1;i<=8;i++){
+      pool.push(...wordBase[i]);
+    }
+  } else {
+    pool=wordBase[level.value]||[];
+  }
+
+  if(!pool.length){
+    wordDisplay.textContent="—";
+    return;
+  }
+
+  let w=pool[Math.floor(Math.random()*pool.length)];
+
+  wordDisplay.innerHTML=decorate(w);
+  wordDisplay.style.fontSize=fontSize.value+"px";
+  wordDisplay.style.fontFamily=fontFamily.value;
+}
+
 function restart(){
   clearInterval(timer);
   if(auto.checked){
-    timer = setInterval(show, speedTable[speed.value]);
+    timer=setInterval(show,speedTable[speed.value]);
   }
 }
 
-/* ========================= */
 speed.oninput=restart;
 level.onchange=show;
 syllables.onchange=show;
@@ -376,7 +324,7 @@ auto.onchange=restart;
 fontSize.oninput=show;
 fontFamily.onchange=show;
 
-wordDisplay.onclick=()=>{ if(!auto.checked) show(); };
+wordDisplay.onclick=()=>{if(!auto.checked) show();};
 
 </script>
 
