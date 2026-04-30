@@ -17,14 +17,34 @@ body {
 }
 
 /* HEADER */
-.header {
-    width: 100%;
-    background: linear-gradient(135deg, #1E3F8A, #274db0);
-    color: white;
-    text-align: center;
-    padding: 16px;
-    font-size: 20px;
-    font-weight: 700;
+.header{
+    width:100%;
+    background:linear-gradient(135deg,#1E3F8A,#274db0);
+    color:white;
+    text-align:center;
+    padding:16px;
+    font-size:20px;
+    font-weight:700;
+    position:relative;
+    box-sizing:border-box;
+}
+
+.backBtn{
+    position:absolute;
+    left:10px;
+    top:8px;
+    transform:none;
+    border:none;
+    background:linear-gradient(135deg,#FF8C00,#ff6a00);
+    color:white;
+    width:42px;
+    height:42px;
+    border-radius:12px;
+    font-size:28px;
+    font-weight:900;
+    line-height:1;
+    padding-bottom:3px;
+    cursor:pointer;
 }
 
 /* START */
@@ -137,8 +157,10 @@ body {
 </head>
 
 <body>
-
-<div class="header">MEMO тренажёр памяти</div>
+<div class="header">
+    <button class="backBtn" onclick="history.back()">❮</button>
+    MEMO тренажёр памяти
+</div>
 
 <div class="start-screen" id="startScreen">
 
