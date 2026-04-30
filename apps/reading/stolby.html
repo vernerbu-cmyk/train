@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Столбики</title>
 
 <style>
@@ -13,9 +12,7 @@ body{
   background:#fff;
 }
 
-/* =========================
-   TOP BAR (NEUROX STYLE)
-========================= */
+/* TOP */
 .top{
   background:#1E3F8A;
   color:#fff;
@@ -29,27 +26,19 @@ body{
   top:0;
 }
 
-/* заголовок */
+/* TITLE */
 .top-title{
   width:100%;
   text-align:center;
   font-style:italic;
   font-size:22px;
   font-weight:600;
-  margin-bottom:5px;
 }
 
-/* =========================
-   CONTROLS
-========================= */
-label{
-  font-size:14px;
-  color:#fff;
-}
+/* CONTROLS */
+label{font-size:14px;color:#fff;}
 
-input[type="range"]{
-  accent-color:#FF6A00;
-}
+input[type="range"]{accent-color:#FF6A00;}
 
 input[type="number"], select{
   border-radius:6px;
@@ -57,9 +46,7 @@ input[type="number"], select{
   padding:4px;
 }
 
-/* =========================
-   BUTTONS
-========================= */
+/* BUTTONS */
 button{
   background:#FF6A00;
   color:#fff;
@@ -68,7 +55,6 @@ button{
   border-radius:8px;
   box-shadow:0 4px 0 #c84f00;
   cursor:pointer;
-  transition:0.05s;
 }
 
 button:active{
@@ -76,9 +62,7 @@ button:active{
   box-shadow:0 2px 0 #c84f00;
 }
 
-/* =========================
-   WORD DISPLAY
-========================= */
+/* WORD */
 .word{
   margin-top:70px;
   text-align:center;
@@ -88,9 +72,7 @@ button:active{
   padding:10px;
 }
 
-/* =========================
-   PANEL
-========================= */
+/* PANEL */
 .panel{
   position:fixed;
   top:70px;
@@ -107,17 +89,7 @@ button:active{
   border-radius:10px;
 }
 
-textarea{
-  width:100%;
-  margin-top:5px;
-  padding:8px;
-  border:1px solid #ccc;
-  border-radius:6px;
-}
-
-/* =========================
-   BASE LIST
-========================= */
+/* BASE */
 .wordItem{
   display:flex;
   justify-content:space-between;
@@ -139,61 +111,25 @@ textarea{
   color:#1E3F8A;
 }
 
-/* =========================
-   HIGHLIGHT
-========================= */
 .highlight{
   color:#FF6A00;
   font-weight:bold;
 }
 
-/* =========================
-   AUTHOR
-========================= */
+/* BACK BUTTON */
+.backBtn{
+  position:absolute;
+  left:10px;
+  top:10px;
+}
+
+/* AUTHOR */
 .author{
   position:fixed;
   right:8px;
   bottom:6px;
   font-size:11px;
   color:#aaa;
-}
-
-/* =========================
-   MOBILE
-========================= */
-@media (max-width:600px){
-  .word{
-    font-size:24px;
-    margin-top:60px;
-  }
-
-  .top-title{
-    font-size:18px;
-  }
-
-  label{
-    font-size:12px;
-  }
-}
-
-/* 🔴 ДОБАВЛЕНО: кнопка назад */
-.backBtn{
-  position:absolute;
-  left:10px;
-  top:10px;
-  background:#FF6A00;
-  border:none;
-  color:#fff;
-  border-radius:8px;
-  padding:6px 10px;
-  box-shadow:0 3px 0 #c84f00;
-  cursor:pointer;
-  z-index:10;
-}
-
-.backBtn:active{
-  transform:translateY(2px);
-  box-shadow:0 1px 0 #c84f00;
 }
 
 </style>
@@ -203,13 +139,12 @@ textarea{
 
 <div class="top">
 
-  <!-- 🔴 ИЗМЕНЕНО ТОЛЬКО ТУТ -->
-  <button class="backBtn" onclick="smartBack()">❮</button>
+  <button class="backBtn" onclick="window.location.href='index.html'">❮</button>
 
   <div class="top-title">Столбики</div>
 
   <label>Скорость
-    <input type="range" id="speed" min="0" max="10" value="0">
+    <input type="range" id="speed" min="0" max="12" value="0">
   </label>
 
   <label>Уровень
@@ -232,11 +167,11 @@ textarea{
 
   <label>Шрифт
     <select id="fontFamily">
-      <option value="Arial">Arial</option>
-      <option value="Georgia">Georgia</option>
-      <option value="Verdana">Verdana</option>
-      <option value="Tahoma">Tahoma</option>
-      <option value="Courier New">Courier New</option>
+      <option>Arial</option>
+      <option>Georgia</option>
+      <option>Verdana</option>
+      <option>Tahoma</option>
+      <option>Courier New</option>
     </select>
   </label>
 
@@ -263,85 +198,96 @@ textarea{
 <script>
 
 /* =========================
-   SMART BACK (ДОБАВЛЕНО)
+   SAFE STATE
 ========================= */
-function smartBack(){
+let wordBase = {1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[]};
+let appReady = false;
 
-  // если сайт на GitHub Pages
-  const basePath = window.location.pathname.split("/").slice(0, -1).join("/");
+const vowels = "аеёиоуыэюя";
+const speedTable = [
+4000,3500,3000,2500,2000,1750,1500,1250,1000,750,500,250,100
+];
 
-  // пробуем абсолютный путь
-  const menu = window.location.origin + basePath + "/index.html";
+let timer;
 
-  // защита: если вдруг index в корне
-  const fallback = window.location.origin + "/index.html";
-
-  // пробуем перейти
-  try {
-    window.location.href = menu;
-  } catch (e) {
-    window.location.href = fallback;
-  }
 /* =========================
-   BASE LOAD (НЕ ТРОГАЕМ ЛОГИКУ)
+   INIT
 ========================= */
+document.addEventListener("DOMContentLoaded", () => {
+  loadBase();
+});
 
-let wordBase = {};
-
+/* =========================
+   LOAD BASE (SAFE)
+========================= */
 async function loadBase(){
   try{
-    const url = new URL("./base.json", window.location.href).href;
-    const res = await fetch(url);
 
-    if(!res.ok) throw new Error("no json");
+    const res = await fetch("./base.json", {cache:"no-cache"});
+    if(!res.ok) throw new Error("HTTP " + res.status);
 
-    wordBase = await res.json();
+    let data = await res.json();
 
-    if(Array.isArray(wordBase)){
-      const structured = {1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[]};
-      wordBase.forEach(w=>{
-        let lvl = detectLevel(w);
-        structured[lvl].push(w);
-      });
-      wordBase = structured;
-    }
+    wordBase = normalize(data);
+
+    appReady = true;
 
     show();
     restart();
 
   } catch(e){
-    wordDisplay.textContent="Ошибка загрузки";
+
+    console.warn("BASE FAIL → fallback", e);
+
+    wordBase = {
+      1:["дом","кот"],
+      2:["мама","рама"],
+      3:["собака"],
+      4:[],
+      5:[],
+      6:[],
+      7:[],
+      8:[]
+    };
+
+    appReady = true;
+
+    show();
+    restart();
+
+    wordDisplay.textContent = "База не загрузилась (fallback)";
   }
 }
 
-loadBase();
+/* =========================
+   NORMALIZE
+========================= */
+function normalize(data){
 
-/* ========================= */
+  const base = {1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[]};
 
-const vowels="аеёиоуыэюя";
-const speedTable = [
-3000,
-2200,
-1600,
-1100,
-800,
-550,
-380,
-250,
-170,
-110,
-70
-];
-let timer;
+  if(Array.isArray(data)){
+    data.forEach(w=>{
+      const lvl = detectLevel(w || "");
+      base[lvl].push(w);
+    });
+    return base;
+  }
+
+  for(let i=1;i<=8;i++){
+    base[i] = Array.isArray(data[i]) ? data[i] : [];
+  }
+
+  return base;
+}
 
 /* =========================
-   LEVELS (НЕ ТРОГАЕМ)
+   LEVELS (ТВОЯ ЛОГИКА)
 ========================= */
-
 function detectLevel(w){
-  let word=w.trim().toLowerCase();
-  let v=[...word].filter(c=>vowels.includes(c)).length;
-  let len=word.length;
+  let word = w.trim().toLowerCase();
+  let v = [...word].filter(c=>vowels.includes(c)).length;
+  let len = word.length;
 
   if(v===1) return 1;
   if(v===2 && len<=5) return 2;
@@ -355,10 +301,38 @@ function detectLevel(w){
   return 7;
 }
 
-/* ========================= */
+/* =========================
+   SAFE SHOW
+========================= */
+function show(){
 
+  if(!appReady) return;
+
+  let pool = [];
+
+  if(level.value === "random"){
+    for(let i=1;i<=8;i++){
+      if(wordBase[i]) pool.push(...wordBase[i]);
+    }
+  } else {
+    pool = wordBase[level.value] || [];
+  }
+
+  if(!pool.length){
+    wordDisplay.textContent="—";
+    return;
+  }
+
+  let w = pool[Math.floor(Math.random()*pool.length)];
+
+  wordDisplay.innerHTML = decorate(w);
+  wordDisplay.style.fontSize = fontSize.value+"px";
+  wordDisplay.style.fontFamily = fontFamily.value;
+}
+
+/* ========================= */
 function split(word){
-  word=word.toLowerCase();
+  word = word.toLowerCase();
   let res=[],cur="";
 
   for(let i=0;i<word.length;i++){
@@ -375,54 +349,25 @@ function split(word){
   return res;
 }
 
-/* ========================= */
-
 function decorate(w){
-  let parts=split(w);
+  let parts = split(w);
 
   if(highlight.checked){
-    parts=parts.map(p=>"<span class='highlight'>"+p[0]+"</span>"+p.slice(1));
+    parts = parts.map(p=>"<span class='highlight'>"+p[0]+"</span>"+p.slice(1));
   }
 
   return syllables.checked ? parts.join("-") : parts.join("");
 }
 
 /* ========================= */
-
-function show(){
-  let pool=[];
-
-  if(level.value==="random"){
-    for(let i=1;i<=8;i++){
-      if(wordBase[i]) pool.push(...wordBase[i]);
-    }
-  }else{
-    pool = wordBase[level.value] || [];
-  }
-
-  if(!pool.length){
-    wordDisplay.textContent="—";
-    return;
-  }
-
-  let w=pool[Math.floor(Math.random()*pool.length)];
-
-  wordDisplay.innerHTML=decorate(w);
-  wordDisplay.style.fontSize=fontSize.value+"px";
-  wordDisplay.style.fontFamily=fontFamily.value;
-}
-
-/* ========================= */
-
 function restart(){
   clearInterval(timer);
   if(auto.checked){
-    timer=setInterval(show,speedTable[speed.value]);
+    timer = setInterval(show, speedTable[speed.value]);
   }
 }
 
 /* ========================= */
-
 speed.oninput=restart;
 level.onchange=show;
 syllables.onchange=show;
@@ -431,14 +376,7 @@ auto.onchange=restart;
 fontSize.oninput=show;
 fontFamily.onchange=show;
 
-document.addEventListener("keydown",e=>{
-  if(!auto.checked && e.code==="Space"){
-    e.preventDefault();
-    show();
-  }
-});
-
-wordDisplay.onclick=()=>{if(!auto.checked) show();};
+wordDisplay.onclick=()=>{ if(!auto.checked) show(); };
 
 </script>
 
