@@ -175,12 +175,36 @@ textarea{
     font-size:12px;
   }
 }
+
+/* 🔴 ДОБАВЛЕНО: кнопка назад */
+.backBtn{
+  position:absolute;
+  left:10px;
+  top:10px;
+  background:#FF6A00;
+  border:none;
+  color:#fff;
+  border-radius:8px;
+  padding:6px 10px;
+  box-shadow:0 3px 0 #c84f00;
+  cursor:pointer;
+  z-index:10;
+}
+
+.backBtn:active{
+  transform:translateY(2px);
+  box-shadow:0 1px 0 #c84f00;
+}
+
 </style>
 </head>
 
 <body>
 
 <div class="top">
+
+  <!-- 🔴 ИЗМЕНЕНО ТОЛЬКО ТУТ -->
+  <button class="backBtn" onclick="smartBack()">❮</button>
 
   <div class="top-title">Столбики</div>
 
@@ -239,6 +263,20 @@ textarea{
 <script>
 
 /* =========================
+   SMART BACK (ДОБАВЛЕНО)
+========================= */
+function smartBack(){
+  const menuUrl = localStorage.getItem("menuUrl");
+
+  if(menuUrl){
+    window.location.href = menuUrl;
+    return;
+  }
+
+  window.location.href = "/#menu";
+}
+
+/* =========================
    BASE LOAD (НЕ ТРОГАЕМ ЛОГИКУ)
 ========================= */
 
@@ -275,7 +313,19 @@ loadBase();
 /* ========================= */
 
 const vowels="аеёиоуыэюя";
-const speedTable=[2000,1500,1200,1000,800,600,500,400,300,200,100];
+const speedTable = [
+3000,
+2200,
+1600,
+1100,
+800,
+550,
+380,
+250,
+170,
+110,
+70
+];
 let timer;
 
 /* =========================
