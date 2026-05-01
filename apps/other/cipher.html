@@ -29,7 +29,7 @@ body{
     text-align:center;
 }
 
-/* ===== UI ===== */
+/* ===== GAME UI ===== */
 
 .code{
     font-size:42px;
@@ -62,11 +62,56 @@ button{
     border-radius:10px;
     max-height:160px;
     overflow:auto;
+    z-index:999;
 }
 
 .ok{color:#22c55e;}
 .err{color:#ef4444;}
 .warn{color:#facc15;}
+
+/* ===== DRAWER ===== */
+
+#overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.55);
+    z-index:10;
+}
+
+#drawer{
+    position:fixed;
+    top:0;
+    right:-380px;
+    width:340px;
+    height:100%;
+    background:linear-gradient(180deg,#0b1220,#0f172a);
+    padding:16px;
+    overflow:auto;
+    transition:0.25s ease;
+    z-index:11;
+    box-shadow:-12px 0 40px rgba(0,0,0,0.6);
+}
+
+/* таблица */
+.cipherGrid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+.cipherItem{
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.06);
+    border-radius:12px;
+    padding:10px;
+    display:flex;
+    justify-content:space-between;
+}
+
+.cipherLetter{opacity:0.7;font-size:13px;}
+.cipherSymbol{font-size:20px;color:#22d3ee;}
+
 </style>
 </head>
 
@@ -84,10 +129,20 @@ button{
 
 <div id="result"></div>
 
-<button onclick="toggleDebug()">📊 debug</button>
+<button onclick="toggleDrawer()">📊 Таблица шифра</button>
 
 </div>
 
+</div>
+
+<!-- DRAWER -->
+<div id="overlay" onclick="toggleDrawer()"></div>
+
+<div id="drawer">
+<div style="font-size:16px;margin-bottom:10px;color:#93c5fd;">
+📊 Буква → Символ
+</div>
+<div id="cipherTable"></div>
 </div>
 
 <div id="debug"></div>
@@ -99,7 +154,6 @@ button{
 ========================= */
 
 const debugLog = [];
-let debugVisible = true;
 
 function log(msg,type="info"){
     debugLog.push({msg,type});
@@ -109,7 +163,7 @@ function log(msg,type="info"){
 
 function renderDebug(){
     const el=document.getElementById("debug");
-    if(!el || !debugVisible) return;
+    if(!el) return;
 
     el.innerHTML =
     "<b>DEBUG</b><br>" +
@@ -119,14 +173,8 @@ function renderDebug(){
     }).join("");
 }
 
-function toggleDebug(){
-    debugVisible = !debugVisible;
-    document.getElementById("debug").style.display =
-        debugVisible ? "block" : "none";
-}
-
 /* =========================
-   CORE DATA (SAFE FALLBACK)
+   CORE DATA
 ========================= */
 
 const alphabet="АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
@@ -148,6 +196,7 @@ alphabet.split("").map((l,i)=>[l,symbols[i]])
 
 let words = ["КОТ","ШКОЛА","САМОЛЕТ"];
 let current = "";
+let open = false;
 
 /* =========================
    AUTO JSON LOADER
@@ -155,7 +204,7 @@ let current = "";
 
 async function loadWords(){
 
-log("AUTO JSON SEARCH START", "ok");
+log("AUTO JSON SEARCH", "ok");
 
 const paths = [
     "./words.json",
@@ -179,7 +228,7 @@ for(const p of paths){
         if(res.ok){
             data = await res.json();
             used = p;
-            log("FOUND: " + p, "ok");
+            log("FOUND JSON: " + p, "ok");
             break;
         }
 
@@ -189,12 +238,9 @@ for(const p of paths){
 }
 
 if(!data || !data.words){
-
     log("NO JSON → fallback", "err");
-
     document.getElementById("hint").innerText =
-        "❌ JSON не найден → fallback режим";
-
+        "❌ JSON не найден (fallback)";
     newTask();
     return;
 }
@@ -207,15 +253,50 @@ newTask();
 }
 
 /* =========================
-   GAME CORE
+   DRAWER
+========================= */
+
+function toggleDrawer(){
+
+open = !open;
+
+document.getElementById("drawer").style.right =
+open ? "0" : "-380px";
+
+document.getElementById("overlay").style.display =
+open ? "block" : "none";
+
+if(open) renderTable();
+}
+
+/* =========================
+   TABLE
+========================= */
+
+function renderTable(){
+
+const el = document.getElementById("cipherTable");
+
+if(!el) return;
+
+el.innerHTML =
+`<div class="cipherGrid">
+${alphabet.split("").map(l=>`
+<div class="cipherItem">
+    <div class="cipherLetter">${l}</div>
+    <div class="cipherSymbol">${key[l]}</div>
+</div>
+`).join("")}
+</div>`;
+}
+
+/* =========================
+   GAME
 ========================= */
 
 function newTask(){
 
-if(!words.length){
-    log("EMPTY WORDS", "err");
-    return;
-}
+if(!words.length) return;
 
 current = words[Math.floor(Math.random()*words.length)];
 
@@ -225,7 +306,7 @@ encode(current);
 document.getElementById("hint").innerText =
 "HINT READY";
 
-log("word: " + current, "ok");
+log("WORD: " + current, "ok");
 }
 
 function encode(word){
@@ -233,7 +314,7 @@ return word.split("").map(l=>key[l]||"?").join(" ");
 }
 
 /* =========================
-   START SAFE
+   BOOT
 ========================= */
 
 window.addEventListener("load", ()=>{
