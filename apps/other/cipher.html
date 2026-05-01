@@ -188,7 +188,7 @@ let open = false;
 async function loadWords(){
 
 try{
-    const res = await fetch("words.json");
+    const res = await fetch("./words.json")
 
     if(res.ok){
         const data = await res.json();
