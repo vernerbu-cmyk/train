@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SHIFR TRAINER v21</title>
+<title>SHIFR TRAINER v23</title>
 
 <style>
 body{
@@ -29,25 +29,7 @@ body{
     text-align:center;
 }
 
-/* ===== HINT ===== */
-
-.hintGrid{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:8px;
-}
-
-.hintItem{
-    background:#0f172a;
-    border:1px solid #1e293b;
-    border-radius:12px;
-    padding:10px;
-}
-
-.hintLetter{opacity:0.7;font-size:14px;}
-.hintSymbol{font-size:26px;margin-top:4px;}
-
-/* ===== CODE ===== */
+/* ===== UI ===== */
 
 .code{
     font-size:42px;
@@ -55,8 +37,6 @@ body{
     margin:16px 0;
     color:#22d3ee;
 }
-
-/* ===== BUTTONS ===== */
 
 button{
     width:100%;
@@ -68,56 +48,25 @@ button{
     color:white;
 }
 
-.correct{color:#22c55e;}
-.wrong{color:#ef4444;}
+/* ===== DEBUG ===== */
 
-/* ===== DRAWER ===== */
-
-#overlay{
-    display:none;
+#debug{
     position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.55);
-    z-index:10;
-}
-
-#drawer{
-    position:fixed;
-    top:0;
-    right:-380px;
-    width:340px;
-    height:100%;
-    background:linear-gradient(180deg,#0b1220,#0f172a);
-    padding:16px;
-    overflow:auto;
-    transition:0.25s ease;
-    z-index:11;
-    box-shadow:-12px 0 40px rgba(0,0,0,0.6);
-}
-
-/* таблица */
-.cipherGrid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:10px;
-}
-
-.cipherItem{
-    background:rgba(255,255,255,0.04);
-    border:1px solid rgba(255,255,255,0.06);
-    border-radius:12px;
+    bottom:10px;
+    left:10px;
+    right:10px;
+    background:#0f172a;
+    border:1px solid rgba(255,255,255,0.1);
     padding:10px;
-    display:flex;
-    justify-content:space-between;
-}
-
-.cipherLetter{opacity:0.7;font-size:13px;}
-.cipherSymbol{font-size:20px;color:#22d3ee;}
-
-.label{
     font-size:12px;
-    opacity:0.6;
+    border-radius:10px;
+    max-height:160px;
+    overflow:auto;
 }
+
+.ok{color:#22c55e;}
+.err{color:#ef4444;}
+.warn{color:#facc15;}
 </style>
 </head>
 
@@ -127,40 +76,60 @@ button{
 
 <div class="card">
 
-<div id="hint"></div>
+<div id="hint">🔄 загрузка...</div>
 
-<div class="label">🔐 Шифр</div>
-<div id="cipherWord" class="code"></div>
+<div class="code" id="cipherWord"></div>
 
 <div id="options"></div>
 
 <div id="result"></div>
 
-<button onclick="toggleDrawer()">📊 Таблица шифра</button>
+<button onclick="toggleDebug()">📊 debug</button>
 
 </div>
 
 </div>
 
-<!-- DRAWER -->
-<div id="overlay" onclick="toggleDrawer()"></div>
-
-<div id="drawer">
-<div style="font-size:16px;margin-bottom:10px;color:#93c5fd;">
-📊 Буква → Символ
-</div>
-
-<div id="cipherTable"></div>
-</div>
+<div id="debug"></div>
 
 <script>
 
 /* =========================
-   CORE DATA (FALLBACK SAFE)
+   DEBUG ENGINE
 ========================= */
 
-const alphabet =
-"АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
+const debugLog = [];
+let debugVisible = true;
+
+function log(msg,type="info"){
+    debugLog.push({msg,type});
+    renderDebug();
+    console.log(msg);
+}
+
+function renderDebug(){
+    const el=document.getElementById("debug");
+    if(!el || !debugVisible) return;
+
+    el.innerHTML =
+    "<b>DEBUG</b><br>" +
+    debugLog.slice(-12).map(d=>{
+        let cls = d.type==="err"?"err":d.type==="warn"?"warn":"ok";
+        return `<div class="${cls}">${d.msg}</div>`;
+    }).join("");
+}
+
+function toggleDebug(){
+    debugVisible = !debugVisible;
+    document.getElementById("debug").style.display =
+        debugVisible ? "block" : "none";
+}
+
+/* =========================
+   CORE DATA (SAFE FALLBACK)
+========================= */
+
+const alphabet="АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
 
 const symbols=[
 "●","○","■","□","▲","△","▼","▽",
@@ -174,118 +143,67 @@ alphabet.split("").map((l,i)=>[l,symbols[i]])
 );
 
 /* =========================
-   STATE (SAFE FALLBACK)
+   STATE
 ========================= */
 
-let words = ["КОТ","ШКОЛА","САМОЛЕТ"]; // fallback ALWAYS
+let words = ["КОТ","ШКОЛА","САМОЛЕТ"];
 let current = "";
-let open = false;
 
 /* =========================
-   OPTIONAL JSON LOAD (SAFE)
+   AUTO JSON LOADER
 ========================= */
 
 async function loadWords(){
 
-try{
-    const res = await fetch("./words.json")
+log("AUTO JSON SEARCH START", "ok");
 
-    if(res.ok){
-        const data = await res.json();
-        if(data.words && data.words.length){
-            words = data.words;
+const paths = [
+    "./words.json",
+    "words.json",
+    "../words.json",
+    "../../words.json",
+    "/words.json",
+    "/main/apps/other/words.json"
+];
+
+let data = null;
+let used = null;
+
+for(const p of paths){
+
+    try{
+        log("try: " + p, "warn");
+
+        const res = await fetch(p);
+
+        if(res.ok){
+            data = await res.json();
+            used = p;
+            log("FOUND: " + p, "ok");
+            break;
         }
+
+    }catch(e){
+        log("fail: " + p, "err");
     }
-
-}catch(e){
-    console.warn("JSON not loaded, using fallback words");
 }
 
-/* игра стартует ВСЕГДА */
-newTask();
+if(!data || !data.words){
 
-}
+    log("NO JSON → fallback", "err");
 
-/* =========================
-   DRAWER (UNBREAKABLE)
-========================= */
+    document.getElementById("hint").innerText =
+        "❌ JSON не найден → fallback режим";
 
-function toggleDrawer(){
-
-open = !open;
-
-const drawer = document.getElementById("drawer");
-const overlay = document.getElementById("overlay");
-
-if(drawer){
-    drawer.style.right = open ? "0" : "-380px";
-}
-
-if(overlay){
-    overlay.style.display = open ? "block" : "none";
-}
-
-/* таблица ВСЕГДА строится заново */
-renderTable();
-}
-
-/* =========================
-   TABLE (ALWAYS SAFE)
-========================= */
-
-function renderTable(){
-
-const el = document.getElementById("cipherTable");
-
-if(!el){
+    newTask();
     return;
 }
 
-el.innerHTML =
-`<div class="cipherGrid">
-${alphabet.split("").map(l=>`
-<div class="cipherItem">
-    <div class="cipherLetter">${l}</div>
-    <div class="cipherSymbol">${key[l] || "?"}</div>
-</div>
-`).join("")}
-</div>`;
-}
+words = data.words;
 
-/* =========================
-   ENCODE
-========================= */
+log("WORDS LOADED: " + words.length + " via " + used, "ok");
 
-function encode(word){
-return word.split("").map(l=>key[l] || "?").join(" ");
-}
-
-/* =========================
-   HINT
-========================= */
-
-function buildHint(word){
-
-let correct = word.split("").map(l=>({l,s:key[l]}));
-
-let noise = alphabet.split("")
-.filter(l=>!word.includes(l))
-.sort(()=>Math.random()-0.5)
-.slice(0,word.length)
-.map(l=>({l,s:key[l]}));
-
-let mix = correct.concat(noise)
-.sort(()=>Math.random()-0.5);
-
-document.getElementById("hint").innerHTML =
-`<div class="hintGrid">
-${mix.map(i=>`
-<div class="hintItem">
-<div class="hintLetter">${i.l}</div>
-<div class="hintSymbol">${i.s}</div>
-</div>
-`).join("")}
-</div>`;
+newTask();
 }
 
 /* =========================
@@ -294,49 +212,34 @@ ${mix.map(i=>`
 
 function newTask(){
 
-if(!words.length) return;
+if(!words.length){
+    log("EMPTY WORDS", "err");
+    return;
+}
 
 current = words[Math.floor(Math.random()*words.length)];
-
-buildHint(current);
-
-document.getElementById("cipherWord").innerText = "";
-
-setTimeout(()=>{
 
 document.getElementById("cipherWord").innerText =
 encode(current);
 
-let opts = [current,"ТОК","МОД","ЛОС"]
-.sort(()=>Math.random()-0.5);
+document.getElementById("hint").innerText =
+"HINT READY";
 
-document.getElementById("options").innerHTML =
-opts.map(o=>`<button onclick="check('${o}')">${o}</button>`).join("");
+log("word: " + current, "ok");
+}
 
-},900);
-
-document.getElementById("result").innerText="";
+function encode(word){
+return word.split("").map(l=>key[l]||"?").join(" ");
 }
 
 /* =========================
-   CHECK
+   START SAFE
 ========================= */
 
-function check(ans){
-
-let res = document.getElementById("result");
-
-res.innerText = (ans===current) ? "✔ Верно" : "✖ Ошибка";
-res.className = (ans===current) ? "correct" : "wrong";
-
-setTimeout(newTask,700);
-}
-
-/* =========================
-   START (CRASH-PROOF)
-========================= */
-
-loadWords();
+window.addEventListener("load", ()=>{
+    log("WINDOW LOADED", "ok");
+    loadWords();
+});
 
 </script>
 
