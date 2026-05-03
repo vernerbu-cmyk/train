@@ -29,54 +29,61 @@ body{
     text-align:center;
 }
 
-/* ===== GAME UI ===== */
+#hint{
+    font-size:15px;
+    color:#93c5fd;
+    margin-bottom:10px;
+}
 
 .code{
     font-size:42px;
     letter-spacing:10px;
-    margin:16px 0;
+    margin:18px 0;
     color:#22d3ee;
+    min-height:54px;
 }
 
 button{
     width:100%;
     margin-top:8px;
-    padding:10px;
+    padding:11px;
     border:none;
     border-radius:10px;
     background:#334155;
-    color:white;
+    color:#fff;
+    font-size:15px;
 }
 
-/* ===== DEBUG ===== */
+button:active{
+    transform:scale(0.99);
+}
 
 #debug{
     position:fixed;
-    bottom:10px;
     left:10px;
     right:10px;
+    bottom:10px;
     background:#0f172a;
-    border:1px solid rgba(255,255,255,0.1);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:10px;
     padding:10px;
     font-size:12px;
-    border-radius:10px;
     max-height:160px;
     overflow:auto;
-    z-index:999;
+    z-index:50;
 }
 
 .ok{color:#22c55e;}
 .err{color:#ef4444;}
 .warn{color:#facc15;}
 
-/* ===== DRAWER ===== */
-
+/* drawer */
 #overlay{
     display:none;
     position:fixed;
     inset:0;
-    background:rgba(0,0,0,0.55);
-    z-index:10;
+    background:rgba(0,0,0,.55);
+    z-index:90;
 }
 
 #drawer{
@@ -85,15 +92,20 @@ button{
     right:-380px;
     width:340px;
     height:100%;
-    background:linear-gradient(180deg,#0b1220,#0f172a);
-    padding:16px;
+    background:linear-gradient(180deg,#0b1220,#111827);
+    transition:.25s ease;
+    z-index:100;
     overflow:auto;
-    transition:0.25s ease;
-    z-index:11;
-    box-shadow:-12px 0 40px rgba(0,0,0,0.6);
+    padding:16px;
+    box-sizing:border-box;
 }
 
-/* таблица */
+.drawerTitle{
+    font-size:18px;
+    color:#93c5fd;
+    margin-bottom:12px;
+}
+
 .cipherGrid{
     display:grid;
     grid-template-columns:1fr 1fr;
@@ -101,61 +113,58 @@ button{
 }
 
 .cipherItem{
-    background:rgba(255,255,255,0.04);
-    border:1px solid rgba(255,255,255,0.06);
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.06);
     border-radius:12px;
     padding:10px;
     display:flex;
     justify-content:space-between;
+    align-items:center;
 }
 
-.cipherLetter{opacity:0.7;font-size:13px;}
-.cipherSymbol{font-size:20px;color:#22d3ee;}
+.cipherLetter{
+    opacity:.75;
+    font-size:13px;
+}
 
+.cipherSymbol{
+    font-size:22px;
+    color:#22d3ee;
+}
 </style>
 </head>
 
 <body>
 
 <div class="container">
-
 <div class="card">
 
-<div id="hint">🔄 загрузка...</div>
+<div id="hint">🔄 загрузка слов...</div>
 
 <div class="code" id="cipherWord"></div>
 
-<div id="options"></div>
-
-<div id="result"></div>
-
+<button onclick="newTask()">🔁 Новое слово</button>
 <button onclick="toggleDrawer()">📊 Таблица шифра</button>
 
 </div>
-
 </div>
 
-<!-- DRAWER -->
 <div id="overlay" onclick="toggleDrawer()"></div>
 
 <div id="drawer">
-<div style="font-size:16px;margin-bottom:10px;color:#93c5fd;">
-📊 Буква → Символ
-</div>
+<div class="drawerTitle">📊 Буква → Символ</div>
 <div id="cipherTable"></div>
 </div>
 
 <div id="debug"></div>
 
 <script>
-
 /* =========================
-   DEBUG ENGINE
+   DEBUG
 ========================= */
+const debugLog=[];
 
-const debugLog = [];
-
-function log(msg,type="info"){
+function log(msg,type="ok"){
     debugLog.push({msg,type});
     renderDebug();
     console.log(msg);
@@ -163,165 +172,148 @@ function log(msg,type="info"){
 
 function renderDebug(){
     const el=document.getElementById("debug");
-    if(!el) return;
-
-    el.innerHTML =
-    "<b>DEBUG</b><br>" +
-    debugLog.slice(-12).map(d=>{
-        let cls = d.type==="err"?"err":d.type==="warn"?"warn":"ok";
-        return `<div class="${cls}">${d.msg}</div>`;
-    }).join("");
+    el.innerHTML="<b>DEBUG</b><br>"+debugLog.slice(-12).map(x=>
+        `<div class="${x.type}">${x.msg}</div>`
+    ).join("");
 }
 
 /* =========================
-   CORE DATA
+   DATA
 ========================= */
-
 const alphabet="АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
 
 const symbols=[
 "●","○","■","□","▲","△","▼","▽",
 "◆","◇","★","☆","♥","♦","♣","♠",
 "⬤","◯","▣","▢","▰","▱","◼","◻",
-"▮","▯","+","×","÷","=","≠","∞","√","π"
+"▮","▯","+","×","÷","=","≠","∞"
 ];
 
-const key = Object.fromEntries(
-alphabet.split("").map((l,i)=>[l,symbols[i]])
-);
+const key={};
+
+alphabet.split("").forEach((letter,i)=>{
+    key[letter]=symbols[i];
+});
+
+let words=["КОТ","ДОМ","ЛЕС"];
+let currentWord="";
+let drawerOpen=false;
 
 /* =========================
-   STATE
+   JSON LOADER
+   ТВОЙ ФОРМАТ = МАССИВ []
 ========================= */
-
-let words = ["КОТ","ШКОЛА","САМОЛЕТ"];
-let current = "";
-let open = false;
-
-/* =========================
-   AUTO JSON LOADER
-========================= */
-
 async function loadWords(){
 
-log("AUTO JSON SEARCH", "ok");
+log("LOAD words.json","warn");
 
-const paths = [
-    "./words.json",
-    "words.json",
-    "../words.json",
-    "../../words.json",
-    "/words.json",
-    "/main/apps/other/words.json"
-];
+try{
+    const res = await fetch("words.json?v="+Date.now());
 
-let data = null;
-let used = null;
-
-for(const p of paths){
-
-    try{
-        log("try: " + p, "warn");
-
-        const res = await fetch(new URL(p, location.href));
-
-        if(res.ok){
-            data = await res.json();
-            used = p;
-            log("FOUND JSON: " + p, "ok");
-            break;
-        }
-
-    }catch(e){
-        log("fail: " + p, "err");
+    if(!res.ok){
+        throw new Error("HTTP "+res.status);
     }
+
+    const data = await res.json();
+
+    /* ожидаем массив строк */
+    if(!Array.isArray(data)){
+        throw new Error("JSON не массив");
+    }
+
+    words = data
+        .filter(x=>typeof x==="string" && x.trim()!=="")
+        .map(x=>normalizeWord(x));
+
+    if(!words.length){
+        throw new Error("пустой список");
+    }
+
+    log("WORDS LOADED: "+words.length,"ok");
+
+}catch(e){
+
+    log("JSON FAIL → fallback","err");
+
+    words=["КОТ","ДОМ","ЛЕС","ШКОЛА"];
 }
-
-if(!data || !data.words){
-    log("NO JSON → fallback", "err");
-    document.getElementById("hint").innerText =
-        "❌ JSON не найден (fallback)";
-    newTask();
-    return;
-}
-
-words = data.words;
-
-log("WORDS LOADED: " + words.length + " via " + used, "ok");
 
 newTask();
 }
 
 /* =========================
-   DRAWER
+   NORMALIZE
 ========================= */
+function normalizeWord(word){
 
-function toggleDrawer(){
-
-open = !open;
-
-document.getElementById("drawer").style.right =
-open ? "0" : "-380px";
-
-document.getElementById("overlay").style.display =
-open ? "block" : "none";
-
-if(open) renderTable();
+return word
+    .trim()
+    .toUpperCase()
+    .replace(/Ё/g,"Е");
 }
 
 /* =========================
-   TABLE
+   GAME
 ========================= */
+function newTask(){
+
+if(!words.length) return;
+
+currentWord =
+words[Math.floor(Math.random()*words.length)];
+
+document.getElementById("cipherWord").innerText =
+encode(currentWord);
+
+document.getElementById("hint").innerText =
+"Слов загружено: "+words.length;
+}
+
+function encode(word){
+
+return word
+.split("")
+.map(ch=>key[ch] || "?")
+.join(" ");
+}
+
+/* =========================
+   DRAWER
+========================= */
+function toggleDrawer(){
+
+drawerOpen=!drawerOpen;
+
+document.getElementById("drawer").style.right =
+drawerOpen ? "0" : "-380px";
+
+document.getElementById("overlay").style.display =
+drawerOpen ? "block" : "none";
+
+if(drawerOpen){
+    renderTable();
+}
+}
 
 function renderTable(){
 
-const el = document.getElementById("cipherTable");
+const el=document.getElementById("cipherTable");
 
-if(!el) return;
-
-el.innerHTML =
+el.innerHTML=
 `<div class="cipherGrid">
-${alphabet.split("").map(l=>`
+${alphabet.split("").map(letter=>`
 <div class="cipherItem">
-    <div class="cipherLetter">${l}</div>
-    <div class="cipherSymbol">${key[l]}</div>
+<div class="cipherLetter">${letter}</div>
+<div class="cipherSymbol">${key[letter]}</div>
 </div>
 `).join("")}
 </div>`;
 }
 
 /* =========================
-   GAME
+   START
 ========================= */
-
-function newTask(){
-
-if(!words.length) return;
-
-current = words[Math.floor(Math.random()*words.length)];
-
-document.getElementById("cipherWord").innerText =
-encode(current);
-
-document.getElementById("hint").innerText =
-"HINT READY";
-
-log("WORD: " + current, "ok");
-}
-
-function encode(word){
-return word.split("").map(l=>key[l]||"?").join(" ");
-}
-
-/* =========================
-   BOOT
-========================= */
-
-window.addEventListener("load", ()=>{
-    log("WINDOW LOADED", "ok");
-    loadWords();
-});
-
+window.addEventListener("load",loadWords);
 </script>
 
 </body>
