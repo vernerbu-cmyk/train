@@ -2,184 +2,148 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SHIFR TRAINER v23</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>SHIFR PRO TRAINER</title>
 
 <style>
+:root{
+--bg:#0b1220;
+--card:#111827;
+--line:rgba(255,255,255,.08);
+--blue:#22d3ee;
+--blue2:#93c5fd;
+--text:#fff;
+}
+
 body{
-    margin:0;
-    font-family:Arial,sans-serif;
-    background:#0b1220;
-    color:#fff;
-    display:flex;
-    justify-content:center;
+margin:0;
+font-family:Arial,sans-serif;
+background:var(--bg);
+color:var(--text);
+display:flex;
+justify-content:center;
 }
 
-.container{
-    width:100%;
-    max-width:520px;
-    padding:16px;
+.wrap{
+width:100%;
+max-width:560px;
+padding:14px;
 }
 
-.card{
-    margin-top:14px;
-    background:#111827;
-    padding:16px;
-    border-radius:16px;
-    text-align:center;
+.panel{
+background:var(--card);
+border-radius:18px;
+padding:16px;
+margin-top:12px;
+border:1px solid var(--line);
 }
 
-#hint{
-    font-size:15px;
-    color:#93c5fd;
-    margin-bottom:10px;
+h1{
+text-align:center;
+color:var(--blue);
+margin:0 0 10px;
 }
 
 .code{
-    font-size:42px;
-    letter-spacing:10px;
-    margin:18px 0;
-    color:#22d3ee;
-    min-height:54px;
+font-size:40px;
+text-align:center;
+margin:18px 0;
+color:var(--blue);
+letter-spacing:8px;
 }
 
 button{
-    width:100%;
-    margin-top:8px;
-    padding:11px;
-    border:none;
-    border-radius:10px;
-    background:#334155;
-    color:#fff;
-    font-size:15px;
+width:100%;
+padding:11px;
+border:none;
+border-radius:12px;
+margin-top:8px;
+background:#334155;
+color:#fff;
+font-size:15px;
 }
 
-button:active{
-    transform:scale(0.99);
-}
+.primary{background:#0891b2;}
 
-#debug{
-    position:fixed;
-    left:10px;
-    right:10px;
-    bottom:10px;
-    background:#0f172a;
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:10px;
-    padding:10px;
-    font-size:12px;
-    max-height:160px;
-    overflow:auto;
-    z-index:50;
-}
-
-.ok{color:#22c55e;}
-.err{color:#ef4444;}
-.warn{color:#facc15;}
-
-/* drawer */
 #overlay{
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.55);
-    z-index:90;
+display:none;
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.55);
 }
 
 #drawer{
-    position:fixed;
-    top:0;
-    right:-380px;
-    width:340px;
-    height:100%;
-    background:linear-gradient(180deg,#0b1220,#111827);
-    transition:.25s ease;
-    z-index:100;
-    overflow:auto;
-    padding:16px;
-    box-sizing:border-box;
+position:fixed;
+top:0;
+right:-420px;
+width:360px;
+height:100%;
+background:#0f172a;
+padding:16px;
+overflow:auto;
+transition:.25s;
+box-shadow:-10px 0 40px rgba(0,0,0,.6);
 }
 
-.drawerTitle{
-    font-size:18px;
-    color:#93c5fd;
-    margin-bottom:12px;
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:8px;
 }
 
-.cipherGrid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:10px;
+.cell{
+background:rgba(255,255,255,.04);
+padding:10px;
+border-radius:10px;
+display:flex;
+justify-content:space-between;
 }
 
-.cipherItem{
-    background:rgba(255,255,255,.04);
-    border:1px solid rgba(255,255,255,.06);
-    border-radius:12px;
-    padding:10px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
+.small{opacity:.7;}
+.big{
+font-size:22px;
+color:var(--blue);
+font-family:"Segoe UI Symbol","Noto Sans Symbols",sans-serif;
 }
 
-.cipherLetter{
-    opacity:.75;
-    font-size:13px;
+.printBtn{
+background:#16a34a;
 }
 
-.cipherSymbol{
-    font-size:22px;
-    color:#22d3ee;
-}
 </style>
 </head>
 
 <body>
 
-<div class="container">
-<div class="card">
+<div class="wrap">
 
-<div id="hint">🔄 загрузка слов...</div>
+<div class="panel">
 
-<div class="code" id="cipherWord"></div>
+<h1>🔐 SHIFR</h1>
 
-<button onclick="newTask()">🔁 Новое слово</button>
+<div class="code" id="code">---</div>
+
+<button onclick="newWord()">🔁 Новое слово</button>
 <button onclick="toggleDrawer()">📊 Таблица шифра</button>
+<button class="printBtn" onclick="printTable()">🖨 Печать таблицы</button>
 
 </div>
+
 </div>
 
 <div id="overlay" onclick="toggleDrawer()"></div>
 
 <div id="drawer">
-<div class="drawerTitle">📊 Буква → Символ</div>
-<div id="cipherTable"></div>
+<h2 style="color:#93c5fd;">📊 Буква → Символ</h2>
+<div id="table"></div>
 </div>
 
-<div id="debug"></div>
-
 <script>
-/* =========================
-   DEBUG
-========================= */
-const debugLog=[];
 
-function log(msg,type="ok"){
-    debugLog.push({msg,type});
-    renderDebug();
-    console.log(msg);
-}
+/* ======================
+DATA
+====================== */
 
-function renderDebug(){
-    const el=document.getElementById("debug");
-    el.innerHTML="<b>DEBUG</b><br>"+debugLog.slice(-12).map(x=>
-        `<div class="${x.type}">${x.msg}</div>`
-    ).join("");
-}
-
-/* =========================
-   DATA
-========================= */
 const alphabet="АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
 
 const symbols=[
@@ -190,130 +154,190 @@ const symbols=[
 ];
 
 const key={};
-
-alphabet.split("").forEach((letter,i)=>{
-    key[letter]=symbols[i];
+alphabet.split("").forEach((l,i)=>{
+key[l]=symbols[i];
 });
 
 let words=["КОТ","ДОМ","ЛЕС"];
-let currentWord="";
-let drawerOpen=false;
+let current="";
 
-/* =========================
-   JSON LOADER
-   ТВОЙ ФОРМАТ = МАССИВ []
-========================= */
+/* ======================
+LOAD OPTIONAL JSON SAFE
+====================== */
+
 async function loadWords(){
-
-log("LOAD words.json","warn");
-
 try{
-    const res = await fetch("words.json?v="+Date.now());
-
-    if(!res.ok){
-        throw new Error("HTTP "+res.status);
-    }
-
-    const data = await res.json();
-
-    /* ожидаем массив строк */
-    if(!Array.isArray(data)){
-        throw new Error("JSON не массив");
-    }
-
-    words = data
-        .filter(x=>typeof x==="string" && x.trim()!=="")
-        .map(x=>normalizeWord(x));
-
-    if(!words.length){
-        throw new Error("пустой список");
-    }
-
-    log("WORDS LOADED: "+words.length,"ok");
-
-}catch(e){
-
-    log("JSON FAIL → fallback","err");
-
-    words=["КОТ","ДОМ","ЛЕС","ШКОЛА"];
+const r=await fetch("words.json?v="+Date.now());
+const d=await r.json();
+if(Array.isArray(d)) words=d.map(x=>x.toUpperCase());
+}catch(e){}
 }
 
-newTask();
-}
+/* ======================
+GAME
+====================== */
 
-/* =========================
-   NORMALIZE
-========================= */
-function normalizeWord(word){
-
-return word
-    .trim()
-    .toUpperCase()
-    .replace(/Ё/g,"Е");
-}
-
-/* =========================
-   GAME
-========================= */
-function newTask(){
-
+function newWord(){
 if(!words.length) return;
 
-currentWord =
-words[Math.floor(Math.random()*words.length)];
+current=words[Math.floor(Math.random()*words.length)];
 
-document.getElementById("cipherWord").innerText =
-encode(currentWord);
-
-document.getElementById("hint").innerText =
-"Слов загружено: "+words.length;
+document.getElementById("code").innerText =
+encode(current);
 }
 
-function encode(word){
-
-return word
-.split("")
-.map(ch=>key[ch] || "?")
-.join(" ");
+function encode(w){
+return w.split("").map(c=>key[c]||"?").join(" ");
 }
 
-/* =========================
-   DRAWER
-========================= */
-function toggleDrawer(){
+/* ======================
+DRAWER
+====================== */
 
-drawerOpen=!drawerOpen;
+let open=false;
+
+function toggleDrawer(force=null){
+
+open = force!==null ? force : !open;
 
 document.getElementById("drawer").style.right =
-drawerOpen ? "0" : "-380px";
+open ? "0" : "-420px";
 
 document.getElementById("overlay").style.display =
-drawerOpen ? "block" : "none";
+open ? "block" : "none";
 
-if(drawerOpen){
-    renderTable();
+if(open) renderTable();
 }
-}
+
+/* ======================
+TABLE (FIXED SAFE RENDER)
+====================== */
 
 function renderTable(){
 
-const el=document.getElementById("cipherTable");
+const wrap=document.getElementById("table");
+wrap.innerHTML="";
 
-el.innerHTML=
-`<div class="cipherGrid">
-${alphabet.split("").map(letter=>`
-<div class="cipherItem">
-<div class="cipherLetter">${letter}</div>
-<div class="cipherSymbol">${key[letter]}</div>
-</div>
-`).join("")}
-</div>`;
+const grid=document.createElement("div");
+grid.className="grid";
+
+alphabet.split("").forEach(l=>{
+
+const cell=document.createElement("div");
+cell.className="cell";
+
+const left=document.createElement("span");
+left.className="small";
+left.textContent=l;
+
+const right=document.createElement("span");
+right.className="big";
+right.textContent=key[l];
+
+cell.appendChild(left);
+cell.appendChild(right);
+grid.appendChild(cell);
+
+});
+
+wrap.appendChild(grid);
 }
 
-/* =========================
-   START
-========================= */
-window.addEventListener("load",loadWords);
+/* ======================
+PRINT
+====================== */
+function printTable(){
+
+const w = window.open("","_blank");
+
+const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Шифр</title>
+
+<style>
+
+@page {
+  margin: 10mm;
+}
+
+body{
+font-family:Arial, sans-serif;
+margin:0;
+padding:10px;
+}
+
+h2{
+text-align:center;
+font-size:18px;
+margin:0 0 10px 0;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(4, max-content);
+gap:8px;
+justify-content:start;
+}
+
+.item{
+display:inline-flex;
+justify-content:flex-start;
+align-items:center;
+gap:6px;
+padding:4px 8px;
+border:1px solid #ddd;
+border-radius:6px;
+font-size:16px;
+line-height:1;
+white-space:nowrap;
+}
+
+.l{
+font-size:16px;
+opacity:0.75;
+min-width:16px;
+}
+
+.s{
+font-size:18px;
+font-weight:bold;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>ШИФР</h2>
+
+<div class="grid">
+${alphabet.split("").map(l => `
+  <div class="item">
+    <div class="l">${l}</div>
+    <div class="s">${key[l]}</div>
+  </div>
+`).join("")}
+</div>
+
+</body>
+</html>
+`;
+
+w.document.write(html);
+w.document.close();
+w.print();
+}
+/* ======================
+INIT
+====================== */
+
+loadWords();
+newWord();
+
 </script>
 
 </body>
