@@ -2,226 +2,416 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Что лишнее?</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Что лишнее? — 4 уровня</title>
 
 <style>
-/* ===== ОБЩИЙ СТИЛЬ ===== */
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f4f6fb;
-  text-align: center;
+body{
+  margin:0;
+  font-family:Arial;
+  background:#f4f6fb;
+  text-align:center;
 }
 
-/* ===== ВЕРХНЯЯ ПАНЕЛЬ ===== */
-.header {
-  background: #1E3F8A;
-  color: white;
-  padding: 18px 10px;
-  font-size: 26px;
-  font-style: italic;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+.top{
+  background:#1E3F8A;
+  color:#fff;
+  padding:14px;
+  font-size:22px;
 }
 
-/* ===== КОНТЕНТ ===== */
-.wrapper {
-  padding: 20px;
+.wrap{max-width:600px;margin:auto;padding:12px;}
+
+select,button{
+  padding:10px;
+  margin:6px;
+  border:none;
+  border-radius:10px;
+  font-weight:bold;
 }
 
-/* ===== СЕТКА ===== */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(2, 120px);
-  gap: 15px;
-  justify-content: center;
-  margin-top: 20px;
+button{background:#FF6A00;color:#fff;cursor:pointer;}
+
+.hintBtn{
+  background:#FFD54A;
+  color:#000;
 }
 
-/* ===== КАРТОЧКИ ===== */
-.card {
-  font-size: 50px;
-  padding: 20px;
-  background: #fff;
-  border-radius: 16px;
-  cursor: pointer;
-  box-shadow: 0 6px 14px rgba(0,0,0,0.12);
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+.rule{
+  margin-top:10px;
+  font-size:18px;
+  font-weight:bold;
+  color:#333;
+  min-height:24px;
 }
 
-.card:active {
-  transform: translateY(3px);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(120px, 160px));
+  grid-template-rows:repeat(2, minmax(120px, 160px));
+  gap:14px;
+  justify-content:center;
+  margin-top:16px;
 }
 
-/* ===== КНОПКИ ===== */
-button, select {
-  margin-top: 15px;
-  padding: 10px 18px;
-  font-size: 16px;
-  border-radius: 10px;
-  border: none;
-  outline: none;
+.card{
+  width:100%;
+  height:100%;
+
+  font-size:54px;
+  background:#fff;
+  border-radius:16px;
+  cursor:pointer;
+  box-shadow:0 6px 14px rgba(0,0,0,0.12);
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  user-select:none;
 }
 
-/* ОРАНЖЕВАЯ КНОПКА */
-button {
-  background: #FF6A00;
-  color: white;
-  box-shadow: 0 4px 0 #c84f00;
-  cursor: pointer;
+@media (max-width: 480px){
+
+  .grid{
+    grid-template-columns:repeat(2, 45vw);
+    grid-template-rows:repeat(2, 45vw);
+    gap:10px;
+  }
+
+  .card{
+    font-size:48px;
+    border-radius:14px;
+  }
 }
 
-button:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 #c84f00;
-}
-
-/* SELECT */
-select {
-  border: 2px solid #FF6A00;
-  background: white;
-}
-
-/* ===== СООБЩЕНИЕ ===== */
-#msg {
-  margin-top: 18px;
-  font-size: 22px;
-  font-weight: bold;
-  color: #1E3F8A;
-}
-
-/* ===== ФУТЕР ===== */
-.footer {
-  position: fixed;
-  right: 10px;
-  bottom: 6px;
-  font-size: 11px;
-  color: rgba(0,0,0,0.4);
-}
+#msg{margin-top:10px;font-size:18px;font-weight:bold;}
 </style>
 </head>
 
 <body>
 
-<div class="header">Что лишнее?</div>
+<div class="top">Что лишнее?</div>
 
-<div class="wrapper">
+<div class="wrap">
 
-  <select id="difficulty">
-    <option value="easy">Легко</option>
-    <option value="medium" selected>Средне</option>
-    <option value="hard">Сложно</option>
-    <option value="super">Супер сложно</option>
-  </select>
+<select id="level" onchange="gen()">
+  <option value="easy">EASY</option>
+  <option value="medium">MEDIUM</option>
+  <option value="hard">HARD</option>
+  <option value="extreme">EXTREME</option>
+</select>
 
-  <br>
+<button onclick="gen()">Новый раунд</button>
+<button class="hintBtn" onclick="toggleRule()">💡</button>
 
-  <button onclick="generate()">Новый уровень</button>
-
-  <div id="grid" class="grid"></div>
-  <div id="msg"></div>
+<div id="rule" class="rule"></div>
+<div id="grid" class="grid"></div>
+<div id="msg"></div>
 
 </div>
 
-<div class="footer">© verner</div>
-
 <script>
 
-/* ===== ЛОГИКА НЕ ТРОГАЛАСЬ ===== */
-
-const categories = [
-  { items: ["🐶","🐱","🐰","🦊","🐻","🐼","🐯","🦁","🐮","🐷","🐸","🐵","🐔","🦆","🦉","🐺","🐴","🐑","🐘","🐭","🐹"] },
-
-  { items: ["🐟","🐠","🐡","🐬","🐳","🐋","🐙","🦀","🦑","🐚","🐊","🐢","🦈","🦞","🦐"] },
-
-  { items: ["🚗","🚕","🚙","🚲","🚌","🚎","🚓","🚑","🚒","🚜","🚂","🚆","🚊","✈️","🚁","🚀","🚢","⛵","🛳️","🛥️","🛴"] },
-
-  { items: ["🍎","🍏","🍌","🍓","🍇","🍉","🍒","🍍","🥝","🍐","🍊","🍋","🍑","🥭","🍅","🥕","🥒","🌽","🥔","🧄","🧅"] },
-
-  { items: ["☀️","🌙","⭐","🌧️","❄️","🌈","🔥","🌊","🌿","🌳","🌲","🌴","🌵","🍀","🍁","🍂","🌸","🌼","🌻"] },
-
-  { items: ["⚽","🏀","🎾","🏐","🏈","🥊","🎯","🏓","🥅","🏆","🥇","🥈","🥉","🎳","⛳","🏸","🤸","🏊","🚴"] },
-
-  { items: ["🔴","🟠","🟡","🟢","🔵","🟣","⚫","⚪","🟥","🟧","🟨","🟩","🟦","🟪","⬛","⬜","⭐"] }
-];
-
 let correct = "";
+let currentRule = "";
+let ruleVisible = false;
 
 function rand(arr){
   return arr[Math.floor(Math.random()*arr.length)];
 }
 
-function shuffle(arr){
-  return arr.sort(()=>Math.random()-0.5);
+function shuffle(a){
+  return [...a].sort(()=>Math.random()-0.5);
 }
 
-function pickUnique(arr, count){
-  const copy = [...new Set(arr)];
-  const res = [];
-  while(res.length < count){
-    const i = Math.floor(Math.random()*copy.length);
-    res.push(copy.splice(i,1)[0]);
-  }
-  return res;
+/* =========================
+   GAME DATA
+========================= */
+
+const GAME = {
+
+/* ========== EASY ========== */
+easy:{
+  bank:{
+
+    living:[
+      "🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯",
+      "🦁","🐮","🐷","🐸","🐵","🐔","🐦","🦆","🦅","🐟","🐙"
+    ],
+
+    non_living:[
+      "🏠","🏢","🚗","🚲","✈️","🚢","📱","💻","📦","🎮","🔧"
+    ],
+
+    edible:[
+      "🍎","🍌","🍓","🍇","🍒","🍑","🍍","🍊","🍉","🍞","🍔"
+    ],
+
+    non_edible:[
+      "🚗","🏠","📱","💻","📦","🎮","🔧","⚙️"
+    ],
+
+    animal:[
+      "🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐯","🐮","🐷","🐸"
+    ],
+
+    plant:[
+      "🌳","🌲","🌴","🌵","🌿","🌸","🌼","🌻","🍀","🌱"
+    ]
+
+  },
+
+  rules:[
+    { name:"Живое / Неживое", a:"living", b:"non_living" },
+    { name:"Съедобное / Несъедобное", a:"edible", b:"non_edible" },
+    { name:"Животное / Растение", a:"animal", b:"plant" }
+  ]
+},
+
+/* ========== MEDIUM ========== */
+medium:{
+  bank:{
+
+    domestic:["🐶","🐱","🐮","🐷","🐴","🐑","🐐","🐔","🐰","🐹"],
+    wild:["🐯","🦁","🐻","🦊","🐺","🐗","🐵","🐘","🦓","🦒"],
+
+    water:["🐟","🐠","🐬","🐙","🦀","🐋"],
+    land:["🐶","🐱","🐻","🦊","🐴","🐮","🐷","🐰"],
+
+    fly:["🐦","🦅","🦉","🦋","🦇","🐝","✈️","🚁"],
+    non_fly:["🐶","🐱","🐻","🦊","🐷","🐮","🚗","🚲"],
+
+    fruit:["🍎","🍌","🍓","🍇","🍒","🍑","🍍","🍊"],
+    veg:["🥕","🥒","🍅","🥦","🌽","🥬","🥔"]
+
+  },
+
+  rules:[
+    { name:"Домашние / Дикие", a:"domestic", b:"wild" },
+    { name:"Вода / Суша", a:"water", b:"land" },
+    { name:"Летает / Не летает", a:"fly", b:"non_fly" },
+    { name:"Фрукты / Овощи", a:"fruit", b:"veg" }
+  ]
+},
+
+/* ========== HARD ========== */
+hard:{
+  bank:{
+
+    /* =========================
+       КРУГЛОЕ / УГЛОВАТОЕ
+    ========================= */
+    round:[
+      "⚽","🏀","⚾","🎾","🏐",
+      "🍎","🍊","🍇","🍓","🍒",
+      "🔴","🟠","🟡","🟢","🔵","🟣",
+      "⭕","🪩"
+    ],
+
+    angular:[
+      "📦","🧱","📱","💻","🖥️",
+      "📐","📏","📊","📋","🗂️",
+      "🔲","⬛","🟦","🟥","🟨"
+    ],
+
+    /* =========================
+       ГОРЯЧЕЕ / ХОЛОДНОЕ
+    ========================= */
+    hot:[
+      "🔥","☀️","🌶️","🌋","🥵",
+      "♨️","🌞","🍜"
+    ],
+
+    cold:[
+      "❄️","🧊","⛄","🐧","🥶",
+      "🌨️","🏔️","🧥"
+    ],
+
+    /* =========================
+       ДВИЖЕНИЕ / СТАТИКА
+    ========================= */
+    moves:[
+      "🐶","🐱","🐦","🐟","🐎",
+      "🦁","🐆","🐅","🦅","🐬",
+      "🚗","✈️","🚀","🚴","🏃"
+    ],
+
+    still:[
+      "🚦","🏔️","🧱","🏠","🏢", 
+      "📦","🗼","🪑","🖼️","📚" 
+    ],
+
+    /* =========================
+       АКТИВНОСТЬ / ПАССИВНОСТЬ
+    ========================= */
+    active:[
+      "⚡","🚀","💥","🏃","🎯",
+      "🔥","🧨","🎮","🥊","⚔️"
+    ],
+
+    passive:[
+      "📚","🛌","🧘","🪑","🏠",
+      "📖","🕰️","🧩","🖼️","🌙"
+    ]
+  },
+
+  rules:[
+    { name:"Форма", a:"round", b:"angular" },
+    { name:"Температура", a:"hot", b:"cold" },
+    { name:"Движение", a:"moves", b:"still" },
+    { name:"Активность", a:"active", b:"passive" }
+  ]
+},
+
+/* ========== EXTREME ========== */
+extreme:{
+  bank:{
+
+    /* =========================
+       СОСТАВ: сложное / простое
+    ========================= */
+    composite:[
+      "🚗","🚕","🚙","🚌","🚎",
+      "🏠","🏢","🏭","🏬","🏫",
+      "📱","💻","🖥️","📺","📷",
+      "🚢","✈️","🚁","🚲","🏍️"
+    ],
+
+    simple:[
+      "🔥","💧","🌳","🍎","🍊",
+      "🍓","🍌","🌙","⭐","☀️",
+      "🌊","⚡","🌫️","🌈","🌧️"
+    ],
+
+    /* =========================
+       ИЗМЕНЧИВОЕ / СТАБИЛЬНОЕ
+    ========================= */
+    changing:[
+      "🔥","🌊","☁️","🌱","🌪️",
+      "🌧️","🌈","⚡","❄️","🌤️",
+      "🌦️","🌬️"
+    ],
+
+    stable:[
+      "🏠","🏢","🏭","🏫","🏬",
+      "📦","🧱","🏛️","🪑","🖼️",
+      "📚","⛩️","🏗️"
+    ],
+
+    /* =========================
+       ПРИРОДНОЕ / ИСКУССТВЕННОЕ
+    ========================= */
+    natural:[
+      "🐶","🐱","🐭","🐹","🐰",
+      "🦊","🐻","🐼","🐯","🦁",
+      "🌳","🌲","🌴","🌿","🍄",
+      "🌊","🐟","🐬","🐦","🦋"
+    ],
+
+    artificial:[
+      "🚗","🚕","🚙","🚌","🚎",
+      "🏠","🏢","🏭","📱","💻",
+      "📺","📷","🎮","🔧","🧰",
+      "📦","🖥️","🚁","🚲","🏍️"
+    ],
+
+    /* =========================
+       РЕАКТИВНОЕ / ИНЕРТНОЕ
+    ========================= */
+    reactive:[
+      "🔥","🌊","⚡","🌪️","💥",
+      "🌈","🌧️","☄️","🌬️","🌀",
+      "🌦️"
+    ],
+
+    inert:[
+      "🏠","🏢","🏭","📦","🧱",
+      "🪑","🖼️","📚","🏛️","⛩️",
+      "🏫","🏬","🏗️"
+    ]
+
+  },
+
+  rules:[
+    { name:"Состав", a:"composite", b:"simple" },
+    { name:"Изменчивость", a:"changing", b:"stable" },
+    { name:"Происхождение", a:"natural", b:"artificial" },
+    { name:"Реактивность", a:"reactive", b:"inert" }
+  ]
 }
 
-function generate(){
+};
 
-  const grid = document.getElementById("grid");
-  const msg = document.getElementById("msg");
-  const difficulty = document.getElementById("difficulty").value;
-  msg.textContent = "";
+/* =========================
+   GENERATOR (FIXED)
+========================= */
 
-  let goodCat = rand(categories);
-  let badCat = rand(categories);
+function gen(){
 
-  while(badCat === goodCat){
-    badCat = rand(categories);
-  }
+  const lvl = document.getElementById("level").value;
+  const data = GAME[lvl];
 
-  let goodItems = [];
-  let badItem = "";
+  const rule = rand(data.rules);
+  currentRule = rule.name;
 
-  if(difficulty === "easy"){
-    goodItems = pickUnique(goodCat.items, 3);
-    badItem = rand(badCat.items);
-  }
+  const flip = Math.random() < 0.5;
 
-  if(difficulty === "medium"){
-    goodItems = pickUnique(goodCat.items, 3);
-    badItem = rand(goodCat.items);
-  }
+  const main = flip ? rule.a : rule.b;
+  const wrong = flip ? rule.b : rule.a;
 
-  if(difficulty === "hard"){
-    goodItems = pickUnique(goodCat.items, 3);
-    badItem = rand(goodCat.items);
-  }
+  const good = shuffle(data.bank[main]).slice(0,3);
+  const bad = rand(data.bank[wrong]);
 
-  if(difficulty === "super"){
-    goodItems = pickUnique(goodCat.items, 3);
-    badItem = rand(goodCat.items.filter(x => !goodItems.includes(x)));
-  }
+  correct = bad;
 
-  const all = shuffle([...goodItems, badItem]);
-  correct = badItem;
+  const set = shuffle([...good,bad]);
 
-  grid.innerHTML = "";
+  document.getElementById("msg").textContent = "";
 
-  all.forEach(el=>{
-    const div = document.createElement("div");
-    div.className = "card";
-    div.textContent = el;
+  updateRule();
+  draw(set);
+}
 
-    div.onclick = ()=>{
-      msg.textContent = (el === correct) ? "🎉 Верно!" : "❌ Попробуй ещё";
+/* =========================
+   UI
+========================= */
+
+function draw(arr){
+
+  const g = document.getElementById("grid");
+  g.innerHTML = "";
+
+  arr.forEach(x=>{
+
+    const d = document.createElement("div");
+    d.className="card";
+    d.textContent=x;
+
+    d.onclick=()=>{
+      document.getElementById("msg").textContent =
+        x===correct ? "🎉 Верно!" : "❌ Попробуй ещё";
     };
 
-    grid.appendChild(div);
+    g.appendChild(d);
   });
 }
 
-generate();
+/* =========================
+   RULE TOGGLE
+========================= */
+
+function toggleRule(){
+  ruleVisible = !ruleVisible;
+  updateRule();
+}
+
+function updateRule(){
+  document.getElementById("rule").textContent =
+    ruleVisible ? ("Правило: " + currentRule) : "";
+}
+
+gen();
 
 </script>
 
