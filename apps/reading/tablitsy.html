@@ -16,6 +16,7 @@ body{
   background:#f4f6fb;
 }
 
+/* ===== HEADER ===== */
 .header{
   background:var(--blue);
   color:#fff;
@@ -25,6 +26,7 @@ body{
   padding:14px;
 }
 
+/* ===== STATUS ===== */
 #status{
   text-align:center;
   padding:6px;
@@ -32,6 +34,7 @@ body{
   font-size:14px;
 }
 
+/* ===== CONTROLS ===== */
 .controls{
   display:flex;
   flex-wrap:wrap;
@@ -45,6 +48,7 @@ label{
   font-size:14px;
 }
 
+/* ===== BUTTONS ===== */
 button{
   background:var(--orange);
   color:#fff;
@@ -71,27 +75,39 @@ button:active{
   grid-auto-rows:1fr;
 }
 
-/* ===== CELL ===== */
+/* ===== CELL (ОСНОВНОЙ ФИКС РАЗМЕРА) ===== */
 .cell{
   background:#fff;
   border-radius:16px;
-  padding:22px;
-  text-align:center;
-  font-weight:500;
-  user-select:none;
-  cursor:pointer;
-  box-shadow:0 6px 18px rgba(0,0,0,0.08);
 
   display:flex;
   align-items:center;
   justify-content:center;
 
-  white-space:pre-line;
+  text-align:center;
+  user-select:none;
+  cursor:pointer;
+
+  box-shadow:0 6px 18px rgba(0,0,0,0.08);
+
+  /* ✔ НОРМАЛЬНЫЙ РАЗМЕР */
+  font-size:28px;
+  padding:18px;
+
+  word-break:break-word;
 }
 
 .cell.hidden{
   background:var(--orange);
   color:transparent;
+}
+
+/* ===== MOBILE ===== */
+@media (max-width:600px){
+  .cell{
+    font-size:22px;
+    padding:16px;
+  }
 }
 
 /* ===== FOOTER ===== */
@@ -122,11 +138,6 @@ button:active{
   <label><input id="v4" type="checkbox" checked> 4</label>
   <label><input id="v5" type="checkbox" checked> 5+</label>
 
-  <label>
-    слоги
-    <input id="syllableMode" type="checkbox">
-  </label>
-
   <button onclick="generate()">Сгенерировать</button>
 
 </div>
@@ -142,9 +153,7 @@ const status = document.getElementById("status");
 
 const vowels = "аоуыэиеёюя";
 
-/* =========================
-   LOAD JSON
-========================= */
+/* ===== LOAD ===== */
 async function load(){
   try{
     status.textContent = "⏳ загрузка JSON...";
@@ -162,151 +171,7 @@ async function load(){
   }
 }
 
-/* =========================
-   ГЛАСНЫЕ
-========================= */
-function isVowel(ch){
-  return vowels.includes(ch);
-}
-
-/* =========================
-   СЛОГИ (1:1 ТВОЙ АЛГОРИТМ)
-========================= */
-function preprocess(word){
-
-  word = word.toLowerCase();
-
-  const res = [];
-
-  for(let i=0;i<word.length;i++){
-
-    const ch = word[i];
-
-    if(ch === " "){
-      res.push(" ");
-      continue;
-    }
-
-    if(!/[а-яё]/.test(ch)) continue;
-
-    if(ch === "ь" || ch === "ъ"){
-      if(res.length){
-        res[res.length - 1] += ch;
-      }
-      continue;
-    }
-
-    if(ch === "й"){
-      if(res.length){
-        res[res.length - 1] += ch;
-      }else{
-        res.push(ch);
-      }
-      continue;
-    }
-
-    res.push(ch);
-  }
-
-  return res;
-}
-
-function split(word){
-
-  if(word.includes(" ")){
-    return word
-      .split(" ")
-      .map(w => split(w).join("-"))
-      .join(" ")
-      .split(" ");
-  }
-
-  const letters = preprocess(word);
-
-  const isV = ch => vowels.includes(ch[0]);
-
-  const vowelCount =
-    letters.filter(x => isV(x)).length;
-
-  if(vowelCount <= 1){
-    return [letters.join("")];
-  }
-
-  const res = [];
-  let cur = "";
-  let i = 0;
-
-  while(i < letters.length){
-
-    cur += letters[i];
-
-    if(isV(letters[i])){
-
-      let j = i + 1;
-      let cons = [];
-
-      while(j < letters.length && !isV(letters[j])){
-        cons.push(letters[j]);
-        j++;
-      }
-
-      // конец слова
-      if(j >= letters.length){
-        cur += cons.join("");
-        res.push(cur);
-        break;
-      }
-
-      // ✔ ВАЖНОЕ ИСПРАВЛЕНИЕ:
-      // НЕ делим "сс", "лл", "мм" автоматически
-
-      if(cons.length === 0){
-
-        res.push(cur);
-        cur = "";
-
-      } else if(cons.length === 1){
-
-        res.push(cur);
-        cur = cons[0];
-
-      } else {
-
-        // ❗ НОВОЕ ПРАВИЛО:
-        // двойные согласные НЕ режем (исправление бага)
-
-        const double =
-          cons.length >= 2 &&
-          cons[0] === cons[1];
-
-        if(double){
-
-          cur += cons.join("");
-          res.push(cur);
-          cur = "";
-
-        } else {
-
-          cur += cons.slice(0,-1).join("");
-          res.push(cur);
-          cur = cons.slice(-1).join("");
-        }
-      }
-
-      i = j - 1;
-    }
-
-    i++;
-  }
-
-  if(cur) res.push(cur);
-
-  return res;
-}
-
-/* =========================
-   GENERATE (ФИКС СТРОК)
-========================= */
+/* ===== GENERATE ===== */
 function generate(){
 
   const r = +rows.value || 5;
@@ -331,16 +196,12 @@ function generate(){
     pool = [...pool, ...words];
   }
 
-  pool = pool.sort(()=>Math.random()-0.5);
+  pool = pool.sort(()=>Math.random()-0.5).slice(0, need);
 
-  const result = pool.slice(0, need);
-
-  render(result, c);
+  render(pool, c);
 }
 
-/* =========================
-   RENDER (СТРОКИ СТАБИЛЬНЫ)
-========================= */
+/* ===== RENDER ===== */
 function render(list, cols){
 
   grid.innerHTML = "";
@@ -353,11 +214,7 @@ function render(list, cols){
     const div = document.createElement("div");
     div.className = "cell";
 
-    if(syllableMode.checked){
-      div.innerHTML = split(word).join("<br>");
-    }else{
-      div.textContent = word;
-    }
+    div.textContent = word;
 
     div.onclick = ()=>div.classList.toggle("hidden");
 
