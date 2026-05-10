@@ -32,6 +32,7 @@ body{
   font-size:14px;
 }
 
+/* ===== CONTROLS ===== */
 .controls{
   display:flex;
   flex-wrap:wrap;
@@ -71,7 +72,7 @@ button:active{
   grid-auto-rows:1fr;
 }
 
-/* ===== CELL ===== */
+/* ===== CARD ===== */
 .cell{
   background:#fff;
   border-radius:16px;
@@ -86,10 +87,12 @@ button:active{
 
   box-shadow:0 6px 18px rgba(0,0,0,0.08);
 
-  font-size:28px;
   padding:18px;
 
   word-break:break-word;
+  overflow-wrap:anywhere;
+  white-space:normal;
+
   transition:0.15s;
 }
 
@@ -110,8 +113,7 @@ button:active{
 /* ===== MOBILE ===== */
 @media (max-width:600px){
   .cell{
-    font-size:22px;
-    padding:16px;
+    padding:14px;
   }
 }
 </style>
@@ -134,10 +136,15 @@ button:active{
   <label><input id="v4" type="checkbox" checked> 4</label>
   <label><input id="v5" type="checkbox" checked> 5+</label>
 
-  <!-- 🆕 РЕЖИМ КРУПНЫХ КАРТОЧЕК -->
+  <!-- РЕЖИМЫ -->
   <label>
     <input id="bigMode" type="checkbox">
     крупные карточки
+  </label>
+
+  <label>
+    <input id="ultraMode" type="checkbox">
+    слабовидящие
   </label>
 
   <button onclick="generate()">Сгенерировать</button>
@@ -208,10 +215,11 @@ function render(list, cols){
 
   grid.innerHTML = "";
 
-  const big = bigMode.checked;
-
   grid.style.gridTemplateColumns =
-    `repeat(${cols}, 1fr)`;
+    `repeat(${cols}, minmax(0, 1fr))`;
+
+  const big = bigMode.checked;
+  const ultra = ultraMode.checked;
 
   list.forEach(word=>{
 
@@ -220,11 +228,36 @@ function render(list, cols){
 
     div.textContent = word;
 
-    /* ===== КРУПНЫЙ РЕЖИМ ===== */
+    const len = word.length;
+
+    /* =========================
+       УМНЫЙ РАЗМЕР ШРИФТА
+    ========================= */
+    let size = 28;
+
     if(big){
-      div.style.fontSize = "42px";
-      div.style.padding = "32px";
-      div.style.minHeight = "90px";
+      size = 44;
+    }
+
+    if(ultra){
+      size = 54;
+    }
+
+    // авто-уменьшение для длинных слов
+    if(len > 8) size -= 4;
+    if(len > 12) size -= 8;
+    if(len > 16) size -= 12;
+    if(len > 20) size -= 16;
+
+    div.style.fontSize = size + "px";
+
+    // padding тоже адаптивный
+    if(ultra){
+      div.style.padding = "34px";
+    } else if(big){
+      div.style.padding = "28px";
+    } else {
+      div.style.padding = "18px";
     }
 
     div.onclick = ()=>div.classList.toggle("hidden");
