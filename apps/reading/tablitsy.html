@@ -68,23 +68,33 @@ button:active{
 /* ===== GRID ===== */
 #grid{
   display:grid;
-  gap:10px;
+  gap:12px;
   max-width:1000px;
   margin:20px auto;
   padding:0 10px;
 }
 
-/* ===== CELL ===== */
+/* ВАЖНО: убираем конфликтующие ограничения */
 .cell{
   background:#fff;
   border-radius:16px;
-  padding:22px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
   text-align:center;
+
   font-weight:500;
   user-select:none;
   cursor:pointer;
+
   box-shadow:0 6px 18px rgba(0,0,0,0.08);
-  white-space:pre-line;
+
+  padding:0; /* ВАЖНО */
+  min-height:unset; /* убираем фикс */
+
+  word-break:break-word;
+  white-space:normal;
 }
 
 .cell.hidden{
@@ -335,16 +345,20 @@ function render(list, cols){
   const isMobile = window.innerWidth < 600;
   const finalCols = isMobile ? Math.min(cols, 2) : cols;
 
-  const minCell = Math.max(80, font * 2.2);
-
+  /* 👉 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ */
   grid.style.gridTemplateColumns =
-    `repeat(${finalCols}, minmax(${minCell}px, 1fr))`;
+    `repeat(${finalCols}, 1fr)`;
 
   list.forEach(word=>{
 
     const div = document.createElement("div");
     div.className = "cell";
+
     div.style.fontSize = font + "px";
+
+    /* 👉 высота зависит от текста */
+    div.style.minHeight = (font * 2.2) + "px";
+    div.style.padding = (font * 0.6) + "px";
 
     if(syllableMode.checked){
       div.innerHTML = split(word).join("<br>");
