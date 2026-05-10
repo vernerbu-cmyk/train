@@ -298,7 +298,7 @@ function preprocess(word){
 
 function split(word){
 
-  word = word.toLowerCase().replace(/[^а-яё]/g,"");
+  word = word.toLowerCase().replace(/[^а-яё\s]/g,"");
 
   const res = [];
   let cur = "";
