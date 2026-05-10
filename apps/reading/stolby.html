@@ -298,41 +298,45 @@ function preprocess(word){
 
 function split(word){
 
-  const letters = preprocess(word);
+  word = word.toLowerCase().replace(/[^а-яё]/g,"");
 
   const res = [];
   let cur = "";
 
-  for(let i=0;i<letters.length;i++){
+  const isVowel = ch => vowels.includes(ch);
 
-    const ch = letters[i];
+  for(let i=0;i<word.length;i++){
+
+    const ch = word[i];
     cur += ch;
 
+    // нашли гласную
     if(isVowel(ch)){
 
       let j = i + 1;
       let cons = "";
 
-      while(j < letters.length && !isVowel(letters[j])){
-        cons += letters[j];
+      // собираем согласные до следующей гласной
+      while(j < word.length && !isVowel(word[j])){
+        cons += word[j];
         j++;
       }
 
-      // конец слова
-      if(j >= letters.length){
+      // конец слова → всё остаётся в одном слоге
+      if(j >= word.length){
         cur += cons;
         res.push(cur);
         return res;
       }
 
-      // нет согласных
+      // 0 согласных
       if(cons.length === 0){
         res.push(cur);
         cur = "";
         continue;
       }
 
-      // 1 согласная
+      // 1 согласная → вправо
       if(cons.length === 1){
         cur += cons;
         res.push(cur);
@@ -341,7 +345,7 @@ function split(word){
         continue;
       }
 
-      // 2+ согласных → всё кроме последней влево
+      // 2+ согласных → ВСЁ кроме последней влево
       cur += cons.slice(0, -1);
       res.push(cur);
       cur = cons.slice(-1);
