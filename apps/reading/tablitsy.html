@@ -223,8 +223,10 @@ function split(word){
 
   const letters = preprocess(word);
 
+  const isV = ch => vowels.includes(ch[0]);
+
   const vowelCount =
-    letters.filter(x => isVowel(x[0])).length;
+    letters.filter(x => isV(x)).length;
 
   if(vowelCount <= 1){
     return [letters.join("")];
@@ -238,52 +240,60 @@ function split(word){
 
     cur += letters[i];
 
-    if(isVowel(letters[i][0])){
+    if(isV(letters[i])){
 
       let j = i + 1;
       let cons = [];
 
-      while(j < letters.length && !isVowel(letters[j][0])){
+      while(j < letters.length && !isV(letters[j])){
         cons.push(letters[j]);
         j++;
       }
 
-      if(j < letters.length){
+      // конец слова
+      if(j >= letters.length){
+        cur += cons.join("");
+        res.push(cur);
+        break;
+      }
 
-        if(cons.length === 0){
+      // ✔ ВАЖНОЕ ИСПРАВЛЕНИЕ:
+      // НЕ делим "сс", "лл", "мм" автоматически
+
+      if(cons.length === 0){
+
+        res.push(cur);
+        cur = "";
+
+      } else if(cons.length === 1){
+
+        res.push(cur);
+        cur = cons[0];
+
+      } else {
+
+        // ❗ НОВОЕ ПРАВИЛО:
+        // двойные согласные НЕ режем (исправление бага)
+
+        const double =
+          cons.length >= 2 &&
+          cons[0] === cons[1];
+
+        if(double){
+
+          cur += cons.join("");
           res.push(cur);
           cur = "";
-        }
 
-        else if(cons.length === 1){
-          res.push(cur);
-          cur = cons[0];
-          i = j - 1;
-          continue;
-        }
+        } else {
 
-        else if(cons.length >= 2 && cons[0][0] === cons[1][0]){
-
-          if(vowelCount === 1){
-            return [letters.join("")];
-          }
-
-          cur += cons[0];
-          res.push(cur);
-          cur = cons.slice(1).join("");
-
-          i = j - 1;
-          continue;
-        }
-
-        else{
           cur += cons.slice(0,-1).join("");
           res.push(cur);
           cur = cons.slice(-1).join("");
-          i = j - 1;
-          continue;
         }
       }
+
+      i = j - 1;
     }
 
     i++;
