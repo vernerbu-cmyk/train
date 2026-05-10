@@ -6,136 +6,135 @@
 <title>ЛАВИНА</title>
 
 <style>
-body {
+body{
   margin:0;
-  font-family: Arial, sans-serif;
+  font-family:Arial;
   background:#fffaf2;
 }
 
-/* HEADER */
+/* ===== HEADER ===== */
 header{
+  position:sticky;
+  top:0;
+  z-index:10;
   background:#1E3F8A;
-  color:white;
+  color:#fff;
   padding:10px;
   display:flex;
-  flex-wrap:wrap;
   align-items:center;
   justify-content:space-between;
+  flex-wrap:wrap;
   gap:10px;
 }
 
-.logo{
-  font-weight:bold;
-  font-size:22px;
+.title{
   font-style:italic;
-}
-
-/* SPEED */
-.speed{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  font-size:14px;
-}
-
-input[type=range]{
-  width:120px;
-}
-
-/* TOGGLES */
-.toggles{
-  display:flex;
-  gap:10px;
-  font-size:13px;
-}
-
-/* FONT */
-.font-controls{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  font-size:13px;
-}
-
-#fontSize{
-  width:90px;
-}
-
-#fontFamily{
-  font-size:13px;
+  font-size:24px;
+  font-weight:700;
 }
 
 /* LEVELS */
 .levels{
   display:flex;
-  justify-content:center;
-  gap:8px;
-  margin:10px;
+  gap:6px;
+  flex-wrap:wrap;
 }
 
 .levels button{
   background:#FF6A00;
-  color:white;
   border:none;
+  color:#fff;
   padding:6px 10px;
   border-radius:6px;
-  box-shadow:0 3px 0 #c84f00;
   cursor:pointer;
 }
 
-.levels button:active{
-  transform:translateY(2px);
+/* SETTINGS BUTTON (стрелка) */
+#toggleSettings{
+  background:#FF6A00;
+  border:none;
+  color:white;
+  padding:6px 10px;
+  border-radius:6px;
+  cursor:pointer;
 }
 
-/* CONTROL BUTTONS */
+/* ===== CONTROLS ===== */
 .controls{
-  margin:10px;
   display:flex;
   justify-content:center;
   gap:10px;
+  margin:10px;
+  flex-wrap:wrap;
 }
 
-button.main{
-  font-size:16px;
-  padding:8px 14px;
+.controls button{
   background:#FF6A00;
-  color:white;
   border:none;
+  color:#fff;
+  padding:8px 14px;
   border-radius:6px;
-  box-shadow:0 3px 0 #c84f00;
+  cursor:pointer;
+  box-shadow:0 3px 0 #c24f00;
 }
 
-button.main:active{
+.controls button:active{
   transform:translateY(2px);
+  box-shadow:0 1px 0 #c24f00;
 }
 
-/* TEXT */
+/* ===== SETTINGS (СТАРЫЙ СТИЛЬ ВНУТРИ ПАНЕЛИ) ===== */
+#settings{
+  display:none;
+  background:#fff;
+  margin:10px;
+  padding:10px;
+  border-radius:10px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.15);
+}
+
+.settings-row{
+  margin-bottom:10px;
+}
+
+label{
+  font-size:13px;
+  display:block;
+  margin-bottom:4px;
+}
+
+input,select{
+  width:100%;
+}
+
+/* ===== TEXT ===== */
 #text{
-  padding:20px;
   max-width:900px;
-  margin:auto;
+  margin:20px auto;
+  padding:20px;
+  background:white;
+  border-radius:10px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.1);
   font-size:28px;
   line-height:1.6;
-  text-align:justify;
-  background:white;
-  border-radius:8px;
-  box-shadow:0 2px 6px rgba(0,0,0,0.1);
 }
 
-/* INFO */
+/* ===== INFO ===== */
 #words,#time{
   position:fixed;
   right:10px;
+  font-size:14px;
   padding:6px 10px;
   border-radius:6px;
-  font-size:14px;
 }
 
-#words{ bottom:10px; background:#ffe0b2; }
-#time{ bottom:48px; background:#c8e6c9; }
+#words{bottom:10px;background:#ffe0b2;}
+#time{bottom:45px;background:#c8e6c9;}
 
-@media (max-width:600px){
-  #text{ font-size:22px; }
+/* ===== MOBILE FIX ===== */
+@media(max-width:600px){
+  #text{font-size:22px;}
+  .title{font-size:18px;}
 }
 </style>
 </head>
@@ -143,190 +142,198 @@ button.main:active{
 <body>
 
 <header>
-  <div class="logo">ЛАВИНА</div>
+  <div class="title">ЛАВИНА</div>
 
-  <div class="speed">
-    <span>мед</span>
-    <input id="speed" type="range" min="0" max="9" value="4">
-    <span>быстр</span>
+  <div class="levels">
+    <button onclick="setLevel('level_1')">1</button>
+    <button onclick="setLevel('level_2')">2</button>
+    <button onclick="setLevel('level_3')">3</button>
+    <button onclick="setLevel('level_4')">4</button>
   </div>
 
-  <div class="toggles">
-    <label><input type="checkbox" id="paint"> белый</label>
-    <label><input type="checkbox" id="reverseMode"> реверс</label>
-  </div>
-
-  <div class="font-controls">
-    <span>A</span>
-    <input id="fontSize" type="range" min="18" max="48" value="28">
-    <span>A</span>
-
-    <select id="fontFamily">
-      <option value="Arial">Arial</option>
-      <option value="Georgia">Georgia</option>
-      <option value="Times New Roman">Times</option>
-      <option value="Verdana">Verdana</option>
-    </select>
-  </div>
+  <button id="toggleSettings">⚙</button>
 </header>
 
-<div class="levels">
-  <button onclick="setLevel('level_1')">1</button>
-  <button onclick="setLevel('level_2')">2</button>
-  <button onclick="setLevel('level_3')">3</button>
-  <button onclick="setLevel('level_4')">4</button>
+<!-- CONTROLS -->
+<div class="controls">
+  <button id="start">Старт</button>
+  <button id="stop">Стоп</button>
+  <button id="repeat">Повтор</button>
 </div>
 
-<div class="controls">
-  <button class="main" id="start">Старт</button>
-  <button class="main" id="stop">Стоп</button>
-  <button class="main" id="repeat">Повтор</button>
+<!-- SETTINGS -->
+<div id="settings">
+
+  <div class="settings-row">
+    <label>Скорость</label>
+    <input id="speed" type="range" min="0" max="9" value="4">
+  </div>
+
+  <div class="settings-row">
+    <label>Размер текста</label>
+    <input id="fontSize" type="range" min="18" max="48" value="28">
+  </div>
+
+  <div class="settings-row">
+    <label>Шрифт</label>
+    <select id="fontFamily">
+      <option>Arial</option>
+      <option>Georgia</option>
+      <option>Times New Roman</option>
+      <option>Verdana</option>
+    </select>
+  </div>
+
+  <label><input type="checkbox" id="reverseMode"> реверс</label>
+  <label><input type="checkbox" id="paint"> белый режим</label>
+
 </div>
 
 <div id="text"></div>
 
 <div id="words"></div>
-<div id="time">Время: 0 сек</div>
+<div id="time">0 сек</div>
 
 <script>
-const speeds=[2,1.75,1.5,1.25,1,0.75,0.5,0.4,0.25,0.1];
 
-let data=null;
-let texts=[];
+let data, texts=[];
 let spans=[], originalWords=[];
 let i=0, running=false, timer=null;
-let startTime=0, clockInterval=null;
-let currentLevel="level_1";
+let clock=null, startTime=0;
+
+const speeds=[2,1.75,1.5,1.25,1,0.75,0.5,0.4,0.25,0.1];
 
 const textBox=document.getElementById("text");
 const wordsBox=document.getElementById("words");
 const timeBox=document.getElementById("time");
 
 const speed=document.getElementById("speed");
-const paint=document.getElementById("paint");
-const reverseMode=document.getElementById("reverseMode");
-
 const fontSize=document.getElementById("fontSize");
 const fontFamily=document.getElementById("fontFamily");
 
-async function loadJSON(){
-  const res = await fetch("texts2.json");
-  data = await res.json();
-  setLevel("level_1");
-}
+const reverseMode=document.getElementById("reverseMode");
+const paint=document.getElementById("paint");
 
-function setLevel(level){
-  currentLevel=level;
-  texts=data[level].texts;
+/* SETTINGS OPEN/CLOSE */
+document.getElementById("toggleSettings").onclick=()=>{
+  const s=document.getElementById("settings");
+  s.style.display = (s.style.display==="block") ? "none" : "block";
+};
+
+/* LOAD JSON */
+fetch("texts2.json")
+  .then(r=>r.json())
+  .then(j=>{
+    data=j;
+    setLevel("level_1");
+  });
+
+function setLevel(lv){
+  texts=data[lv].texts;
+  stop();
   showText();
 }
 
 /* FORMAT */
-function formatWord(word){
+function formatWord(w){
   if(reverseMode.checked){
-    let punct="";
-    if(/[\.,!?:;]$/.test(word)){
-      punct=word.slice(-1);
-      word=word.slice(0,-1);
+    let p="";
+    if(/[\.,!?:;]$/.test(w)){
+      p=w.slice(-1);
+      w=w.slice(0,-1);
     }
-    return word.split("").reverse().join("")+punct;
+    return w.split("").reverse().join("")+p;
   }
-  return word;
+  return w;
 }
 
 /* SHOW */
 function showText(){
-  let t=texts[i]?.text || texts[0].text;
+  let t=texts[0].text;
 
   originalWords=t.split(" ");
+
   textBox.innerHTML=originalWords
     .map(w=>`<span>${formatWord(w)}</span>`)
     .join(" ");
 
   spans=[...textBox.querySelectorAll("span")];
+
+  applyStyle();
+
   wordsBox.textContent="Слов: "+spans.length;
-
-  applyFont();
 }
 
-/* FONT */
-function applyFont(){
-  textBox.style.fontSize = fontSize.value + "px";
-  textBox.style.fontFamily = fontFamily.value;
+/* STYLE */
+function applyStyle(){
+  textBox.style.fontSize=fontSize.value+"px";
+  textBox.style.fontFamily=fontFamily.value;
 }
 
-fontSize.oninput=applyFont;
-fontFamily.onchange=applyFont;
+fontSize.oninput=applyStyle;
+fontFamily.onchange=applyStyle;
 
 /* TIMER */
 function startClock(){
-  clockInterval=setInterval(()=>{
-    timeBox.textContent="Время: "+Math.floor((Date.now()-startTime)/1000)+" сек";
-  },200);
-}
+  clearInterval(clock);
+  startTime=Date.now();
 
-function stopClock(){
-  clearInterval(clockInterval);
+  clock=setInterval(()=>{
+    timeBox.textContent=Math.floor((Date.now()-startTime)/1000)+" сек";
+  },300);
 }
 
 /* DISAPPEAR */
-function disappearWord(){
+function disappear(){
   if(!running || i>=spans.length) return;
 
-  for(let j=i;j<spans.length;j++){
-    spans[j].textContent=formatWord(originalWords[j]);
+  if(paint.checked){
+    spans[i].style.color="#fff";
+  } else {
+    spans[i].style.display="none";
   }
-
-  if(paint.checked) spans[i].style.color="white";
-  else spans[i].style.display="none";
 
   i++;
   wordsBox.textContent="Слов: "+(spans.length-i);
 
   if(i<spans.length){
-    timer=setTimeout(disappearWord, speeds[speed.value]*1000);
-  }else{
+    timer=setTimeout(disappear, speeds[speed.value]*1000);
+  } else {
     running=false;
-    stopClock();
+    clearInterval(clock);
   }
 }
 
-/* CONTROLS */
+/* START */
 document.getElementById("start").onclick=()=>{
-  running=true;
+  stop();
   i=0;
-  startTime=Date.now();
-  startClock();
+  running=true;
   showText();
-  disappearWord();
+  startClock();
+  disappear();
 };
 
-document.getElementById("stop").onclick=()=>{
+/* STOP */
+function stop(){
   running=false;
   clearTimeout(timer);
-  stopClock();
-};
+  clearInterval(clock);
+}
 
+/* STOP BTN */
+document.getElementById("stop").onclick=stop;
+
+/* REPEAT */
 document.getElementById("repeat").onclick=()=>{
-  running=false;
-  clearTimeout(timer);
+  stop();
   i=0;
-  showText();
   running=true;
-  startTime=Date.now();
+  showText();
   startClock();
-  disappearWord();
+  disappear();
 };
 
-/* SPEED LIVE CHANGE */
-speed.oninput=()=>{
-  if(running){
-    clearTimeout(timer);
-    timer=setTimeout(disappearWord, speeds[speed.value]*1000);
-  }
-};
-
-loadJSON();
 </script>
 
 </body>
