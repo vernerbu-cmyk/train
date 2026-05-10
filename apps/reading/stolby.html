@@ -337,13 +337,15 @@ function split(word){
       }
 
       // 1 согласная → вправо
-      if(cons.length === 1){
-        cur += cons;
-        res.push(cur);
-        cur = "";
-        i = j - 1;
-        continue;
-      }
+     if(cons.length === 1){
+
+    res.push(cur);
+
+    cur = cons;
+
+    i = j - 1;
+    continue;
+}
 
       // 2+ согласных → ВСЁ кроме последней влево
       cur += cons.slice(0, -1);
