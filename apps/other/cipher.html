@@ -15,8 +15,6 @@
 --text:#fff;
 }
 
-/* ===== BASE ===== */
-
 body{
 margin:0;
 font-family:Arial,sans-serif;
@@ -57,8 +55,6 @@ padding:16px;
 border:1px solid rgba(255,255,255,0.08);
 }
 
-/* ===== CODE ===== */
-
 .code{
 font-size:40px;
 text-align:center;
@@ -66,8 +62,6 @@ margin:18px 0;
 color:var(--orange);
 letter-spacing:6px;
 }
-
-/* ===== BUTTONS ===== */
 
 button{
 width:100%;
@@ -112,8 +106,6 @@ overflow:auto;
 box-shadow:0 -10px 40px rgba(0,0,0,0.5);
 }
 
-/* ===== HEADER ===== */
-
 .sheetHeader{
 font-size:22px;
 font-weight:700;
@@ -126,14 +118,10 @@ background:#0f172a;
 padding:8px 0;
 }
 
-/* ===== CENTER WRAP ===== */
-
 #table{
 display:flex;
 justify-content:center;
 }
-
-/* ===== GRID ===== */
 
 .grid{
 display:grid;
@@ -141,8 +129,6 @@ grid-template-columns:repeat(4, max-content);
 gap:10px;
 justify-content:center;
 }
-
-/* ===== ITEM (CARD) ===== */
 
 .item{
 display:inline-flex;
@@ -156,26 +142,8 @@ white-space:nowrap;
 background:rgba(255,255,255,0.03);
 }
 
-/* буква */
-.l{
-opacity:0.75;
-font-size:18px;
-min-width:18px;
-}
-
-/* символ */
-.s{
-font-weight:700;
-font-size:20px;
-color:var(--orange);
-}
-
-/* лёгкая “живость” */
-.item:active{
-transform:scale(0.98);
-}
-
-/* ===== SIGN ===== */
+.l{opacity:0.75;font-size:18px;min-width:18px;}
+.s{font-weight:700;font-size:20px;color:var(--orange);}
 
 .signature{
 position:fixed;
@@ -234,8 +202,45 @@ const symbols=[
 const key={};
 alphabet.split("").forEach((l,i)=>key[l]=symbols[i]);
 
-let words=["КОТ","ДОМ","ЛЕС"];
-let current="";
+/* ===== JSON STATE ===== */
+
+let words = [];
+let current = "";
+
+/* ===== LOAD JSON ===== */
+
+async function loadWords(){
+
+try{
+
+const res = await fetch("words.json");
+
+if(!res.ok){
+console.warn("JSON fallback:", res.status);
+words=["КОТ","ДОМ","ЛЕС"];
+newWord();
+return;
+}
+
+const data = await res.json();
+
+if(Array.isArray(data)){
+words = data.map(w => w.toUpperCase());
+} else {
+words = data.words?.map(w => w.toUpperCase()) || [];
+}
+
+console.log("WORDS LOADED:", words.length);
+
+newWord();
+
+}catch(e){
+console.error("JSON ERROR:", e);
+words=["КОТ","ДОМ","ЛЕС"];
+newWord();
+}
+
+}
 
 /* ===== GAME ===== */
 
@@ -308,13 +313,10 @@ w.document.write(`
 
 <style>
 
-@page {
-  margin: 10mm;
-}
+@page { margin: 10mm; }
 
 body{
-font-family:Arial, sans-serif;
-margin:0;
+font-family:Arial;
 padding:14px;
 }
 
@@ -323,41 +325,27 @@ text-align:center;
 font-size:20px;
 margin:0 0 14px 0;
 color:#FF6A00;
-letter-spacing:1px;
 }
 
-/* 🔥 КОМФОРТНАЯ СЕТКА ДЛЯ ЧТЕНИЯ */
 .grid{
 display:grid;
-grid-template-columns:repeat(3, 1fr);
+grid-template-columns:repeat(3,1fr);
 gap:10px;
 }
 
-/* 🔥 КРУПНЫЕ КАРТОЧКИ (НЕ ШПАРГАЛКА, А ЛИСТ ОБУЧЕНИЯ) */
 .item{
 display:flex;
-align-items:center;
-justify-content:flex-start;
 gap:10px;
-padding:10px 12px;
+padding:10px;
 border:1px solid #ddd;
 border-radius:10px;
 font-size:18px;
-background:#fafafa;
 }
 
-/* буква */
-.l{
-font-size:18px;
-opacity:0.75;
-min-width:20px;
-}
-
-/* символ */
 .s{
-font-size:22px;
-font-weight:bold;
 color:#FF6A00;
+font-weight:bold;
+font-size:22px;
 }
 
 </style>
@@ -369,11 +357,11 @@ color:#FF6A00;
 <h2>ДЕШИФРОВЩИК</h2>
 
 <div class="grid">
-${alphabet.split("").map(l => `
-  <div class="item">
-    <span class="l">${l}</span>
-    <span class="s">${key[l]}</span>
-  </div>
+${alphabet.split("").map(l=>`
+<div class="item">
+<span>${l}</span>
+<span class="s">${key[l]}</span>
+</div>
 `).join("")}
 </div>
 
@@ -384,4 +372,12 @@ ${alphabet.split("").map(l => `
 w.document.close();
 w.print();
 }
+
+/* ===== START ===== */
+
+loadWords();
+
+</script>
+
+</body>
 </html>
