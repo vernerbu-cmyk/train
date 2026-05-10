@@ -255,13 +255,14 @@ function detectLevel(w){
 }
 
 /* =========================
-   SLOGOLOGIC
+   CORE SYLLABLE ENGINE (FIXED)
 ========================= */
 
 function isVowel(ch){
   return vowels.includes(ch);
 }
 
+/* ✔ теперь реально используется */
 function preprocess(word){
 
   word = word.toLowerCase().replace(/[^а-яё]/g,"");
@@ -272,11 +273,13 @@ function preprocess(word){
 
     const ch = word[i];
 
+    // мягкий/твёрдый знак
     if(ch==="ь"||ch==="ъ"){
       if(res.length) res[res.length-1]+=ch;
       continue;
     }
 
+    // й
     if(ch==="й"){
       if(res.length) res[res.length-1]+=ch;
       else res.push(ch);
@@ -289,74 +292,62 @@ function preprocess(word){
   return res;
 }
 
+/* =========================
+   SPLIT (FIXED STABLE VERSION)
+========================= */
+
 function split(word){
 
   const letters = preprocess(word);
 
-  const vowelCount = letters.filter(x=>isVowel(x[0])).length;
+  const res = [];
+  let cur = "";
 
-  if(vowelCount<=1){
-    return [letters.join("")];
-  }
+  for(let i=0;i<letters.length;i++){
 
-  const res=[];
-  let cur="";
-  let i=0;
+    const ch = letters[i];
+    cur += ch;
 
-  while(i<letters.length){
+    if(isVowel(ch)){
 
-    cur+=letters[i];
+      let j = i + 1;
+      let cons = "";
 
-    if(isVowel(letters[i][0])){
-
-      let j=i+1;
-      let cons=[];
-
-      while(j<letters.length && !isVowel(letters[j][0])){
-        cons.push(letters[j]);
+      while(j < letters.length && !isVowel(letters[j])){
+        cons += letters[j];
         j++;
       }
 
-      if(j<letters.length){
-
-        if(cons.length===0){
-          res.push(cur);
-          cur="";
-        }
-
-        else if(cons.length===1){
-          res.push(cur);
-          cur=cons[0];
-          i=j-1;
-          i++;
-          continue;
-        }
-
-        else{
-          const str=cons.join("");
-
-          if(
-  j < letters.length &&            // ← важно: есть следующая гласная
-  cons.length >= 2 &&
-  cons[0][0] === cons[1][0]
-){
-  cur += cons[0];
-  res.push(cur);
-  cur = cons.slice(1).join("");
-  i = j - 1;
-  continue;
-}
-
-          cur+=cons.slice(0,-1).join("");
-          res.push(cur);
-          cur=cons.slice(-1).join("");
-          i=j-1;
-          continue;
-        }
+      // конец слова
+      if(j >= letters.length){
+        cur += cons;
+        res.push(cur);
+        return res;
       }
-    }
 
-    i++;
+      // нет согласных
+      if(cons.length === 0){
+        res.push(cur);
+        cur = "";
+        continue;
+      }
+
+      // 1 согласная
+      if(cons.length === 1){
+        cur += cons;
+        res.push(cur);
+        cur = "";
+        i = j - 1;
+        continue;
+      }
+
+      // 2+ согласных → всё кроме последней влево
+      cur += cons.slice(0, -1);
+      res.push(cur);
+      cur = cons.slice(-1);
+
+      i = j - 1;
+    }
   }
 
   if(cur) res.push(cur);
@@ -373,7 +364,9 @@ function decorate(w){
   let parts = split(w);
 
   if(highlight.checked){
-    parts = parts.map(p=>"<span class='highlight'>"+p[0]+"</span>"+p.slice(1));
+    parts = parts.map(p=>
+      "<span class='highlight'>"+p[0]+"</span>"+p.slice(1)
+    );
   }
 
   return syllables.checked ? parts.join("-") : parts.join("");
