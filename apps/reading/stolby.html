@@ -335,13 +335,17 @@ function split(word){
         else{
           const str=cons.join("");
 
-          if(str.length>=2 && cons[0][0]===cons[1][0]){
-            cur+=cons[0];
-            res.push(cur);
-            cur=cons.slice(1).join("");
-            i=j-1;
-            continue;
-          }
+          if(
+  j < letters.length &&            // ← важно: есть следующая гласная
+  cons.length >= 2 &&
+  cons[0][0] === cons[1][0]
+){
+  cur += cons[0];
+  res.push(cur);
+  cur = cons.slice(1).join("");
+  i = j - 1;
+  continue;
+}
 
           cur+=cons.slice(0,-1).join("");
           res.push(cur);
