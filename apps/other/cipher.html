@@ -2,18 +2,20 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>SHIFR PRO TRAINER</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Дешифровщик</title>
 
 <style>
+
 :root{
+--blue:#1E3F8A;
+--orange:#FF6A00;
 --bg:#0b1220;
 --card:#111827;
---line:rgba(255,255,255,.08);
---blue:#22d3ee;
---blue2:#93c5fd;
 --text:#fff;
 }
+
+/* ===== BASE ===== */
 
 body{
 margin:0;
@@ -24,90 +26,163 @@ display:flex;
 justify-content:center;
 }
 
+/* ===== TOP BAR ===== */
+
+.topbar{
+position:fixed;
+top:0;
+left:0;
+right:0;
+background:var(--blue);
+padding:12px;
+text-align:center;
+font-style:italic;
+font-weight:600;
+color:#fff;
+z-index:10;
+}
+
+/* ===== LAYOUT ===== */
+
 .wrap{
 width:100%;
 max-width:560px;
-padding:14px;
+padding:70px 14px 20px;
 }
 
 .panel{
 background:var(--card);
-border-radius:18px;
+border-radius:16px;
 padding:16px;
-margin-top:12px;
-border:1px solid var(--line);
+border:1px solid rgba(255,255,255,0.08);
 }
 
-h1{
-text-align:center;
-color:var(--blue);
-margin:0 0 10px;
-}
+/* ===== CODE ===== */
 
 .code{
 font-size:40px;
 text-align:center;
 margin:18px 0;
-color:var(--blue);
-letter-spacing:8px;
+color:var(--orange);
+letter-spacing:6px;
 }
+
+/* ===== BUTTONS ===== */
 
 button{
 width:100%;
-padding:11px;
+padding:12px;
+margin-top:10px;
 border:none;
 border-radius:12px;
-margin-top:8px;
-background:#334155;
+background:var(--orange);
 color:#fff;
 font-size:15px;
+box-shadow:0 4px 0 #c94f00;
+cursor:pointer;
 }
 
-.primary{background:#0891b2;}
+button:active{
+transform:translateY(3px);
+box-shadow:0 1px 0 #c94f00;
+}
+
+/* ===== OVERLAY ===== */
 
 #overlay{
 display:none;
 position:fixed;
 inset:0;
-background:rgba(0,0,0,.55);
+background:rgba(0,0,0,0.5);
 }
 
-#drawer{
+/* ===== SHEET ===== */
+
+#sheet{
 position:fixed;
-top:0;
-right:-420px;
-width:360px;
-height:100%;
+left:0;
+right:0;
+bottom:-100%;
+height:75%;
 background:#0f172a;
-padding:16px;
+border-radius:18px 18px 0 0;
+padding:18px 14px;
+transition:0.25s ease;
 overflow:auto;
-transition:.25s;
-box-shadow:-10px 0 40px rgba(0,0,0,.6);
+box-shadow:0 -10px 40px rgba(0,0,0,0.5);
 }
+
+/* ===== HEADER ===== */
+
+.sheetHeader{
+font-size:22px;
+font-weight:700;
+color:var(--orange);
+text-align:center;
+margin-bottom:14px;
+position:sticky;
+top:0;
+background:#0f172a;
+padding:8px 0;
+}
+
+/* ===== CENTER WRAP ===== */
+
+#table{
+display:flex;
+justify-content:center;
+}
+
+/* ===== GRID ===== */
 
 .grid{
 display:grid;
-grid-template-columns:1fr 1fr;
-gap:8px;
+grid-template-columns:repeat(4, max-content);
+gap:10px;
+justify-content:center;
 }
 
-.cell{
-background:rgba(255,255,255,.04);
-padding:10px;
-border-radius:10px;
-display:flex;
-justify-content:space-between;
+/* ===== ITEM (CARD) ===== */
+
+.item{
+display:inline-flex;
+align-items:center;
+gap:10px;
+padding:10px 12px;
+border:1px solid rgba(255,255,255,0.12);
+border-radius:12px;
+font-size:18px;
+white-space:nowrap;
+background:rgba(255,255,255,0.03);
 }
 
-.small{opacity:.7;}
-.big{
-font-size:22px;
-color:var(--blue);
-font-family:"Segoe UI Symbol","Noto Sans Symbols",sans-serif;
+/* буква */
+.l{
+opacity:0.75;
+font-size:18px;
+min-width:18px;
 }
 
-.printBtn{
-background:#16a34a;
+/* символ */
+.s{
+font-weight:700;
+font-size:20px;
+color:var(--orange);
+}
+
+/* лёгкая “живость” */
+.item:active{
+transform:scale(0.98);
+}
+
+/* ===== SIGN ===== */
+
+.signature{
+position:fixed;
+bottom:6px;
+right:10px;
+font-size:10px;
+opacity:0.4;
 }
 
 </style>
@@ -115,34 +190,37 @@ background:#16a34a;
 
 <body>
 
+<div class="topbar">ДЕШИФРОВЩИК</div>
+
 <div class="wrap">
 
 <div class="panel">
 
-<h1>🔐 SHIFR</h1>
-
 <div class="code" id="code">---</div>
 
-<button onclick="newWord()">🔁 Новое слово</button>
-<button onclick="toggleDrawer()">📊 Таблица шифра</button>
-<button class="printBtn" onclick="printTable()">🖨 Печать таблицы</button>
+<button onclick="newWord()">НОВОЕ СЛОВО</button>
+<button onclick="toggleTable()">ТАБЛИЦА ШИФРА</button>
+<button onclick="printTable()">ПЕЧАТЬ</button>
 
 </div>
 
 </div>
 
-<div id="overlay" onclick="toggleDrawer()"></div>
+<div id="overlay" onclick="toggleTable()"></div>
 
-<div id="drawer">
-<h2 style="color:#93c5fd;">📊 Буква → Символ</h2>
+<div id="sheet">
+
+<div class="sheetHeader">ТАБЛИЦА ШИФРА</div>
+
 <div id="table"></div>
+
 </div>
+
+<div class="signature">© verner</div>
 
 <script>
 
-/* ======================
-DATA
-====================== */
+/* ===== DATA ===== */
 
 const alphabet="АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
 
@@ -154,54 +232,28 @@ const symbols=[
 ];
 
 const key={};
-alphabet.split("").forEach((l,i)=>{
-key[l]=symbols[i];
-});
+alphabet.split("").forEach((l,i)=>key[l]=symbols[i]);
 
 let words=["КОТ","ДОМ","ЛЕС"];
 let current="";
 
-/* ======================
-LOAD OPTIONAL JSON SAFE
-====================== */
-
-async function loadWords(){
-try{
-const r=await fetch("words.json?v="+Date.now());
-const d=await r.json();
-if(Array.isArray(d)) words=d.map(x=>x.toUpperCase());
-}catch(e){}
-}
-
-/* ======================
-GAME
-====================== */
+/* ===== GAME ===== */
 
 function newWord(){
-if(!words.length) return;
-
-current=words[Math.floor(Math.random()*words.length)];
-
+current = words[Math.floor(Math.random()*words.length)];
 document.getElementById("code").innerText =
-encode(current);
+current.split("").map(c=>key[c]||"?").join(" ");
 }
 
-function encode(w){
-return w.split("").map(c=>key[c]||"?").join(" ");
-}
-
-/* ======================
-DRAWER
-====================== */
+/* ===== SHEET ===== */
 
 let open=false;
 
-function toggleDrawer(force=null){
+function toggleTable(){
+open=!open;
 
-open = force!==null ? force : !open;
-
-document.getElementById("drawer").style.right =
-open ? "0" : "-420px";
+document.getElementById("sheet").style.bottom =
+open ? "0" : "-100%";
 
 document.getElementById("overlay").style.display =
 open ? "block" : "none";
@@ -209,9 +261,7 @@ open ? "block" : "none";
 if(open) renderTable();
 }
 
-/* ======================
-TABLE (FIXED SAFE RENDER)
-====================== */
+/* ===== TABLE ===== */
 
 function renderTable(){
 
@@ -223,39 +273,38 @@ grid.className="grid";
 
 alphabet.split("").forEach(l=>{
 
-const cell=document.createElement("div");
-cell.className="cell";
+const item=document.createElement("div");
+item.className="item";
 
-const left=document.createElement("span");
-left.className="small";
-left.textContent=l;
+const a=document.createElement("span");
+a.className="l";
+a.textContent=l;
 
-const right=document.createElement("span");
-right.className="big";
-right.textContent=key[l];
+const b=document.createElement("span");
+b.className="s";
+b.textContent=key[l];
 
-cell.appendChild(left);
-cell.appendChild(right);
-grid.appendChild(cell);
+item.appendChild(a);
+item.appendChild(b);
+grid.appendChild(item);
 
 });
 
 wrap.appendChild(grid);
 }
 
-/* ======================
-PRINT
-====================== */
+/* ===== PRINT ===== */
+
 function printTable(){
 
 const w = window.open("","_blank");
 
-const html = `
+w.document.write(`
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Шифр</title>
+<title>Дешифровщик</title>
 
 <style>
 
@@ -266,44 +315,49 @@ const html = `
 body{
 font-family:Arial, sans-serif;
 margin:0;
-padding:10px;
+padding:14px;
 }
 
 h2{
 text-align:center;
-font-size:18px;
-margin:0 0 10px 0;
+font-size:20px;
+margin:0 0 14px 0;
+color:#FF6A00;
+letter-spacing:1px;
 }
 
+/* 🔥 КОМФОРТНАЯ СЕТКА ДЛЯ ЧТЕНИЯ */
 .grid{
 display:grid;
-grid-template-columns:repeat(4, max-content);
-gap:8px;
-justify-content:start;
+grid-template-columns:repeat(3, 1fr);
+gap:10px;
 }
 
+/* 🔥 КРУПНЫЕ КАРТОЧКИ (НЕ ШПАРГАЛКА, А ЛИСТ ОБУЧЕНИЯ) */
 .item{
-display:inline-flex;
-justify-content:flex-start;
+display:flex;
 align-items:center;
-gap:6px;
-padding:4px 8px;
+justify-content:flex-start;
+gap:10px;
+padding:10px 12px;
 border:1px solid #ddd;
-border-radius:6px;
-font-size:16px;
-line-height:1;
-white-space:nowrap;
-}
-
-.l{
-font-size:16px;
-opacity:0.75;
-min-width:16px;
-}
-
-.s{
+border-radius:10px;
 font-size:18px;
+background:#fafafa;
+}
+
+/* буква */
+.l{
+font-size:18px;
+opacity:0.75;
+min-width:20px;
+}
+
+/* символ */
+.s{
+font-size:22px;
 font-weight:bold;
+color:#FF6A00;
 }
 
 </style>
@@ -312,33 +366,22 @@ font-weight:bold;
 
 <body>
 
-<h2>ШИФР</h2>
+<h2>ДЕШИФРОВЩИК</h2>
 
 <div class="grid">
 ${alphabet.split("").map(l => `
   <div class="item">
-    <div class="l">${l}</div>
-    <div class="s">${key[l]}</div>
+    <span class="l">${l}</span>
+    <span class="s">${key[l]}</span>
   </div>
 `).join("")}
 </div>
 
 </body>
 </html>
-`;
+`);
 
-w.document.write(html);
 w.document.close();
 w.print();
 }
-/* ======================
-INIT
-====================== */
-
-loadWords();
-newWord();
-
-</script>
-
-</body>
 </html>
