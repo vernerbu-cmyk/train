@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Мобильная доска</title>
+<title>Доска PRO</title>
 
 <style>
 html,body{
@@ -11,68 +11,34 @@ html,body{
   height:100%;
   overflow:hidden;
   font-family:Arial;
-  background:#fff;
+  background:#f5f5f5;
 }
 
-/* canvas */
 canvas{
   position:absolute;
   top:0;
   left:0;
   touch-action:none;
+  background:#fff;
 }
 
-/* панель */
 #panel{
   position:fixed;
   top:10px;
   left:10px;
+  z-index:1000;
   background:rgba(0,0,0,.85);
   color:#fff;
-  padding:12px;
-  border-radius:12px;
-  z-index:1000;
-  width:220px;
+  padding:10px;
+  border-radius:10px;
+  width:240px;
 }
 
+#panel button,
 #panel select,
-#panel input,
-#panel button{
+#panel input{
   width:100%;
-  margin:5px 0;
-  font-size:14px;
-}
-
-/* мобилка */
-@media (max-width:600px){
-  #panel{
-    width:160px;
-    font-size:12px;
-    padding:10px;
-  }
-
-  #panel button{
-    padding:8px;
-  }
-}
-
-/* курсоры */
-#clothCursor,#hlCursor{
-  position:absolute;
-  pointer-events:none;
-  z-index:2000;
-  display:none;
-}
-
-#clothCursor{
-  border-radius:50%;
-  background:#ddd;
-  opacity:.8;
-}
-
-#hlCursor{
-  background:rgba(255,255,0,.35);
-  border-radius:4px;
+  margin:4px 0;
 }
 </style>
 </head>
@@ -82,127 +48,152 @@ canvas{
 <div id="panel">
   Инструмент:
   <select id="tool">
-    <option value="highlighter">Текстовыделитель</option>
     <option value="pen">Ручка</option>
+    <option value="marker">Маркер</option>
     <option value="chalk">Мел</option>
-    <option value="cloth">Тряпка</option>
+    <option value="eraser">Тряпка</option>
   </select>
 
   Цвет:
-  <input type="color" id="color" value="#ffff00">
+  <input type="color" id="color" value="#000000">
 
   Размер:
-  <input type="range" id="size" min="10" max="80" value="40">
+  <input type="range" id="size" min="5" max="80" value="30">
 
-  <button onclick="clearAll()">Очистить</button>
+  <button onclick="undo()">Undo</button>
+  <button onclick="redo()">Redo</button>
+
+  <button onclick="exportImage()">Открыть изображение</button>
+  <button onclick="toggleFullscreen()">Полный экран</button>
 </div>
 
 <canvas id="c"></canvas>
-
-<div id="clothCursor"></div>
-<div id="hlCursor"></div>
 
 <script>
 const c=document.getElementById("c");
 const ctx=c.getContext("2d");
 
-const cloth=document.getElementById("clothCursor");
-const hl=document.getElementById("hlCursor");
+let dpr=window.devicePixelRatio||1;
 
 let drawing=false;
 let last=null;
 
-/* DPI FIX (ВАЖНО для мобилок) */
+let undoStack=[];
+let redoStack=[];
+
+/* resize */
 function resize(){
-  const dpr = window.devicePixelRatio || 1;
-
-  c.width = innerWidth * dpr;
-  c.height = innerHeight * dpr;
-
-  c.style.width = innerWidth + "px";
-  c.style.height = innerHeight + "px";
-
+  c.width=innerWidth*dpr;
+  c.height=innerHeight*dpr;
+  c.style.width=innerWidth+"px";
+  c.style.height=innerHeight+"px";
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
 resize();
 addEventListener("resize",resize);
 
-/* координаты */
-function pos(e){
-  const r=c.getBoundingClientRect();
-  return {
-    x:e.clientX - r.left,
-    y:e.clientY - r.top
+/* save */
+function save(){
+  undoStack.push(c.toDataURL());
+  if(undoStack.length>30) undoStack.shift();
+  redoStack=[];
+}
+
+/* restore */
+function restore(img){
+  const image=new Image();
+  image.onload=()=>{
+    ctx.clearRect(0,0,c.width,c.height);
+    ctx.drawImage(image,0,0,innerWidth,innerHeight);
   };
+  image.src=img;
+}
+
+function undo(){
+  if(!undoStack.length) return;
+  redoStack.push(c.toDataURL());
+  restore(undoStack.pop());
+}
+
+function redo(){
+  if(!redoStack.length) return;
+  undoStack.push(c.toDataURL());
+  restore(redoStack.pop());
+}
+
+/* coords */
+function pos(e){
+  return {
+    x:e.clientX,
+    y:e.clientY
+  };
+}
+
+/* draw line */
+function drawLine(x1,y1,x2,y2,color,size,tool){
+  ctx.strokeStyle=color;
+
+  if(tool==="pen"){
+    ctx.globalAlpha=1;
+    ctx.lineWidth=size/6;
+    ctx.lineCap="round";
+  }
+
+  if(tool==="marker"){
+    ctx.globalAlpha=0.35;
+    ctx.lineWidth=size/2;
+    ctx.lineCap="butt";
+  }
+
+  if(tool==="chalk"){
+    ctx.globalAlpha=0.25;
+    ctx.lineWidth=size;
+    ctx.lineCap="round";
+    ctx.setLineDash([2,6]);
+  }
+
+  if(tool==="eraser"){
+    ctx.globalCompositeOperation="destination-out";
+    ctx.lineWidth=size;
+    ctx.lineCap="round";
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  ctx.lineTo(x2,y2);
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+  ctx.globalCompositeOperation="source-over";
+  ctx.globalAlpha=1;
+}
+
+/* draw */
+function draw(e){
+  if(!drawing) return;
+
+  const p=pos(e);
+
+  const tool=toolEl.value;
+  const color=colorEl.value;
+  const size=parseInt(sizeEl.value);
+
+  if(!last) last=p;
+
+  drawLine(last.x,last.y,p.x,p.y,color,size,tool);
+
+  last=p;
 }
 
 /* start */
 c.addEventListener("pointerdown",(e)=>{
   drawing=true;
+  save();
   last=pos(e);
-  c.setPointerCapture(e.pointerId);
 });
 
 /* move */
-c.addEventListener("pointermove",(e)=>{
-  const p=pos(e);
-
-  updateCursor(p);
-
-  if(!drawing) return;
-
-  const tool=toolSelect.value;
-  const size=parseInt(sizeInput.value);
-  const color=colorInput.value;
-
-  if(!last) last=p;
-
-  if(tool==="highlighter"){
-    ctx.globalAlpha=0.3;
-    ctx.strokeStyle=color;
-    ctx.lineWidth=size/2;
-    ctx.lineCap="butt";
-
-    ctx.beginPath();
-    ctx.moveTo(last.x,last.y);
-    ctx.lineTo(p.x,p.y);
-    ctx.stroke();
-  }
-
-  if(tool==="pen"){
-    ctx.globalAlpha=1;
-    ctx.strokeStyle=color;
-    ctx.lineWidth=size/6;
-    ctx.lineCap="round";
-
-    ctx.beginPath();
-    ctx.moveTo(last.x,last.y);
-    ctx.lineTo(p.x,p.y);
-    ctx.stroke();
-  }
-
-  if(tool==="chalk"){
-    ctx.globalAlpha=0.3;
-    ctx.strokeStyle=color;
-    ctx.lineWidth=size;
-    ctx.lineCap="round";
-
-    ctx.beginPath();
-    ctx.moveTo(last.x,last.y);
-    ctx.lineTo(p.x,p.y);
-    ctx.stroke();
-  }
-
-  if(tool==="cloth"){
-    ctx.globalCompositeOperation="destination-out";
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,size/2,0,Math.PI*2);
-    ctx.fill();
-    ctx.globalCompositeOperation="source-over";
-  }
-
-  last=p;
-});
+c.addEventListener("pointermove",draw);
 
 /* stop */
 c.addEventListener("pointerup",()=>{
@@ -210,45 +201,31 @@ c.addEventListener("pointerup",()=>{
   last=null;
 });
 
-c.addEventListener("pointercancel",()=>{
-  drawing=false;
-  last=null;
-});
-
-/* курсор */
-function updateCursor(p){
-  const tool=toolSelect.value;
-  const size=parseInt(sizeInput.value);
-
-  cloth.style.display="none";
-  hl.style.display="none";
-
-  if(tool==="cloth"){
-    cloth.style.display="block";
-    cloth.style.width=size+"px";
-    cloth.style.height=size+"px";
-    cloth.style.left=(p.x-size/2)+"px";
-    cloth.style.top=(p.y-size/2)+"px";
-  }
-
-  if(tool==="highlighter"){
-    hl.style.display="block";
-    hl.style.width=size+"px";
-    hl.style.height=(size/3)+"px";
-    hl.style.left=(p.x-size/2)+"px";
-    hl.style.top=(p.y-size/6)+"px";
-  }
-}
-
-/* очистка */
+/* clear */
 function clearAll(){
   ctx.clearRect(0,0,c.width,c.height);
 }
 
+/* export (OPEN IMAGE) */
+function exportImage(){
+  const img=c.toDataURL("image/png");
+  const w=window.open();
+  w.document.write(`<img src="${img}" style="width:100%;">`);
+}
+
+/* fullscreen */
+function toggleFullscreen(){
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen?.();
+  }else{
+    document.exitFullscreen?.();
+  }
+}
+
 /* controls */
-const toolSelect=document.getElementById("tool");
-const colorInput=document.getElementById("color");
-const sizeInput=document.getElementById("size");
+const toolEl=document.getElementById("tool");
+const colorEl=document.getElementById("color");
+const sizeEl=document.getElementById("size");
 </script>
 
 </body>
