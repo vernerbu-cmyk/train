@@ -26,7 +26,6 @@ body{
   top:0;
 }
 
-/* TITLE */
 .top-title{
   width:100%;
   text-align:center;
@@ -35,7 +34,6 @@ body{
   font-weight:600;
 }
 
-/* CONTROLS */
 label{font-size:14px;color:#fff;}
 
 input[type="range"]{accent-color:#FF6A00;}
@@ -46,7 +44,6 @@ input[type="number"], select{
   padding:4px;
 }
 
-/* BUTTONS */
 button{
   background:#FF6A00;
   color:#fff;
@@ -62,7 +59,6 @@ button:active{
   box-shadow:0 2px 0 #c84f00;
 }
 
-/* WORD */
 .word{
   margin-top:70px;
   text-align:center;
@@ -72,7 +68,6 @@ button:active{
   padding:10px;
 }
 
-/* PANEL */
 .panel{
   position:fixed;
   top:70px;
@@ -89,7 +84,6 @@ button:active{
   border-radius:10px;
 }
 
-/* BASE */
 .wordItem{
   display:flex;
   justify-content:space-between;
@@ -116,7 +110,6 @@ button:active{
   font-weight:bold;
 }
 
-/* AUTHOR */
 .author{
   position:fixed;
   right:8px;
@@ -124,7 +117,6 @@ button:active{
   font-size:11px;
   color:#aaa;
 }
-
 </style>
 </head>
 
@@ -153,7 +145,7 @@ button:active{
   <label><input type="checkbox" id="auto" checked> авто</label>
 
   <label>Размер
-    <input type="number" id="fontSize" value="28" min="12" max="120">
+    <input type="number" id="fontSize" value="28">
   </label>
 
   <label>Шрифт
@@ -171,78 +163,84 @@ button:active{
 </div>
 
 <div class="panel" id="basePanel">
-
 <textarea id="newWords"></textarea>
-
 <button id="addBtn">Добавить</button>
 <button id="dedupBtn">Дубликаты</button>
 <button id="clearBtn">Очистить</button>
-
 <div id="baseList"></div>
-
 </div>
 
 <div class="word" id="wordDisplay">Загрузка...</div>
-
 <div class="author">© verner</div>
 
 <script>
 
+/* =========================
+   STATE
+========================= */
+
 let wordBase = {1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[]};
 let appReady = false;
 
-const vowels = "аеёиоуыэюя";
+const vowels = "аоуыэиеёюя";
+
 const speedTable = [
 4000,3500,3000,2500,2000,1750,1500,1250,1000,750,500,250,100
 ];
 
 let timer;
 
-document.addEventListener("DOMContentLoaded", () => {
+/* =========================
+   LOAD BASE
+========================= */
+
+document.addEventListener("DOMContentLoaded",()=>{
   loadBase();
 });
 
 async function loadBase(){
   try{
-    const res = await fetch("./base.json", {cache:"no-cache"});
+    const res = await fetch("./base.json",{cache:"no-cache"});
     if(!res.ok) throw new Error();
 
     let data = await res.json();
 
-    wordBase = normalize(data);
-    appReady = true;
-
-    show();
-    restart();
+    if(Array.isArray(data)){
+      const base = {1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[]};
+      data.forEach(w=>{
+        base[detectLevel(w)].push(w);
+      });
+      wordBase = base;
+    } else {
+      wordBase = data;
+    }
 
   } catch(e){
-    wordBase = {1:["дом"],2:["кот"],3:[],4:[],5:[],6:[],7:[],8:[]};
-    appReady = true;
-    show();
-    restart();
+    wordBase = {
+      1:["дом","кот"],
+      2:["мама","рама"],
+      3:["пальма","морковь"],
+      4:["собака"],
+      5:["телефон"],
+      6:["облако"],
+      7:["самолёт"],
+      8:["математика"]
+    };
   }
+
+  appReady = true;
+  show();
+  restart();
 }
 
-function normalize(data){
-  const base={1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[]};
-
-  if(Array.isArray(data)){
-    data.forEach(w=>{
-      base[detectLevel(w)].push(w);
-    });
-    return base;
-  }
-
-  for(let i=1;i<=8;i++){
-    base[i]=data[i]||[];
-  }
-  return base;
-}
+/* =========================
+   LEVELS
+========================= */
 
 function detectLevel(w){
-  let word=w.trim().toLowerCase();
-  let v=[...word].filter(c=>vowels.includes(c)).length;
-  let len=word.length;
+  let word = w.trim().toLowerCase();
+  let v = [...word].filter(c=>vowels.includes(c)).length;
+  let len = word.length;
 
   if(v===1) return 1;
   if(v===2 && len<=5) return 2;
@@ -256,57 +254,147 @@ function detectLevel(w){
   return 7;
 }
 
-function split(word){
-  word=word.toLowerCase();
-  let res=[],cur="";
+/* =========================
+   SLOGOLOGIC
+========================= */
+
+function isVowel(ch){
+  return vowels.includes(ch);
+}
+
+function preprocess(word){
+
+  word = word.toLowerCase().replace(/[^а-яё]/g,"");
+
+  const res = [];
 
   for(let i=0;i<word.length;i++){
-    cur+=word[i];
-    if(vowels.includes(word[i])){
-      if(word[i+1]==="ь"){cur+=word[i+1];i++;}
-      res.push(cur);
-      cur="";
-    }
-  }
 
-  if(cur) res[res.length-1]+=cur;
+    const ch = word[i];
+
+    if(ch==="ь"||ch==="ъ"){
+      if(res.length) res[res.length-1]+=ch;
+      continue;
+    }
+
+    if(ch==="й"){
+      if(res.length) res[res.length-1]+=ch;
+      else res.push(ch);
+      continue;
+    }
+
+    res.push(ch);
+  }
 
   return res;
 }
 
+function split(word){
+
+  const letters = preprocess(word);
+
+  const vowelCount = letters.filter(x=>isVowel(x[0])).length;
+
+  if(vowelCount<=1){
+    return [letters.join("")];
+  }
+
+  const res=[];
+  let cur="";
+  let i=0;
+
+  while(i<letters.length){
+
+    cur+=letters[i];
+
+    if(isVowel(letters[i][0])){
+
+      let j=i+1;
+      let cons=[];
+
+      while(j<letters.length && !isVowel(letters[j][0])){
+        cons.push(letters[j]);
+        j++;
+      }
+
+      if(j<letters.length){
+
+        if(cons.length===0){
+          res.push(cur);
+          cur="";
+        }
+
+        else if(cons.length===1){
+          res.push(cur);
+          cur=cons[0];
+          i=j-1;
+          i++;
+          continue;
+        }
+
+        else{
+          const str=cons.join("");
+
+          if(str.length>=2 && cons[0][0]===cons[1][0]){
+            cur+=cons[0];
+            res.push(cur);
+            cur=cons.slice(1).join("");
+            i=j-1;
+            continue;
+          }
+
+          cur+=cons.slice(0,-1).join("");
+          res.push(cur);
+          cur=cons.slice(-1).join("");
+          i=j-1;
+          continue;
+        }
+      }
+    }
+
+    i++;
+  }
+
+  if(cur) res.push(cur);
+
+  return res;
+}
+
+/* =========================
+   UI
+========================= */
+
 function decorate(w){
-  let parts=split(w);
+
+  let parts = split(w);
 
   if(highlight.checked){
-    parts=parts.map(p=>"<span class='highlight'>"+p[0]+"</span>"+p.slice(1));
+    parts = parts.map(p=>"<span class='highlight'>"+p[0]+"</span>"+p.slice(1));
   }
 
   return syllables.checked ? parts.join("-") : parts.join("");
 }
 
 function show(){
+
   if(!appReady) return;
 
   let pool=[];
 
   if(level.value==="random"){
-    for(let i=1;i<=8;i++){
-      pool.push(...wordBase[i]);
-    }
-  } else {
-    pool=wordBase[level.value]||[];
-  }
+    for(let i=1;i<=8;i++) pool.push(...wordBase[i]);
+  } else pool = wordBase[level.value]||[];
 
   if(!pool.length){
     wordDisplay.textContent="—";
     return;
   }
 
-  let w=pool[Math.floor(Math.random()*pool.length)];
+  let w = pool[Math.floor(Math.random()*pool.length)];
 
-  wordDisplay.innerHTML=decorate(w);
-  wordDisplay.style.fontSize=fontSize.value+"px";
-  wordDisplay.style.fontFamily=fontFamily.value;
+  wordDisplay.innerHTML = decorate(w);
+  wordDisplay.style.fontSize = fontSize.value+"px";
+  wordDisplay.style.fontFamily = fontFamily.value;
 }
 
 function restart(){
@@ -315,6 +403,8 @@ function restart(){
     timer=setInterval(show,speedTable[speed.value]);
   }
 }
+
+/* ========================= */
 
 speed.oninput=restart;
 level.onchange=show;
