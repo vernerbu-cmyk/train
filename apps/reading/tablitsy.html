@@ -16,7 +16,6 @@ body{
   background:#f4f6fb;
 }
 
-/* ===== HEADER ===== */
 .header{
   background:var(--blue);
   color:#fff;
@@ -26,7 +25,6 @@ body{
   padding:14px;
 }
 
-/* ===== STATUS ===== */
 #status{
   text-align:center;
   padding:6px;
@@ -34,7 +32,6 @@ body{
   font-size:14px;
 }
 
-/* ===== CONTROLS ===== */
 .controls{
   display:flex;
   flex-wrap:wrap;
@@ -48,7 +45,6 @@ label{
   font-size:14px;
 }
 
-/* ===== BUTTONS ===== */
 button{
   background:var(--orange);
   color:#fff;
@@ -75,7 +71,7 @@ button:active{
   grid-auto-rows:1fr;
 }
 
-/* ===== CELL (ОСНОВНОЙ ФИКС РАЗМЕРА) ===== */
+/* ===== CELL ===== */
 .cell{
   background:#fff;
   border-radius:16px;
@@ -90,24 +86,16 @@ button:active{
 
   box-shadow:0 6px 18px rgba(0,0,0,0.08);
 
-  /* ✔ НОРМАЛЬНЫЙ РАЗМЕР */
   font-size:28px;
   padding:18px;
 
   word-break:break-word;
+  transition:0.15s;
 }
 
 .cell.hidden{
   background:var(--orange);
   color:transparent;
-}
-
-/* ===== MOBILE ===== */
-@media (max-width:600px){
-  .cell{
-    font-size:22px;
-    padding:16px;
-  }
 }
 
 /* ===== FOOTER ===== */
@@ -117,6 +105,14 @@ button:active{
   right:10px;
   font-size:11px;
   color:#888;
+}
+
+/* ===== MOBILE ===== */
+@media (max-width:600px){
+  .cell{
+    font-size:22px;
+    padding:16px;
+  }
 }
 </style>
 </head>
@@ -137,6 +133,12 @@ button:active{
   <label><input id="v3" type="checkbox" checked> 3</label>
   <label><input id="v4" type="checkbox" checked> 4</label>
   <label><input id="v5" type="checkbox" checked> 5+</label>
+
+  <!-- 🆕 РЕЖИМ КРУПНЫХ КАРТОЧЕК -->
+  <label>
+    <input id="bigMode" type="checkbox">
+    крупные карточки
+  </label>
 
   <button onclick="generate()">Сгенерировать</button>
 
@@ -206,6 +208,8 @@ function render(list, cols){
 
   grid.innerHTML = "";
 
+  const big = bigMode.checked;
+
   grid.style.gridTemplateColumns =
     `repeat(${cols}, 1fr)`;
 
@@ -215,6 +219,13 @@ function render(list, cols){
     div.className = "cell";
 
     div.textContent = word;
+
+    /* ===== КРУПНЫЙ РЕЖИМ ===== */
+    if(big){
+      div.style.fontSize = "42px";
+      div.style.padding = "32px";
+      div.style.minHeight = "90px";
+    }
 
     div.onclick = ()=>div.classList.toggle("hidden");
 
