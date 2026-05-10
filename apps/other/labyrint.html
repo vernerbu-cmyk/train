@@ -568,14 +568,41 @@ function draw(){
 
     /* exit */
 
-    ctx.fillStyle="#fff";
+    /* ===== EXIT (ЧЁТКО ВИДЕН) ===== */
 
-    ctx.fillRect(
-        exit.x*cell+ox+cell*0.25,
-        exit.y*cell+oy+cell*0.25,
-        cell*0.5,
-        cell*0.5
-    );
+let ex=exit.x*cell+ox+cell/2;
+let ey=exit.y*cell+oy+cell/2;
+
+/* glow */
+ctx.shadowColor="#FF6A00";
+ctx.shadowBlur=12;
+
+/* base */
+ctx.fillStyle="#fff";
+ctx.fillRect(
+    exit.x*cell+ox+cell*0.25,
+    exit.y*cell+oy+cell*0.25,
+    cell*0.5,
+    cell*0.5
+);
+
+/* border */
+ctx.shadowBlur=0;
+ctx.strokeStyle="#FF6A00";
+ctx.lineWidth=3;
+ctx.strokeRect(
+    exit.x*cell+ox+cell*0.25,
+    exit.y*cell+oy+cell*0.25,
+    cell*0.5,
+    cell*0.5
+);
+
+/* label */
+ctx.fillStyle="#FF6A00";
+ctx.font=`${Math.floor(cell*0.35)}px Arial`;
+ctx.textAlign="center";
+ctx.textBaseline="middle";
+ctx.fillText("F", ex, ey);
 
     /* player */
 
