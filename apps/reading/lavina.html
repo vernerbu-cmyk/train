@@ -6,201 +6,150 @@
 <title>Лавина</title>
 
 <style>
-:root{
-  --blue:#1E3F8A;
-  --orange:#FF6A00;
-}
-
-body{
+body {
   margin:0;
-  font-family:Arial,sans-serif;
-  background:#f6f7fb;
+  font-family: Arial, sans-serif;
+  background:#fffaf2;
 }
 
-/* ===== HEADER ===== */
+/* HEADER */
 header{
-  background:var(--blue);
-  color:#fff;
-  padding:10px 12px;
+  background:#1E3F8A;
+  color:white;
+  padding:10px;
   display:flex;
   align-items:center;
   justify-content:space-between;
-  position:relative;
-  gap:12px;
+  flex-wrap:wrap;
 }
 
 .logo{
-  position:absolute;
-  left:50%;
-  transform:translateX(-50%);
-  font-weight:800;
-  font-style:italic;
-  font-size:28px;
-  letter-spacing:1px;
-  white-space:nowrap;
-  pointer-events:none;
+  font-style: italic;
+  font-size:22px;
+  flex:1;
+  text-align:center;
 }
 
+/* SPEED */
 .speed{
   display:flex;
   align-items:center;
-  gap:8px;
+  gap:6px;
   font-size:13px;
-  z-index:2;
 }
 
+input[type=range]{ width:120px; }
+
+/* LEVELS */
+.levels{
+  display:flex;
+  gap:6px;
+  margin-top:6px;
+}
+
+.levels button{
+  background:#FF6A00;
+  color:white;
+  border:none;
+  padding:4px 10px;
+  border-radius:6px;
+  box-shadow:0 3px 0 #c84f00;
+  cursor:pointer;
+}
+
+.levels button:active{
+  transform:translateY(2px);
+  box-shadow:0 1px 0 #c84f00;
+}
+
+/* TOGGLES */
 .toggles{
   display:flex;
   gap:10px;
   font-size:13px;
-  z-index:2;
 }
 
-input[type=range],
-input[type=checkbox]{
-  accent-color:var(--orange);
-}
-
-input[type=range]{
-  width:140px;
-}
-
-/* ===== BUTTONS ===== */
+/* BUTTONS */
 .controls{
   margin:12px;
   display:flex;
   justify-content:center;
+  gap:12px;
   flex-wrap:wrap;
-  gap:10px;
 }
 
 button.main{
-  background:var(--orange);
-  color:#fff;
-  border:none;
-  border-radius:8px;
-  padding:10px 16px;
   font-size:16px;
+  padding:8px 16px;
+  background:#FF6A00;
+  color:white;
+  border:none;
+  border-radius:6px;
+  box-shadow:0 4px 0 #c84f00;
   cursor:pointer;
-  box-shadow:0 4px 0 #c24f00;
 }
 
 button.main:active{
   transform:translateY(2px);
-  box-shadow:0 1px 0 #c24f00;
+  box-shadow:0 2px 0 #c84f00;
 }
 
-/* ===== SETTINGS ===== */
+/* SETTINGS */
 #settings{
   display:none;
-  background:#fff;
-  margin:10px;
+  background:#fff3e0;
   padding:12px;
-  border-radius:10px;
-  box-shadow:0 2px 8px rgba(0,0,0,.08);
 }
 
-#settings select,
-#settings textarea{
+#settings textarea,
+#settings select{
   width:100%;
   margin-top:8px;
-  padding:6px;
   font-size:15px;
-  box-sizing:border-box;
 }
 
-/* ===== TEXT ===== */
+/* TEXT */
 #text{
   padding:20px;
   max-width:900px;
   margin:auto;
-  font-size:30px;
+  font-size:28px;
   line-height:1.6;
   text-align:justify;
-  background:#fff;
-  border-radius:10px;
+  background:white;
+  border-radius:8px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
 }
 
-/* ===== INFO ===== */
+/* INFO */
 #words,#time{
   position:fixed;
   right:10px;
   padding:6px 10px;
-  border-radius:8px;
+  border-radius:6px;
   font-size:14px;
-  background:#fff;
 }
 
-#words{bottom:10px;}
-#time{bottom:46px;}
+#words{ bottom:10px; background:#ffe0b2; }
+#time{ bottom:48px; background:#c8e6c9; }
 
-/* ===== COPYRIGHT ===== */
-#author{
+/* COPYRIGHT */
+.copyright{
   position:fixed;
+  bottom:6px;
   right:10px;
-  bottom:4px;
-  font-size:10px;
-  color:#9aa0a6;
-  opacity:.8;
-  pointer-events:none;
+  font-size:11px;
+  opacity:0.6;
 }
 
-/* ===== MOBILE FIX ===== */
-@media (max-width:768px){
-
+/* MOBILE */
+@media(max-width:600px){
   header{
     flex-direction:column;
-    align-items:stretch;
-    padding:10px;
+    align-items:center;
+    gap:6px;
   }
-
-  /* главное исправление:
-     убираем absolute центрирование на телефоне */
-  .logo{
-    position:static;
-    transform:none;
-    order:1;
-    text-align:center;
-    font-size:24px;
-    margin-bottom:4px;
-  }
-
-  .speed{
-    order:2;
-    width:100%;
-    justify-content:space-between;
-    flex-wrap:wrap;
-    font-size:12px;
-  }
-
-  .toggles{
-    order:3;
-    width:100%;
-    justify-content:space-between;
-    flex-wrap:wrap;
-    font-size:12px;
-  }
-
-  input[type=range]{
-    width:100%;
-    margin:4px 0;
-  }
-
-  button.main{
-    flex:1 1 40%;
-    font-size:15px;
-  }
-
-  #text{
-    font-size:22px;
-    padding:14px;
-    margin:10px;
-  }
-
-  #words,#time{
-    font-size:12px;
-    right:6px;
-  }
+  .logo{ font-size:18px; }
 }
 </style>
 </head>
@@ -208,20 +157,25 @@ button.main:active{
 <body>
 
 <header>
-
-  <div class="logo">Лавина</div>
-
   <div class="speed">
-    <span>Медленно</span>
+    <span>медл</span>
     <input id="speed" type="range" min="0" max="9" value="4">
-    <span>Быстро</span>
+    <span>быстр</span>
   </div>
+
+  <div class="logo">ЛАВИНА</div>
 
   <div class="toggles">
     <label><input type="checkbox" id="paint"> белый</label>
     <label><input type="checkbox" id="reverseMode"> реверс</label>
   </div>
 
+  <div class="levels">
+    <button onclick="setLevel('level_1')">1</button>
+    <button onclick="setLevel('level_2')">2</button>
+    <button onclick="setLevel('level_3')">3</button>
+    <button onclick="setLevel('level_4')">4</button>
+  </div>
 </header>
 
 <div class="controls">
@@ -233,160 +187,182 @@ button.main:active{
 
 <div id="settings">
   <select id="selector"></select>
-  <textarea id="newText" placeholder="Вставь текст"></textarea>
+  <textarea id="newText"></textarea>
   <button class="main" id="add">Добавить</button>
 </div>
 
 <div id="text"></div>
-
 <div id="words"></div>
 <div id="time">Время: 0 сек</div>
-
-<div id="author">© verner</div>
+<div class="copyright">© verner</div>
 
 <script>
+
 const speeds=[2,1.75,1.5,1.25,1,0.75,0.5,0.4,0.25,0.1];
 
-let texts=[];
-let spans=[],originalWords=[];
-let i=0,running=false,timer=null;
+let data = {};
+let texts = [];
+let currentLevel = "level_1";
 
-let startTime=0;
-let clockInterval=null;
-let currentDelay=speeds[4]*1000;
+let spans=[], originalWords=[];
+let i=0, running=false, timer=null;
+let startTime=0, clockInterval=null;
 
+/* UI */
 const textBox=document.getElementById("text");
 const selector=document.getElementById("selector");
-const settings=document.getElementById("settings");
-const toggleSettings=document.getElementById("toggleSettings");
-
-const speed=document.getElementById("speed");
-const paint=document.getElementById("paint");
-const reverseMode=document.getElementById("reverseMode");
-
-const startBtn=document.getElementById("start");
-const stopBtn=document.getElementById("stop");
-const repeatBtn=document.getElementById("repeat");
-
-const newText=document.getElementById("newText");
-const add=document.getElementById("add");
-
 const wordsBox=document.getElementById("words");
 const timeBox=document.getElementById("time");
+const paint=document.getElementById("paint");
+const reverseMode=document.getElementById("reverseMode");
+const speed=document.getElementById("speed");
+const newText=document.getElementById("newText");
 
-async function loadTexts(){
-  const res=await fetch("texts2.json");
-  texts=await res.json();
+/* LOAD JSON */
+async function loadData(){
+  const res = await fetch("texts2.json");
+  data = await res.json();
+  setLevel("level_1");
+}
+loadData();
+
+/* LEVEL SWITCH */
+function setLevel(level){
+  if(!data[level]) return;
+
+  currentLevel = level;
+  texts = data[level].texts || [];
+
   updateSelector();
-  selector.selectedIndex=0;
+  selector.value = 0;
   showText();
 }
 
+/* SELECTOR */
 function updateSelector(){
   selector.innerHTML="";
-  texts.forEach((_,n)=>{
+  texts.forEach((_,idx)=>{
     const o=document.createElement("option");
-    o.value=n;
-    o.textContent="Текст "+(n+1);
+    o.value=idx;
+    o.textContent="Текст "+(idx+1);
     selector.appendChild(o);
   });
 }
 
-function formatWord(w){
+/* FORMAT */
+function formatWord(word){
   if(reverseMode.checked){
-    let p="";
-    if(/[\.,!?:;]$/.test(w)){
-      p=w.slice(-1);
-      w=w.slice(0,-1);
+    let punct="";
+    if(/[\.,!?:;]$/.test(word)){
+      punct = word.slice(-1);
+      word = word.slice(0,-1);
     }
-    return w.split("").reverse().join("")+p;
+    return word.split("").reverse().join("") + punct;
   }
-  return w;
+  return word;
 }
 
+/* SHOW */
 function showText(){
-  const t=texts[selector.value];
-  if(!t) return;
+  if(!texts.length) return;
 
+  let t = texts[selector.value]?.text || texts[selector.value];
   originalWords=t.split(" ");
-  textBox.innerHTML=originalWords.map(w=>`<span>${formatWord(w)}</span>`).join(" ");
+
+  textBox.innerHTML=originalWords
+    .map(w=>`<span>${formatWord(w)}</span>`)
+    .join(" ");
+
   spans=[...textBox.querySelectorAll("span")];
 
-  i=0;
   wordsBox.textContent="Слов: "+spans.length;
   timeBox.textContent="Время: 0 сек";
+  i=0;
 }
 
-selector.onchange=showText;
-
-toggleSettings.onclick=()=>{
-  settings.style.display=settings.style.display==="block"?"none":"block";
-};
-
-add.onclick=()=>{
-  const t=newText.value.trim();
-  if(!t) return;
-  texts.push(t);
-  updateSelector();
-  selector.selectedIndex=texts.length-1;
-  showText();
-};
-
+/* TIMER */
 function startClock(){
-  clearInterval(clockInterval);
   clockInterval=setInterval(()=>{
-    timeBox.textContent="Время: "+Math.floor((Date.now()-startTime)/1000)+" сек";
+    let s=Math.floor((Date.now()-startTime)/1000);
+    timeBox.textContent="Время: "+s+" сек";
   },200);
 }
 
-function go(){
+function stopClock(){
+  clearInterval(clockInterval);
+}
+
+/* DISAPPEAR */
+function disappearWord(){
   if(!running || i>=spans.length) return;
 
   for(let j=i;j<spans.length;j++){
     spans[j].textContent=formatWord(originalWords[j]);
   }
 
-  spans[i].style.color=paint.checked ? "white" : "transparent";
+  if(paint.checked) spans[i].style.color="white";
+  else spans[i].style.display="none";
 
   i++;
+
   wordsBox.textContent="Слов: "+(spans.length-i);
 
   if(i<spans.length){
-    timer=setTimeout(go,currentDelay);
+    timer=setTimeout(disappearWord, speeds[speed.value]*1000);
   }else{
     running=false;
+    stopClock();
   }
 }
 
-startBtn.onclick=()=>{
-  stopBtn.onclick();
+/* CONTROLS */
+document.getElementById("start").onclick=()=>{
+  document.getElementById("stop").onclick();
   running=true;
   i=0;
   startTime=Date.now();
   startClock();
-  go();
+  disappearWord();
 };
 
-stopBtn.onclick=()=>{
+document.getElementById("stop").onclick=()=>{
   running=false;
   clearTimeout(timer);
+  stopClock();
 };
 
-repeatBtn.onclick=()=>{
-  stopBtn.onclick();
+document.getElementById("repeat").onclick=()=>{
+  document.getElementById("stop").onclick();
   showText();
   running=true;
   startTime=Date.now();
   startClock();
-  go();
+  disappearWord();
 };
 
+/* SPEED LIVE */
 speed.oninput=()=>{
-  currentDelay=speeds[speed.value]*1000;
+  if(running){
+    clearTimeout(timer);
+    timer=setTimeout(disappearWord, speeds[speed.value]*1000);
+  }
 };
 
-loadTexts();
-</script>
+/* UI */
+selector.onchange=showText;
 
+document.getElementById("toggleSettings").onclick=()=>{
+  const s=document.getElementById("settings");
+  s.style.display = s.style.display==="block"?"none":"block";
+};
+
+document.getElementById("add").onclick=()=>{
+  const t=newText.value.trim();
+  if(!t) return;
+  texts.push({id:texts.length+1,text:t});
+  updateSelector();
+};
+
+</script>
 </body>
 </html>
