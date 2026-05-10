@@ -16,7 +16,6 @@ body{
   background:#f4f6fb;
 }
 
-/* ===== HEADER ===== */
 .header{
   background:var(--blue);
   color:#fff;
@@ -26,7 +25,6 @@ body{
   padding:14px;
 }
 
-/* ===== STATUS ===== */
 #status{
   text-align:center;
   padding:6px;
@@ -34,7 +32,6 @@ body{
   font-size:14px;
 }
 
-/* ===== CONTROLS ===== */
 .controls{
   display:flex;
   flex-wrap:wrap;
@@ -48,7 +45,6 @@ label{
   font-size:14px;
 }
 
-/* ===== BUTTONS ===== */
 button{
   background:var(--orange);
   color:#fff;
@@ -68,46 +64,34 @@ button:active{
 /* ===== GRID ===== */
 #grid{
   display:grid;
-  gap:12px;
+  gap:10px;
   max-width:1000px;
   margin:20px auto;
   padding:0 10px;
+  grid-auto-rows:1fr;
 }
 
-/* ВАЖНО: убираем конфликтующие ограничения */
+/* ===== CELL ===== */
 .cell{
   background:#fff;
   border-radius:16px;
+  padding:22px;
+  text-align:center;
+  font-weight:500;
+  user-select:none;
+  cursor:pointer;
+  box-shadow:0 6px 18px rgba(0,0,0,0.08);
 
   display:flex;
   align-items:center;
   justify-content:center;
-  text-align:center;
 
-  font-weight:500;
-  user-select:none;
-  cursor:pointer;
-
-  box-shadow:0 6px 18px rgba(0,0,0,0.08);
-
-  padding:0; /* ВАЖНО */
-  min-height:unset; /* убираем фикс */
-
-  word-break:break-word;
-  white-space:normal;
+  white-space:pre-line;
 }
 
 .cell.hidden{
   background:var(--orange);
   color:transparent;
-}
-
-/* ===== MOBILE ===== */
-@media (max-width:600px){
-  .cell{
-    font-size:22px !important;
-    padding:26px 12px;
-  }
 }
 
 /* ===== FOOTER ===== */
@@ -125,35 +109,22 @@ button:active{
 
 <div class="header">Таблицы</div>
 
-<div id="status">⏳ ожидание загрузки...</div>
+<div id="status">⏳ загрузка...</div>
 
 <div class="controls">
 
   <label>Строки <input id="rows" type="number" value="5"></label>
   <label>Столбцы <input id="cols" type="number" value="5"></label>
 
-  <!-- гласные -->
   <label><input id="v1" type="checkbox" checked> 1</label>
   <label><input id="v2" type="checkbox" checked> 2</label>
   <label><input id="v3" type="checkbox" checked> 3</label>
   <label><input id="v4" type="checkbox" checked> 4</label>
   <label><input id="v5" type="checkbox" checked> 5+</label>
 
-  <!-- слоги -->
   <label>
-    <input id="syllableMode" type="checkbox">
     слоги
-  </label>
-
-  <!-- размер текста -->
-  <label>
-    текст
-    <select id="fontSize">
-      <option value="20">S</option>
-      <option value="26" selected>M</option>
-      <option value="34">L</option>
-      <option value="44">XL</option>
-    </select>
+    <input id="syllableMode" type="checkbox">
   </label>
 
   <button onclick="generate()">Сгенерировать</button>
@@ -172,7 +143,7 @@ const status = document.getElementById("status");
 const vowels = "аоуыэиеёюя";
 
 /* =========================
-   LOAD JSON (СТАБИЛЬНО)
+   LOAD JSON
 ========================= */
 async function load(){
   try{
@@ -183,39 +154,32 @@ async function load(){
 
     words = Array.isArray(data) ? data : (data.words || []);
 
-    if(!words.length){
-      throw new Error("пустой список слов");
-    }
-
-    status.textContent = "✔ слов загружено: " + words.length;
+    status.textContent = "✔ слов: " + words.length;
 
   }catch(e){
     console.error(e);
     status.textContent = "❌ JSON не загрузился";
-    words = [];
   }
 }
 
 /* =========================
-   ГЛАСНЫЕ ФИЛЬТРЫ
-========================= */
-function vowelCount(word){
-  return [...word.toLowerCase()]
-    .filter(c => vowels.includes(c)).length;
-}
-
-/* =========================
-   СЛОГИ (твой алгоритм)
+   ГЛАСНЫЕ
 ========================= */
 function isVowel(ch){
   return vowels.includes(ch);
 }
 
+/* =========================
+   СЛОГИ (1:1 ТВОЙ АЛГОРИТМ)
+========================= */
 function preprocess(word){
+
   word = word.toLowerCase();
+
   const res = [];
 
   for(let i=0;i<word.length;i++){
+
     const ch = word[i];
 
     if(ch === " "){
@@ -226,13 +190,18 @@ function preprocess(word){
     if(!/[а-яё]/.test(ch)) continue;
 
     if(ch === "ь" || ch === "ъ"){
-      if(res.length) res[res.length - 1] += ch;
+      if(res.length){
+        res[res.length - 1] += ch;
+      }
       continue;
     }
 
     if(ch === "й"){
-      if(res.length) res[res.length - 1] += ch;
-      else res.push(ch);
+      if(res.length){
+        res[res.length - 1] += ch;
+      }else{
+        res.push(ch);
+      }
       continue;
     }
 
@@ -243,6 +212,14 @@ function preprocess(word){
 }
 
 function split(word){
+
+  if(word.includes(" ")){
+    return word
+      .split(" ")
+      .map(w => split(w).join("-"))
+      .join(" ")
+      .split(" ");
+  }
 
   const letters = preprocess(word);
 
@@ -285,6 +262,20 @@ function split(word){
           continue;
         }
 
+        else if(cons.length >= 2 && cons[0][0] === cons[1][0]){
+
+          if(vowelCount === 1){
+            return [letters.join("")];
+          }
+
+          cur += cons[0];
+          res.push(cur);
+          cur = cons.slice(1).join("");
+
+          i = j - 1;
+          continue;
+        }
+
         else{
           cur += cons.slice(0,-1).join("");
           res.push(cur);
@@ -304,7 +295,7 @@ function split(word){
 }
 
 /* =========================
-   GENERATE
+   GENERATE (ФИКС СТРОК)
 ========================= */
 function generate(){
 
@@ -313,7 +304,9 @@ function generate(){
   const need = r * c;
 
   let pool = words.filter(w=>{
-    const v = vowelCount(w);
+
+    const v = [...w.toLowerCase()]
+      .filter(ch => vowels.includes(ch)).length;
 
     return (
       (v1.checked && v === 1) ||
@@ -328,37 +321,27 @@ function generate(){
     pool = [...pool, ...words];
   }
 
-  pool = pool.sort(()=>Math.random()-0.5).slice(0, need);
+  pool = pool.sort(()=>Math.random()-0.5);
 
-  render(pool, c);
+  const result = pool.slice(0, need);
+
+  render(result, c);
 }
 
 /* =========================
-   RENDER
+   RENDER (СТРОКИ СТАБИЛЬНЫ)
 ========================= */
 function render(list, cols){
 
   grid.innerHTML = "";
 
-  const font = +fontSize.value || 26;
-
-  const isMobile = window.innerWidth < 600;
-  const finalCols = isMobile ? Math.min(cols, 2) : cols;
-
-  /* 👉 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ */
   grid.style.gridTemplateColumns =
-    `repeat(${finalCols}, 1fr)`;
+    `repeat(${cols}, 1fr)`;
 
   list.forEach(word=>{
 
     const div = document.createElement("div");
     div.className = "cell";
-
-    div.style.fontSize = font + "px";
-
-    /* 👉 высота зависит от текста */
-    div.style.minHeight = (font * 2.2) + "px";
-    div.style.padding = (font * 0.6) + "px";
 
     if(syllableMode.checked){
       div.innerHTML = split(word).join("<br>");
@@ -372,9 +355,6 @@ function render(list, cols){
   });
 }
 
-/* =========================
-   START
-========================= */
 load();
 </script>
 
