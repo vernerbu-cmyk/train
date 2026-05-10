@@ -33,7 +33,7 @@ header{
   font-weight:700;
 }
 
-/* LEVELS */
+/* LEVEL BUTTONS */
 .levels{
   display:flex;
   gap:6px;
@@ -49,11 +49,20 @@ header{
   cursor:pointer;
 }
 
-/* SETTINGS BUTTON (стрелка) */
+/* TEXT SELECT */
+#textSelect{
+  background:#FF6A00;
+  color:#fff;
+  border:none;
+  padding:6px 8px;
+  border-radius:6px;
+}
+
+/* SETTINGS BUTTON */
 #toggleSettings{
   background:#FF6A00;
   border:none;
-  color:white;
+  color:#fff;
   padding:6px 10px;
   border-radius:6px;
   cursor:pointer;
@@ -83,7 +92,7 @@ header{
   box-shadow:0 1px 0 #c24f00;
 }
 
-/* ===== SETTINGS (СТАРЫЙ СТИЛЬ ВНУТРИ ПАНЕЛИ) ===== */
+/* ===== SETTINGS ===== */
 #settings{
   display:none;
   background:#fff;
@@ -93,18 +102,21 @@ header{
   box-shadow:0 2px 10px rgba(0,0,0,0.15);
 }
 
-.settings-row{
-  margin-bottom:10px;
-}
-
 label{
   font-size:13px;
   display:block;
-  margin-bottom:4px;
+  margin-top:8px;
 }
 
-input,select{
+/* ===== INPUT ACCENT ===== */
+input[type="range"]{
   width:100%;
+  accent-color:#FF6A00;
+}
+
+input[type="checkbox"]{
+  accent-color:#FF6A00;
+  transform:scale(1.1);
 }
 
 /* ===== TEXT ===== */
@@ -131,7 +143,6 @@ input,select{
 #words{bottom:10px;background:#ffe0b2;}
 #time{bottom:45px;background:#c8e6c9;}
 
-/* ===== MOBILE FIX ===== */
 @media(max-width:600px){
   #text{font-size:22px;}
   .title{font-size:18px;}
@@ -151,38 +162,32 @@ input,select{
     <button onclick="setLevel('level_4')">4</button>
   </div>
 
+  <select id="textSelect"></select>
+
   <button id="toggleSettings">⚙</button>
 </header>
 
-<!-- CONTROLS -->
 <div class="controls">
   <button id="start">Старт</button>
   <button id="stop">Стоп</button>
   <button id="repeat">Повтор</button>
 </div>
 
-<!-- SETTINGS -->
 <div id="settings">
 
-  <div class="settings-row">
-    <label>Скорость</label>
-    <input id="speed" type="range" min="0" max="9" value="4">
-  </div>
+  <label>Скорость</label>
+  <input id="speed" type="range" min="0" max="9" value="4">
 
-  <div class="settings-row">
-    <label>Размер текста</label>
-    <input id="fontSize" type="range" min="18" max="48" value="28">
-  </div>
+  <label>Размер текста</label>
+  <input id="fontSize" type="range" min="18" max="48" value="28">
 
-  <div class="settings-row">
-    <label>Шрифт</label>
-    <select id="fontFamily">
-      <option>Arial</option>
-      <option>Georgia</option>
-      <option>Times New Roman</option>
-      <option>Verdana</option>
-    </select>
-  </div>
+  <label>Шрифт</label>
+  <select id="fontFamily">
+    <option>Arial</option>
+    <option>Georgia</option>
+    <option>Times New Roman</option>
+    <option>Verdana</option>
+  </select>
 
   <label><input type="checkbox" id="reverseMode"> реверс</label>
   <label><input type="checkbox" id="paint"> белый режим</label>
@@ -214,10 +219,14 @@ const fontFamily=document.getElementById("fontFamily");
 const reverseMode=document.getElementById("reverseMode");
 const paint=document.getElementById("paint");
 
-/* SETTINGS OPEN/CLOSE */
+const textSelect=document.getElementById("textSelect");
+
+let currentLevel="level_1";
+
+/* SETTINGS */
 document.getElementById("toggleSettings").onclick=()=>{
   const s=document.getElementById("settings");
-  s.style.display = (s.style.display==="block") ? "none" : "block";
+  s.style.display = s.style.display==="block" ? "none" : "block";
 };
 
 /* LOAD JSON */
@@ -229,7 +238,20 @@ fetch("texts2.json")
   });
 
 function setLevel(lv){
+  currentLevel=lv;
   texts=data[lv].texts;
+
+  textSelect.innerHTML="";
+
+  texts.forEach((t,i)=>{
+    const o=document.createElement("option");
+    o.value=i;
+    o.textContent="Текст "+(i+1);
+    textSelect.appendChild(o);
+  });
+
+  textSelect.value=0;
+
   stop();
   showText();
 }
@@ -249,7 +271,7 @@ function formatWord(w){
 
 /* SHOW */
 function showText(){
-  let t=texts[0].text;
+  let t=texts[textSelect.value].text;
 
   originalWords=t.split(" ");
 
@@ -273,6 +295,11 @@ function applyStyle(){
 fontSize.oninput=applyStyle;
 fontFamily.onchange=applyStyle;
 
+textSelect.onchange=()=>{
+  stop();
+  showText();
+};
+
 /* TIMER */
 function startClock(){
   clearInterval(clock);
@@ -285,7 +312,7 @@ function startClock(){
 
 /* DISAPPEAR */
 function disappear(){
-  if(!running || i>=spans.length) return;
+  if(!running||i>=spans.length) return;
 
   if(paint.checked){
     spans[i].style.color="#fff";
@@ -297,7 +324,7 @@ function disappear(){
   wordsBox.textContent="Слов: "+(spans.length-i);
 
   if(i<spans.length){
-    timer=setTimeout(disappear, speeds[speed.value]*1000);
+    timer=setTimeout(disappear,speeds[speed.value]*1000);
   } else {
     running=false;
     clearInterval(clock);
@@ -321,7 +348,6 @@ function stop(){
   clearInterval(clock);
 }
 
-/* STOP BTN */
 document.getElementById("stop").onclick=stop;
 
 /* REPEAT */
