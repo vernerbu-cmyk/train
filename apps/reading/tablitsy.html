@@ -80,11 +80,11 @@ button:active{
   border-radius:16px;
   padding:22px;
   text-align:center;
-  font-size:26px;
   font-weight:500;
   user-select:none;
   cursor:pointer;
   box-shadow:0 6px 18px rgba(0,0,0,0.08);
+  white-space:pre-line;
 }
 
 .cell.hidden{
@@ -95,36 +95,8 @@ button:active{
 /* ===== MOBILE ===== */
 @media (max-width:600px){
   .cell{
-    font-size:22px;
+    font-size:22px !important;
     padding:26px 12px;
-  }
-}
-
-/* ===== PRINT FIX ===== */
-@media print {
-  body{
-    background:#fff;
-  }
-
-  .header,
-  .controls,
-  #status{
-    display:none !important;
-  }
-
-  #grid{
-    max-width:none;
-    margin:0;
-    padding:0;
-    gap:12px;
-  }
-
-  .cell{
-    font-size:28px !important;
-    padding:28px;
-    border:2px solid #000;
-    box-shadow:none;
-    break-inside:avoid;
   }
 }
 
@@ -146,17 +118,36 @@ button:active{
 <div id="status">⏳ ожидание загрузки...</div>
 
 <div class="controls">
+
   <label>Строки <input id="rows" type="number" value="5"></label>
   <label>Столбцы <input id="cols" type="number" value="5"></label>
 
+  <!-- гласные -->
   <label><input id="v1" type="checkbox" checked> 1</label>
   <label><input id="v2" type="checkbox" checked> 2</label>
   <label><input id="v3" type="checkbox" checked> 3</label>
   <label><input id="v4" type="checkbox" checked> 4</label>
   <label><input id="v5" type="checkbox" checked> 5+</label>
 
+  <!-- слоги -->
+  <label>
+    <input id="syllableMode" type="checkbox">
+    слоги
+  </label>
+
+  <!-- размер текста -->
+  <label>
+    текст
+    <select id="fontSize">
+      <option value="20">S</option>
+      <option value="26" selected>M</option>
+      <option value="34">L</option>
+      <option value="44">XL</option>
+    </select>
+  </label>
+
   <button onclick="generate()">Сгенерировать</button>
-  <button onclick="window.print()">🖨 Печать</button>
+
 </div>
 
 <div id="grid"></div>
@@ -168,28 +159,17 @@ let words = [];
 const grid = document.getElementById("grid");
 const status = document.getElementById("status");
 
-const vowels = "аеёиоуыэюя";
+const vowels = "аоуыэиеёюя";
 
-/* ===== LOAD JSON (СТАБИЛЬНО) ===== */
+/* =========================
+   LOAD JSON (СТАБИЛЬНО)
+========================= */
 async function load(){
-
   try{
     status.textContent = "⏳ загрузка JSON...";
 
-    const res = await fetch("./words.json", { cache:"no-store" });
-
-    if(!res.ok){
-      throw new Error("HTTP " + res.status);
-    }
-
-    const text = await res.text();
-
-    let data;
-    try{
-      data = JSON.parse(text);
-    }catch(e){
-      throw new Error("JSON сломан");
-    }
+    const res = await fetch("./words.json?v=" + Date.now());
+    const data = await res.json();
 
     words = Array.isArray(data) ? data : (data.words || []);
 
@@ -206,19 +186,117 @@ async function load(){
   }
 }
 
-/* ===== ГЛАСНЫЕ ===== */
+/* =========================
+   ГЛАСНЫЕ ФИЛЬТРЫ
+========================= */
 function vowelCount(word){
   return [...word.toLowerCase()]
     .filter(c => vowels.includes(c)).length;
 }
 
-/* ===== GENERATE ===== */
-function generate(){
+/* =========================
+   СЛОГИ (твой алгоритм)
+========================= */
+function isVowel(ch){
+  return vowels.includes(ch);
+}
 
-  if(!words.length){
-    grid.innerHTML = "<div style='text-align:center'>Нет слов</div>";
-    return;
+function preprocess(word){
+  word = word.toLowerCase();
+  const res = [];
+
+  for(let i=0;i<word.length;i++){
+    const ch = word[i];
+
+    if(ch === " "){
+      res.push(" ");
+      continue;
+    }
+
+    if(!/[а-яё]/.test(ch)) continue;
+
+    if(ch === "ь" || ch === "ъ"){
+      if(res.length) res[res.length - 1] += ch;
+      continue;
+    }
+
+    if(ch === "й"){
+      if(res.length) res[res.length - 1] += ch;
+      else res.push(ch);
+      continue;
+    }
+
+    res.push(ch);
   }
+
+  return res;
+}
+
+function split(word){
+
+  const letters = preprocess(word);
+
+  const vowelCount =
+    letters.filter(x => isVowel(x[0])).length;
+
+  if(vowelCount <= 1){
+    return [letters.join("")];
+  }
+
+  const res = [];
+  let cur = "";
+  let i = 0;
+
+  while(i < letters.length){
+
+    cur += letters[i];
+
+    if(isVowel(letters[i][0])){
+
+      let j = i + 1;
+      let cons = [];
+
+      while(j < letters.length && !isVowel(letters[j][0])){
+        cons.push(letters[j]);
+        j++;
+      }
+
+      if(j < letters.length){
+
+        if(cons.length === 0){
+          res.push(cur);
+          cur = "";
+        }
+
+        else if(cons.length === 1){
+          res.push(cur);
+          cur = cons[0];
+          i = j - 1;
+          continue;
+        }
+
+        else{
+          cur += cons.slice(0,-1).join("");
+          res.push(cur);
+          cur = cons.slice(-1).join("");
+          i = j - 1;
+          continue;
+        }
+      }
+    }
+
+    i++;
+  }
+
+  if(cur) res.push(cur);
+
+  return res;
+}
+
+/* =========================
+   GENERATE
+========================= */
+function generate(){
 
   const r = +rows.value || 5;
   const c = +cols.value || 5;
@@ -240,34 +318,49 @@ function generate(){
     pool = [...pool, ...words];
   }
 
-  pool = pool
-    .sort(()=>Math.random()-0.5)
-    .slice(0, need);
+  pool = pool.sort(()=>Math.random()-0.5).slice(0, need);
 
   render(pool, c);
 }
 
-/* ===== RENDER ===== */
+/* =========================
+   RENDER
+========================= */
 function render(list, cols){
 
   grid.innerHTML = "";
 
+  const font = +fontSize.value || 26;
+
   const isMobile = window.innerWidth < 600;
   const finalCols = isMobile ? Math.min(cols, 2) : cols;
 
+  const minCell = Math.max(80, font * 2.2);
+
   grid.style.gridTemplateColumns =
-    `repeat(${finalCols}, minmax(120px, 1fr))`;
+    `repeat(${finalCols}, minmax(${minCell}px, 1fr))`;
 
   list.forEach(word=>{
+
     const div = document.createElement("div");
     div.className = "cell";
-    div.textContent = word;
+    div.style.fontSize = font + "px";
+
+    if(syllableMode.checked){
+      div.innerHTML = split(word).join("<br>");
+    }else{
+      div.textContent = word;
+    }
+
     div.onclick = ()=>div.classList.toggle("hidden");
+
     grid.appendChild(div);
   });
 }
 
-/* ===== START ===== */
+/* =========================
+   START
+========================= */
 load();
 </script>
 
