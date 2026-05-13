@@ -16,38 +16,16 @@ body {
     color: #1E3F8A;
 }
 
-/* HEADER */
-.header{
-    width:100%;
-    background:linear-gradient(135deg,#1E3F8A,#274db0);
-    color:white;
-    text-align:center;
-    padding:16px;
-    font-size:20px;
-    font-weight:700;
-    position:relative;
-    box-sizing:border-box;
+.header {
+    width: 100%;
+    background: linear-gradient(135deg, #1E3F8A, #274db0);
+    color: white;
+    text-align: center;
+    padding: 16px;
+    font-size: 20px;
+    font-weight: 700;
 }
 
-.backBtn{
-    position:absolute;
-    left:10px;
-    top:8px;
-    transform:none;
-    border:none;
-    background:linear-gradient(135deg,#FF8C00,#ff6a00);
-    color:white;
-    width:42px;
-    height:42px;
-    border-radius:12px;
-    font-size:28px;
-    font-weight:900;
-    line-height:1;
-    padding-bottom:3px;
-    cursor:pointer;
-}
-
-/* START */
 .start-screen {
     margin-top: 50px;
     display: flex;
@@ -66,7 +44,6 @@ body {
     cursor: pointer;
 }
 
-/* TIMER */
 .timer-bar {
     width: min(92vw, 720px);
     height: 10px;
@@ -76,17 +53,16 @@ body {
     transition: width 1s linear;
 }
 
-/* GRID */
+/* ❗ СТАБИЛЬНАЯ СЕТКА */
 .grid {
     display: grid;
-    gap: 12px;
+    gap: 8px;
     width: min(92vw, 720px);
-    margin-bottom: 90px;
 }
 
-/* CARD */
+/* карточки фиксированные */
 .card {
-    aspect-ratio: 1/1;
+    aspect-ratio: 1 / 1;
     width: 100%;
     perspective: 900px;
     cursor: pointer;
@@ -104,7 +80,6 @@ body {
     transform: rotateY(180deg);
 }
 
-/* FACES */
 .face {
     position: absolute;
     inset: 0;
@@ -128,39 +103,12 @@ body {
     font-size: 42px;
     border: 1px solid rgba(30,63,138,0.2);
 }
-
-/* MATCH ANIMATION */
-.card.matching {
-    animation: match 1s ease forwards;
-}
-
-@keyframes match {
-    0% { transform: scale(1); opacity: 1; }
-    40% { transform: scale(1.2) rotate(4deg); }
-    100% { transform: scale(0); opacity: 0; }
-}
-
-/* RESULT */
-.result-screen {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 30px;
-    text-align: center;
-}
-
-#resultGrade {
-    font-size: 52px;
-    font-weight: bold;
-}
 </style>
 </head>
 
 <body>
-<div class="header">
-    <button class="backBtn" onclick="history.back()">❮</button>
-    MEMO тренажёр памяти
-</div>
+
+<div class="header">MEMO тренажёр памяти</div>
 
 <div class="start-screen" id="startScreen">
 
@@ -186,37 +134,11 @@ body {
 </div>
 
 <div id="game" class="hidden">
-
     <div class="timer-bar" id="timerBar"></div>
     <div class="grid" id="grid"></div>
-
-</div>
-
-<div class="result-screen" id="resultScreen">
-    <h2 id="resultGrade"></h2>
-    <div id="resultText"></div>
-    <button class="big-btn" onclick="location.reload()">ЗАНОВО</button>
 </div>
 
 <script>
-
-/* 🔊 ЗВУК (ДОБАВЛЕНО) */
-function beep(freq){
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-
-    o.connect(g);
-    g.connect(ctx.destination);
-
-    o.frequency.value = freq;
-    o.type = "sine";
-
-    g.gain.value = 0.08;
-
-    o.start();
-    setTimeout(()=>{ o.stop(); ctx.close(); }, 120);
-}
 
 const icons=[
 "🍎","🚗","🐶","⚽","🌙","🎲","🎧","🔥",
@@ -228,7 +150,6 @@ const icons=[
 let cards=[], first=null, lock=false;
 let pairs=0, moves=0;
 
-/* shuffle */
 function shuffle(a){
     for(let i=a.length-1;i>0;i--){
         let j=Math.floor(Math.random()*(i+1));
@@ -237,24 +158,22 @@ function shuffle(a){
     return a;
 }
 
-/* TIMER — СТРОГО В ФАЗЕ ЗАПОМИНАНИЯ */
-function runTimer(sec){
-
+/* 🔥 ФИКС-таймер */
+function runTimer(sec, onEnd){
     const bar=document.getElementById("timerBar");
     let t=sec;
 
     bar.style.width="100%";
 
     const interval=setInterval(()=>{
-
         t--;
         bar.style.width=(t/sec)*100+"%";
 
         if(t<=0){
             clearInterval(interval);
             bar.style.width="0%";
+            if(onEnd) onEnd();
         }
-
     },1000);
 }
 
@@ -304,15 +223,14 @@ function startGame(){
         grid.appendChild(c);
     });
 
-    runTimer(preview);
+    runTimer(preview, ()=>{
 
-    setTimeout(()=>{
         document.querySelectorAll(".card").forEach(c=>{
             c.classList.remove("flipped");
         });
 
         lock=false;
-    }, preview*1000);
+    });
 }
 
 /* FLIP */
@@ -332,66 +250,35 @@ function flip(card){
 
     if(first.dataset.icon===card.dataset.icon){
 
-        beep(600); // 🔊 совпадение
-
         const a=first;
         const b=card;
-
-        first=null;
 
         setTimeout(()=>{
             a.classList.add("matching");
             b.classList.add("matching");
-        },150);
+        },120);
 
         setTimeout(()=>{
 
-            a.style.visibility = "hidden";
-            b.style.visibility = "hidden";
+            /* ❗ ВАЖНО: НЕ УДАЛЯЕМ, только скрываем */
+            a.style.visibility="hidden";
+            b.style.visibility="hidden";
 
             pairs++;
+            first=null;
             lock=false;
 
-            if(pairs===cards.length/2){
-                finishGame();
-            }
-
-        },1000);
+        },900);
 
     } else {
 
         setTimeout(()=>{
-
             first.classList.remove("flipped");
             card.classList.remove("flipped");
-
             first=null;
             lock=false;
-
         },700);
     }
-}
-
-/* FINISH */
-function finishGame(){
-
-    beep(300); // 🔊 конец
-
-    const total=cards.length/2;
-    const acc=pairs/Math.max(1,moves);
-    const percent=Math.round(acc*100);
-
-    let grade="C";
-    if(percent>=90) grade="S";
-    else if(percent>=80) grade="A";
-    else if(percent>=60) grade="B";
-
-    document.getElementById("game").style.display="none";
-    document.getElementById("resultScreen").style.display="flex";
-
-    document.getElementById("resultGrade").textContent=grade;
-    document.getElementById("resultText").textContent=
-        `Пары: ${pairs}/${total} | Ходы: ${moves}`;
 }
 
 </script>
