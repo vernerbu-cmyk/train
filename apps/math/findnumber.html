@@ -3,95 +3,80 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
 <title>Найди цифру</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Oswald:wght@200..700&family=Rubik+Mono+One&family=Comfortaa:wght@300..700&family=Caveat:wght@400..700&family=Nunito:wght@200..900&family=Pacifico&family=Montserrat:wght@300..900&family=Playfair+Display:wght@400..900&family=Unbounded:wght@200..900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@200..900&family=Comfortaa:wght@300..700&family=Caveat:wght@400..700&family=Nunito:wght@200..900&family=Pacifico&family=Montserrat:wght@300..900&display=swap" rel="stylesheet">
 
 <style>
 
-:root{
-    --blue:#1E3F8A;
-    --orange:#FF6A00;
-    --bg:#0B1220;
-    --panel:#111827;
-    --text:#F3F4F6;
+/* 🔥 FULL NO-SCROLL FIX */
+html, body {
+    margin:0;
+    padding:0;
+    height:100%;
+    overflow:hidden;
 }
-
-*{box-sizing:border-box}
 
 body{
-    margin:0;
-    background:var(--bg);
-    color:var(--text);
-    font-family:Montserrat,sans-serif;
+    display:flex;
+    background:#0B1220;
+    font-family:Montserrat;
+}
+
+/* PANEL */
+#panel{
+    width:220px;
+    min-width:220px;
+    background:#16233f;
+    color:white;
     display:flex;
     flex-direction:column;
-    align-items:center;
+    padding:12px;
+    gap:10px;
+    box-sizing:border-box;
 }
 
-/* TOP */
-
-#topbar{
-    width:100%;
-    background:var(--blue);
-    padding:14px;
-    text-align:center;
+.box{
+    background:rgba(255,255,255,0.08);
+    padding:10px;
+    border-radius:10px;
+    font-weight:700;
 }
 
-#title{
-    color:#fff;
-    font-size:34px;
-    font-style:italic;
-}
-
-#controls{
-    display:flex;
-    justify-content:center;
-    gap:12px;
-    margin-top:10px;
-    flex-wrap:wrap;
-}
-
-.info{
-    background:rgba(255,255,255,.1);
-    padding:10px 14px;
-    border-radius:12px;
-}
-
-.btn{
-    background:var(--orange);
+button{
+    background:#FF6A00;
     border:none;
-    padding:10px 16px;
-    border-radius:12px;
+    padding:10px;
+    border-radius:10px;
     color:white;
+    font-weight:800;
     cursor:pointer;
 }
 
-/* FIELD */
+button:active{
+    transform:translateY(2px);
+}
 
+/* FIELD (FIXED HEIGHT LOGIC) */
 #wrap{
-    width:min(900px,95vw);
-    height:min(900px,95vw);
-    margin:20px;
-    background:var(--panel);
-    border-radius:20px;
+    flex:1;
     position:relative;
+    background:#111827;
     overflow:hidden;
 }
 
 /* NUM */
-
 .num{
     position:absolute;
+    transform:translate(-50%,-50%);
     user-select:none;
+    font-weight:800;
     cursor:pointer;
-    transition:all .4s ease;
+    pointer-events:auto;
 }
 
-/* CENTER */
-
-#centerPop{
+/* CENTER POP */
+#center{
     position:fixed;
     inset:0;
     display:flex;
@@ -99,11 +84,28 @@ body{
     align-items:center;
     font-size:140px;
     font-weight:900;
-    color:var(--orange);
-    opacity:0;
-    transform:scale(.6);
-    transition:.25s;
+    color:#FF6A00;
     pointer-events:none;
+    opacity:0;
+    transition:opacity .25s;
+}
+
+/* MOBILE */
+@media (max-width: 768px){
+    body{
+        flex-direction:column;
+    }
+
+    #panel{
+        width:100%;
+        flex-direction:row;
+        flex-wrap:wrap;
+        justify-content:space-between;
+    }
+
+    #wrap{
+        height:calc(100vh - 140px);
+    }
 }
 
 </style>
@@ -111,184 +113,218 @@ body{
 
 <body>
 
-<div id="topbar">
-    <div id="title">Найди цифру</div>
+<div id="panel">
 
-    <div id="controls">
-        <div class="info" id="target">Найди: —</div>
-        <div class="info" id="timer">0.000</div>
-        <button class="btn" onclick="restart()">Перемешать</button>
+    <div class="box" id="target">Найди: —</div>
+    <div class="box" id="timer">0.000</div>
+
+    <div class="box">
+        Сложность:
+        <select id="diff" onchange="setDifficulty(this.value)">
+            <option value="easy">easy</option>
+            <option value="normal" selected>normal</option>
+            <option value="hard">hard</option>
+        </select>
     </div>
+
+    <button onclick="resetGame()">Заново</button>
+
 </div>
 
 <div id="wrap"></div>
 
-<div id="centerPop"></div>
+<div id="center"></div>
 
 <script>
 
 const wrap = document.getElementById("wrap");
 const targetEl = document.getElementById("target");
 const timerEl = document.getElementById("timer");
-const pop = document.getElementById("centerPop");
+const center = document.getElementById("center");
 
-const SIZE = 900;
 const COUNT = 99;
 
-/* 🔥 более разнообразные и реально разные классы */
-const fonts = [
-"Anton",
-"Bebas Neue",
-"Oswald",
-"Rubik Mono One",
-"Comfortaa",
-"Caveat",
-"Nunito",
-"Pacifico",
-"Montserrat",
-"Playfair Display",
-"Unbounded"
-];
+const DIFF = {
+    easy:   { speed:0.7, size:1.25, force:0.6 },
+    normal: { speed:1.0, size:1.0,  force:1.0 },
+    hard:   { speed:1.5, size:0.75, force:1.4 }
+};
 
-let target = 1;
-let start = performance.now();
+let difficulty = DIFF.normal;
+
+function setDifficulty(val){
+    difficulty = DIFF[val] || DIFF.normal;
+    resetGame();
+}
+
+const fonts = [
+"Unbounded","Comfortaa","Caveat","Nunito","Pacifico","Montserrat"
+];
 
 function rand(a,b){return Math.random()*(b-a)+a;}
 function pick(a){return a[Math.floor(Math.random()*a.length)];}
 
-function updateTimer(){
+let items = [];
+let target = 1;
+let start = performance.now();
+
+let mouseX = -9999;
+let mouseY = -9999;
+let pressed = false;
+
+/* TIMER */
+setInterval(()=>{
     timerEl.textContent =
         ((performance.now()-start)/1000).toFixed(3);
-    requestAnimationFrame(updateTimer);
-}
-updateTimer();
+},50);
 
-function showCenter(n){
-    pop.textContent = n;
-    pop.style.opacity = 1;
-    pop.style.transform = "scale(1)";
+/* POINTER */
+wrap.addEventListener("pointermove",(e)=>{
+    const r = wrap.getBoundingClientRect();
+    mouseX = e.clientX - r.left;
+    mouseY = e.clientY - r.top;
+});
+
+wrap.addEventListener("pointerdown",()=>pressed=true);
+wrap.addEventListener("pointerup",()=>pressed=false);
+
+/* CENTER POP */
+function showCenter(){
+    center.textContent = target;
+    center.style.opacity = 1;
+    setTimeout(()=>center.style.opacity=0,400);
 }
 
-function hideCenter(){
-    pop.style.opacity = 0;
-    pop.style.transform = "scale(.6)";
-}
-
-function newTarget(){
+/* TARGET */
+function setTarget(){
     target = Math.floor(Math.random()*COUNT)+1;
     targetEl.textContent = "Найди: " + target;
-
-    showCenter(target);
-
-    setTimeout(hideCenter,600);
+    showCenter(); // 🔥 FIX ALWAYS SHOW
 }
 
-/* ================= SAFE BOUNDS ================= */
-
-const SAFE = 55; // 🔥 больше защиты от вылета за экран
-
-function collide(a,b,p=14){
-    return !(
-        a.x+a.w+p<b.x ||
-        a.x>b.x+b.w+p ||
-        a.y+a.h+p<b.y ||
-        a.y>b.y+b.h+p
-    );
-}
-
+/* BUILD */
 function build(){
 
     wrap.innerHTML = "";
+    items = [];
 
-    const placed = [];
+    const W = wrap.clientWidth;
+    const H = wrap.clientHeight;
 
     const nums = Array.from({length:COUNT},(_,i)=>i+1)
         .sort(()=>Math.random()-0.5);
 
-    nums.forEach(n=>{
+    for(const n of nums){
 
         const el = document.createElement("div");
         el.className="num";
         el.textContent=n;
 
-        const font = pick(fonts);
-        el.style.fontFamily = font;
+        const size =
+            (Math.random()<0.15 ? 80 :
+            Math.random()<0.40 ? 55 : 32)
+            * difficulty.size;
 
-        const size = rand(16,72);
         el.style.fontSize = size+"px";
-        el.style.fontWeight = 700;
-
-        el.style.color = `hsl(${rand(0,360)},80%,60%)`;
-
-        el.style.transform =
-            `rotate(${rand(-25,25)}deg)`;
+        el.style.fontFamily = pick(fonts);
+        el.style.color = `hsl(${Math.random()*360},80%,60%)`;
 
         wrap.appendChild(el);
 
-        const rect = el.getBoundingClientRect();
-
-        const w = Math.ceil(rect.width);
-        const h = Math.ceil(rect.height);
-
-        let ok=false;
-
-        for(let i=0;i<5000;i++){
-
-            const x = rand(
-                SAFE,
-                SIZE - w - SAFE
-            );
-
-            const y = rand(
-                SAFE,
-                SIZE - h - SAFE
-            );
-
-            const box={x,y,w,h};
-
-            let bad=false;
-
-            for(const p of placed){
-                if(collide(box,p)){
-                    bad=true;break;
-                }
-            }
-
-            if(!bad){
-                placed.push(box);
-
-                el.style.left=x+"px";
-                el.style.top=y+"px";
-
-                ok=true;
-                break;
-            }
-        }
-
-        /* fallback (никогда не исчезает) */
-        if(!ok){
-            el.style.left = rand(SAFE,SIZE-SAFE-50)+"px";
-            el.style.top = rand(SAFE,SIZE-SAFE-50)+"px";
-        }
-
-        el.onclick=()=>{
-            if(n!==target) return;
-            start = performance.now();
-            newTarget();
-            build();
+        const obj = {
+            el,
+            val:n,
+            r:size*0.55,
+            x:rand(0,W),
+            y:rand(0,H),
+            vx:rand(-1,1)*difficulty.speed,
+            vy:rand(-1,1)*difficulty.speed,
+            rot:rand(-40,40),
+            skew:rand(-0.3,0.3)
         };
 
-    });
+        el.addEventListener("pointerdown",(e)=>{
+            e.stopPropagation();
+            if(obj.val !== target) return;
+
+            start = performance.now();
+            resetGame();
+        });
+
+        items.push(obj);
+    }
+
+    setTarget();
 }
 
-function restart(){
-    start = performance.now();
-    newTarget();
-    build();
+/* RESET */
+function resetGame(){
+
+    const W = wrap.clientWidth;
+    const H = wrap.clientHeight;
+
+    for(const o of items){
+        o.x = rand(0,W);
+        o.y = rand(0,H);
+        o.vx = rand(-1,1)*difficulty.speed;
+        o.vy = rand(-1,1)*difficulty.speed;
+    }
+
+    setTarget();
 }
 
-newTarget();
+/* ANIMATE */
+function animate(){
+
+    const W = wrap.clientWidth;
+    const H = wrap.clientHeight;
+
+    for(const o of items){
+
+        o.x += o.vx;
+        o.y += o.vy;
+
+        o.vx *= 0.995;
+        o.vy *= 0.995;
+
+        const MAX = 2.5 * difficulty.speed;
+        o.vx = Math.max(-MAX, Math.min(MAX,o.vx));
+        o.vy = Math.max(-MAX, Math.min(MAX,o.vy));
+
+        if(o.x < o.r){ o.x=o.r; o.vx*=-1; }
+        if(o.x > W-o.r){ o.x=W-o.r; o.vx*=-1; }
+
+        if(o.y < o.r){ o.y=o.r; o.vy*=-1; }
+        if(o.y > H-o.r){ o.y=H-o.r; o.vy*=-1; }
+
+        if(pressed){
+
+            const dx = o.x - mouseX;
+            const dy = o.y - mouseY;
+            const d = Math.hypot(dx,dy);
+
+            const radius = 120;
+
+            if(d < radius && d > 0.001){
+                const f = (1 - d/radius) * difficulty.force;
+                o.vx += dx/d * f;
+                o.vy += dy/d * f;
+            }
+        }
+
+        o.el.style.left = o.x+"px";
+        o.el.style.top = o.y+"px";
+
+        o.el.style.transform =
+            `translate(-50%,-50%) rotate(${o.rot}deg) skew(${o.skew}deg,${o.skew}deg)`;
+    }
+
+    requestAnimationFrame(animate);
+}
+
+/* INIT */
 build();
+animate();
 
 </script>
 
