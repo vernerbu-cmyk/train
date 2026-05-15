@@ -9,10 +9,9 @@
 
 <style>
 
-/* 🔥 FULL NO-SCROLL FIX */
-html, body {
+html,body{
     margin:0;
-    padding:0;
+    width:100%;
     height:100%;
     overflow:hidden;
 }
@@ -20,10 +19,11 @@ html, body {
 body{
     display:flex;
     background:#0B1220;
-    font-family:Montserrat;
+    font-family:Montserrat,sans-serif;
 }
 
 /* PANEL */
+
 #panel{
     width:220px;
     min-width:220px;
@@ -31,25 +31,69 @@ body{
     color:white;
     display:flex;
     flex-direction:column;
-    padding:12px;
     gap:10px;
+    padding:12px;
     box-sizing:border-box;
+    transition:.25s;
+    overflow:hidden;
+    z-index:20;
+}
+
+#panel.closed{
+    width:0;
+    min-width:0;
+    padding:0;
+}
+
+/* TOGGLE */
+
+#toggleBtn{
+    position:fixed;
+    left:220px;
+    top:12px;
+
+    width:34px;
+    height:34px;
+
+    border:none;
+    border-radius:10px;
+
+    background:#FF6A00;
+    color:white;
+
+    font-size:18px;
+    font-weight:900;
+
+    cursor:pointer;
+
+    z-index:50;
+
+    transition:.25s;
+}
+
+#panel.closed + #toggleBtn{
+    left:10px;
 }
 
 .box{
     background:rgba(255,255,255,0.08);
-    padding:10px;
     border-radius:10px;
+    padding:10px;
     font-weight:700;
+}
+
+button,select{
+    border:none;
+    border-radius:10px;
+    padding:10px;
+    font-family:inherit;
+    font-weight:800;
+    box-sizing:border-box;
 }
 
 button{
     background:#FF6A00;
-    border:none;
-    padding:10px;
-    border-radius:10px;
     color:white;
-    font-weight:800;
     cursor:pointer;
 }
 
@@ -57,54 +101,89 @@ button:active{
     transform:translateY(2px);
 }
 
-/* FIELD (FIXED HEIGHT LOGIC) */
+select{
+    width:100%;
+}
+
+/* FIELD */
+
 #wrap{
     flex:1;
     position:relative;
-    background:#111827;
     overflow:hidden;
+    background:#111827;
 }
 
-/* NUM */
+/* NUMBERS */
+
 .num{
     position:absolute;
     transform:translate(-50%,-50%);
     user-select:none;
-    font-weight:800;
     cursor:pointer;
     pointer-events:auto;
+    font-weight:800;
+    will-change:transform,left,top;
 }
 
-/* CENTER POP */
+/* CENTER */
+
 #center{
     position:fixed;
     inset:0;
+
     display:flex;
     justify-content:center;
     align-items:center;
-    font-size:140px;
+
+    font-size:150px;
     font-weight:900;
+
     color:#FF6A00;
-    pointer-events:none;
+
     opacity:0;
-    transition:opacity .25s;
+
+    pointer-events:none;
+
+    transition:opacity .2s;
+
+    z-index:100;
 }
 
 /* MOBILE */
-@media (max-width: 768px){
+
+@media (max-width:768px){
+
     body{
         flex-direction:column;
     }
 
     #panel{
         width:100%;
+        min-width:auto;
+
         flex-direction:row;
         flex-wrap:wrap;
-        justify-content:space-between;
     }
 
-    #wrap{
-        height:calc(100vh - 140px);
+    #panel.closed{
+        height:0;
+        min-height:0;
+        width:100%;
+    }
+
+    #toggleBtn{
+        left:auto;
+        right:10px;
+        top:10px;
+    }
+
+    .box{
+        flex:1 1 45%;
+    }
+
+    button{
+        flex:1 1 45%;
     }
 }
 
@@ -115,21 +194,49 @@ button:active{
 
 <div id="panel">
 
-    <div class="box" id="target">Найди: —</div>
-    <div class="box" id="timer">0.000</div>
-
-    <div class="box">
-        Сложность:
-        <select id="diff" onchange="setDifficulty(this.value)">
-            <option value="easy">easy</option>
-            <option value="normal" selected>normal</option>
-            <option value="hard">hard</option>
-        </select>
+    <div class="box" id="target">
+        Найди: —
     </div>
 
-    <button onclick="resetGame()">Заново</button>
+    <div class="box" id="timer">
+        0.000
+    </div>
+
+    <div class="box">
+
+        Сложность
+
+        <select id="diff">
+
+            <option value="easy">
+                easy
+            </option>
+
+            <option value="normal" selected>
+                normal
+            </option>
+
+            <option value="hard">
+                hard
+            </option>
+
+        </select>
+
+    </div>
+
+    <button id="pauseBtn">
+        Пауза
+    </button>
+
+    <button id="restartBtn">
+        Заново
+    </button>
 
 </div>
+
+<button id="toggleBtn">
+    ◀
+</button>
 
 <div id="wrap"></div>
 
@@ -138,118 +245,250 @@ button:active{
 <script>
 
 const wrap = document.getElementById("wrap");
-const targetEl = document.getElementById("target");
-const timerEl = document.getElementById("timer");
-const center = document.getElementById("center");
+
+const targetEl =
+    document.getElementById("target");
+
+const timerEl =
+    document.getElementById("timer");
+
+const centerEl =
+    document.getElementById("center");
+
+const pauseBtn =
+    document.getElementById("pauseBtn");
+
+const restartBtn =
+    document.getElementById("restartBtn");
+
+const diffSelect =
+    document.getElementById("diff");
+
+const panel =
+    document.getElementById("panel");
+
+const toggleBtn =
+    document.getElementById("toggleBtn");
 
 const COUNT = 99;
 
+const fonts = [
+    "Unbounded",
+    "Comfortaa",
+    "Caveat",
+    "Nunito",
+    "Pacifico",
+    "Montserrat"
+];
+
 const DIFF = {
-    easy:   { speed:0.7, size:1.25, force:0.6 },
-    normal: { speed:1.0, size:1.0,  force:1.0 },
-    hard:   { speed:1.5, size:0.75, force:1.4 }
+
+    easy:{
+        speed:0.7,
+        size:1.25,
+        force:0.8
+    },
+
+    normal:{
+        speed:1.4,
+        size:1,
+        force:1.2
+    },
+
+    hard:{
+        speed:2.2,
+        size:0.75,
+        force:1.8
+    }
 };
 
 let difficulty = DIFF.normal;
 
-function setDifficulty(val){
-    difficulty = DIFF[val] || DIFF.normal;
-    resetGame();
-}
-
-const fonts = [
-"Unbounded","Comfortaa","Caveat","Nunito","Pacifico","Montserrat"
-];
-
-function rand(a,b){return Math.random()*(b-a)+a;}
-function pick(a){return a[Math.floor(Math.random()*a.length)];}
-
 let items = [];
+
 let target = 1;
-let start = performance.now();
+
+let paused = false;
 
 let mouseX = -9999;
 let mouseY = -9999;
+
 let pressed = false;
 
+let start = performance.now();
+
+/* HELPERS */
+
+function rand(a,b){
+    return Math.random()*(b-a)+a;
+}
+
+function pick(arr){
+    return arr[
+        Math.floor(Math.random()*arr.length)
+    ];
+}
+
 /* TIMER */
+
 setInterval(()=>{
+
+    if(paused) return;
+
     timerEl.textContent =
-        ((performance.now()-start)/1000).toFixed(3);
+        ((performance.now()-start)/1000)
+        .toFixed(3);
+
 },50);
 
 /* POINTER */
+
 wrap.addEventListener("pointermove",(e)=>{
-    const r = wrap.getBoundingClientRect();
-    mouseX = e.clientX - r.left;
-    mouseY = e.clientY - r.top;
+
+    const rect =
+        wrap.getBoundingClientRect();
+
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
 });
 
-wrap.addEventListener("pointerdown",()=>pressed=true);
-wrap.addEventListener("pointerup",()=>pressed=false);
+wrap.addEventListener("pointerdown",()=>{
 
-/* CENTER POP */
+    pressed = true;
+});
+
+window.addEventListener("pointerup",()=>{
+
+    pressed = false;
+});
+
+/* PANEL */
+
+toggleBtn.addEventListener("click",()=>{
+
+    panel.classList.toggle("closed");
+
+    const closed =
+        panel.classList.contains("closed");
+
+    toggleBtn.textContent =
+        closed ? "▶" : "◀";
+});
+
+/* CENTER */
+
 function showCenter(){
-    center.textContent = target;
-    center.style.opacity = 1;
-    setTimeout(()=>center.style.opacity=0,400);
+
+    centerEl.textContent = target;
+
+    centerEl.style.opacity = 1;
+
+    setTimeout(()=>{
+
+        centerEl.style.opacity = 0;
+
+    },400);
 }
 
 /* TARGET */
+
 function setTarget(){
-    target = Math.floor(Math.random()*COUNT)+1;
-    targetEl.textContent = "Найди: " + target;
-    showCenter(); // 🔥 FIX ALWAYS SHOW
+
+    target =
+        Math.floor(Math.random()*COUNT)+1;
+
+    targetEl.textContent =
+        "Найди: " + target;
+
+    showCenter();
 }
 
 /* BUILD */
+
 function build(){
 
     wrap.innerHTML = "";
+
     items = [];
 
     const W = wrap.clientWidth;
     const H = wrap.clientHeight;
 
-    const nums = Array.from({length:COUNT},(_,i)=>i+1)
+    const nums =
+        Array.from(
+            {length:COUNT},
+            (_,i)=>i+1
+        )
         .sort(()=>Math.random()-0.5);
 
     for(const n of nums){
 
-        const el = document.createElement("div");
-        el.className="num";
-        el.textContent=n;
+        const el =
+            document.createElement("div");
+
+        el.className = "num";
+
+        el.textContent = n;
+
+        const baseSize =
+
+            Math.random()<0.15 ? 84 :
+
+            Math.random()<0.40 ? 58 :
+
+            Math.random()<0.75 ? 38 : 24;
 
         const size =
-            (Math.random()<0.15 ? 80 :
-            Math.random()<0.40 ? 55 : 32)
-            * difficulty.size;
+            baseSize * difficulty.size;
 
-        el.style.fontSize = size+"px";
-        el.style.fontFamily = pick(fonts);
-        el.style.color = `hsl(${Math.random()*360},80%,60%)`;
+        el.style.fontSize =
+            size + "px";
+
+        el.style.fontFamily =
+            pick(fonts);
+
+        el.style.color =
+            `hsl(${Math.random()*360},85%,65%)`;
 
         wrap.appendChild(el);
 
         const obj = {
+
             el,
+
             val:n,
-            r:size*0.55,
-            x:rand(0,W),
-            y:rand(0,H),
-            vx:rand(-1,1)*difficulty.speed,
-            vy:rand(-1,1)*difficulty.speed,
-            rot:rand(-40,40),
-            skew:rand(-0.3,0.3)
+
+            r:size*0.6,
+
+            x:rand(size,W-size),
+            y:rand(size,H-size),
+
+            vx:rand(-2.8,2.8)
+                * difficulty.speed,
+
+            vy:rand(-2.8,2.8)
+                * difficulty.speed,
+
+            rot:rand(-35,35),
+
+            skew:rand(-0.25,0.25)
         };
 
-        el.addEventListener("pointerdown",(e)=>{
-            e.stopPropagation();
-            if(obj.val !== target) return;
+        el.addEventListener(
+            "pointerdown",
+            (e)=>{
 
-            start = performance.now();
-            resetGame();
-        });
+                e.stopPropagation();
+
+                if(obj.val !== target)
+                    return;
+
+                start =
+                    performance.now();
+
+                resetGame();
+            }
+        );
 
         items.push(obj);
     }
@@ -258,22 +497,69 @@ function build(){
 }
 
 /* RESET */
+
 function resetGame(){
 
     const W = wrap.clientWidth;
     const H = wrap.clientHeight;
 
     for(const o of items){
-        o.x = rand(0,W);
-        o.y = rand(0,H);
-        o.vx = rand(-1,1)*difficulty.speed;
-        o.vy = rand(-1,1)*difficulty.speed;
+
+        o.x = rand(o.r,W-o.r);
+        o.y = rand(o.r,H-o.r);
+
+        o.vx =
+            rand(-2.8,2.8)
+            * difficulty.speed;
+
+        o.vy =
+            rand(-2.8,2.8)
+            * difficulty.speed;
     }
 
     setTarget();
 }
 
+/* PAUSE */
+
+function togglePause(){
+
+    paused = !paused;
+
+    pauseBtn.textContent =
+        paused
+            ? "Продолжить"
+            : "Пауза";
+}
+
+pauseBtn.addEventListener(
+    "click",
+    togglePause
+);
+
+restartBtn.addEventListener(
+    "click",
+    ()=>{
+
+        start = performance.now();
+
+        resetGame();
+    }
+);
+
+diffSelect.addEventListener(
+    "change",
+    (e)=>{
+
+        difficulty =
+            DIFF[e.target.value];
+
+        resetGame();
+    }
+);
+
 /* ANIMATE */
+
 function animate(){
 
     const W = wrap.clientWidth;
@@ -281,49 +567,130 @@ function animate(){
 
     for(const o of items){
 
-        o.x += o.vx;
-        o.y += o.vy;
+        if(!paused){
 
-        o.vx *= 0.995;
-        o.vy *= 0.995;
+            o.x += o.vx;
+            o.y += o.vy;
 
-        const MAX = 2.5 * difficulty.speed;
-        o.vx = Math.max(-MAX, Math.min(MAX,o.vx));
-        o.vy = Math.max(-MAX, Math.min(MAX,o.vy));
+            /* LESS FRICTION */
 
-        if(o.x < o.r){ o.x=o.r; o.vx*=-1; }
-        if(o.x > W-o.r){ o.x=W-o.r; o.vx*=-1; }
+            o.vx *= 0.999;
+            o.vy *= 0.999;
 
-        if(o.y < o.r){ o.y=o.r; o.vy*=-1; }
-        if(o.y > H-o.r){ o.y=H-o.r; o.vy*=-1; }
+            /* SPEED LIMIT */
 
-        if(pressed){
+            const MAX =
+                8 * difficulty.speed;
 
-            const dx = o.x - mouseX;
-            const dy = o.y - mouseY;
-            const d = Math.hypot(dx,dy);
+            o.vx =
+                Math.max(
+                    -MAX,
+                    Math.min(MAX,o.vx)
+                );
 
-            const radius = 120;
+            o.vy =
+                Math.max(
+                    -MAX,
+                    Math.min(MAX,o.vy)
+                );
 
-            if(d < radius && d > 0.001){
-                const f = (1 - d/radius) * difficulty.force;
-                o.vx += dx/d * f;
-                o.vy += dy/d * f;
+            /* WALLS */
+
+            if(o.x < o.r){
+
+                o.x = o.r;
+                o.vx *= -1;
+            }
+
+            if(o.x > W-o.r){
+
+                o.x = W-o.r;
+                o.vx *= -1;
+            }
+
+            if(o.y < o.r){
+
+                o.y = o.r;
+                o.vy *= -1;
+            }
+
+            if(o.y > H-o.r){
+
+                o.y = H-o.r;
+                o.vy *= -1;
+            }
+
+            /* AGGRESSIVE PUSH */
+
+            if(pressed){
+
+                const dx =
+                    o.x - mouseX;
+
+                const dy =
+                    o.y - mouseY;
+
+                const d =
+                    Math.hypot(dx,dy);
+
+                const radius = 240;
+
+                if(d < radius && d > 0.01){
+
+                    const power =
+
+                        (1 - d/radius)
+
+                        * 8
+
+                        * difficulty.force;
+
+                    /* velocity */
+
+                    o.vx +=
+                        (dx/d) * power;
+
+                    o.vy +=
+                        (dy/d) * power;
+
+                    /* direct shove */
+
+                    o.x +=
+                        (dx/d)
+                        * power
+                        * 4;
+
+                    o.y +=
+                        (dy/d)
+                        * power
+                        * 4;
+                }
             }
         }
 
-        o.el.style.left = o.x+"px";
-        o.el.style.top = o.y+"px";
+        o.el.style.left =
+            o.x + "px";
+
+        o.el.style.top =
+            o.y + "px";
 
         o.el.style.transform =
-            `translate(-50%,-50%) rotate(${o.rot}deg) skew(${o.skew}deg,${o.skew}deg)`;
+
+            `translate(-50%,-50%)
+
+            rotate(${o.rot}deg)
+
+            skew(${o.skew}deg,
+            ${o.skew}deg)`;
     }
 
     requestAnimationFrame(animate);
 }
 
-/* INIT */
+/* START */
+
 build();
+
 animate();
 
 </script>
