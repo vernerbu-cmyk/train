@@ -10,13 +10,23 @@
     --blue:#1E3F8A;
     --orange:#FF6A00;
     --bg:#0f1b3d;
+    --cell:#2c3e70;
+    --coord:#182952;
+    --text:white;
+}
+
+body.light{
+    --bg:#f5f6fa;
+    --cell:#dbe4ff;
+    --coord:#c9d6ff;
+    --text:#111;
 }
 
 body{
     margin:0;
     font-family:Arial,sans-serif;
     background:var(--bg);
-    color:white;
+    color:var(--text);
     display:flex;
     flex-direction:column;
     align-items:center;
@@ -105,7 +115,7 @@ button:active{
 }
 
 .cell{
-    background:#2c3e70;
+    background:var(--cell);
     font-size:28px;
     cursor:pointer;
     transition:0.12s;
@@ -116,18 +126,18 @@ button:active{
 }
 
 .coord{
-    background:#182952;
+    background:var(--coord);
     font-weight:bold;
     font-size:16px;
 }
 
 /* STATES */
 .correct{
-    background:var(--orange) !important;
+    background:var(--orange)!important;
 }
 
 .wrong{
-    background:#e74c3c !important;
+    background:#e74c3c!important;
 }
 
 /* FOOTER SIGN */
@@ -142,7 +152,7 @@ button:active{
 
 /* MOBILE */
 @media (max-width:600px){
-    .cell, .coord{
+    .cell,.coord{
         width:48px;
         height:48px;
         font-size:22px;
@@ -187,7 +197,20 @@ button:active{
     <option value="1700">Быстро</option>
 </select>
 
+⚙️
+<select id="mode">
+    <option value="auto" selected>Авто</option>
+    <option value="manual">Ручной</option>
+</select>
+
+<label>
+<input type="checkbox"
+onchange="document.body.classList.toggle('light')">
+☀️
+</label>
+
 <button onclick="startGame()">Старт</button>
+<button onclick="showManual()">ДАЛЬШЕ</button>
 
 </div>
 
@@ -204,8 +227,14 @@ button:active{
 <div id="signature">© verner</div>
 
 <script>
-const symbols = ["🔵","🟡","🟢","🔺","⬛","⭐","🍎","⚪"];
-const letters = ["A","B","C","D","E"];
+
+const symbols = [
+"🔵","🟡","🟢","🔺","⬛","⭐","🍎","⚪",
+"🍌","🍇","🍒","🍉","🔥","⚡","🌙","☀️",
+"🚗","🚀","🎯","🎲","🎈","🧩","🍭","🪁"
+];
+
+const letters = ["А","Б","В","Г","Д"];
 
 let baseState=[];
 let changedState=[];
@@ -213,6 +242,7 @@ let changedIndices=[];
 let fakeIndices=[];
 
 let showing=false;
+let mode="auto";
 
 let level=1;
 let score=0;
@@ -277,11 +307,17 @@ function createGrid(state,size){
         }
     }
 
+    /* ЛОЖНЫЕ СИГНАЛЫ — КАК В ТВОЁМ КОДЕ */
     setTimeout(()=>{
         document.querySelectorAll(".cell").forEach((el,i)=>{
             if(fakeIndices.includes(i)){
                 el.style.filter="brightness(1.4)";
                 el.style.transform="scale(1.05)";
+
+                setTimeout(()=>{
+                    el.style.filter="";
+                    el.style.transform="";
+                },220);
             }
         });
     },30);
@@ -293,9 +329,10 @@ function generate(){
     let changeCount=+document.getElementById("changes").value;
     let speed=+document.getElementById("speed").value;
 
+    mode=document.getElementById("mode").value;
+
     baseState=[];
     changedState=[];
-
     changedIndices=[];
     fakeIndices=[];
 
@@ -310,6 +347,7 @@ function generate(){
 
     while(changedIndices.length<changeCount){
         let idx=Math.floor(Math.random()*size);
+
         if(!changedIndices.includes(idx)){
             changedIndices.push(idx);
         }
@@ -319,11 +357,17 @@ function generate(){
         changedState[i]=randomSymbol();
     });
 
+    /* ЛОЖНЫЕ СИГНАЛЫ — КАК БЫЛО */
     let fakeCount=Math.min(3,Math.floor(changeCount/2));
 
     while(fakeIndices.length<fakeCount){
         let idx=Math.floor(Math.random()*size);
-        if(!changedIndices.includes(idx)&&!fakeIndices.includes(idx)){
+
+        if(
+            !changedIndices.includes(idx)
+            &&
+            !fakeIndices.includes(idx)
+        ){
             fakeIndices.push(idx);
         }
     }
@@ -331,10 +375,27 @@ function generate(){
     showing=true;
     createGrid(baseState,size);
 
-    setTimeout(()=>{
-        showing=false;
-        createGrid(changedState,size);
-    },speed);
+    if(mode==="auto"){
+
+        setTimeout(()=>{
+            showing=false;
+            createGrid(changedState,size);
+        },speed);
+
+    }
+}
+
+function showManual(){
+
+    if(mode!=="manual") return;
+    if(!showing) return;
+
+    showing=false;
+
+    const size=
+    +document.getElementById("size").value;
+
+    createGrid(changedState,size);
 }
 
 function startGame(){
@@ -386,6 +447,7 @@ function check(i,el){
         setTimeout(next,800);
     }
 }
+
 </script>
 
 </body>
