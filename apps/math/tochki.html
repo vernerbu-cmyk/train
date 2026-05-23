@@ -191,6 +191,7 @@ let historyData = [];
 let memoryHidden = false;
 let autoTimer = null;
 let userAnswers = {};
+let usedPatterns = new Set();
 
 const rainbow = ["#FF0000","#FF8C00","#FFD700","#00C800","#00A2FF","#003CFF","#8A00FF"];
 
@@ -210,7 +211,8 @@ function getTypes(step,diff){
 }
 
 function nextStep(){
-memoryHidden = false;
+
+  memoryHidden = false;
 
   if(step >= 16) return;
 
@@ -221,26 +223,50 @@ memoryHidden = false;
   const count = getBaseCount(size);
   const types = getTypes(step,diff);
 
-  let used = [];
-  while(used.length < count){
-    let n = Math.floor(Math.random()*size*size);
-    if(!used.includes(n)) used.push(n);
-  }
+  let figs;
+  let pattern;
 
-  const figs = used.map(i => ({
-    index:i,
-    type:types[Math.floor(Math.random()*types.length)],
-    color: colorMode ? rainbow[Math.floor(Math.random()*rainbow.length)] : "#111"
-  }));
+  do {
 
-  historyData[step] = {size, figs:structuredClone(figs)};
+    let used = [];
+
+    while(used.length < count){
+      let n = Math.floor(Math.random() * size * size);
+
+      if(!used.includes(n)){
+        used.push(n);
+      }
+    }
+
+    figs = used.map(i => ({
+      index: i,
+      type: types[Math.floor(Math.random() * types.length)],
+      color: colorMode
+        ? rainbow[Math.floor(Math.random() * rainbow.length)]
+        : "#111"
+    }));
+
+    // уникальный отпечаток
+    pattern = figs
+      .map(f => `${f.index}-${f.type}-${f.color}`)
+      .sort()
+      .join("|");
+
+  } while(usedPatterns.has(pattern));
+
+  usedPatterns.add(pattern);
+
+  historyData[step] = {
+    size,
+    figs: structuredClone(figs)
+  };
 
   step++;
   progress.textContent = step + " / 16";
 
   drawGrid(size, figs);
 
-  autoRun(); // ⏱ ДОБАВЛЕНО
+  autoRun();
 }
 
 function drawGrid(size, figs, hide=false){
@@ -333,7 +359,8 @@ function prevStep(){
 function resetTrainer(){
   step = 0;
   historyData = [];
-  memoryHidden = false;
+usedPatterns.clear();
+memoryHidden = false;
   userAnswers = {};
   clearTimeout(autoTimer);
   grid.innerHTML = "";
