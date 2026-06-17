@@ -212,14 +212,49 @@ button:active{
 const r=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 
 const Engine={
-  plusminus(){
-    let a=r(+min1.value,+max1.value);
-    let b=r(+min2.value,+max2.value);
-    const t=document.getElementById("pmType")?.value||"both";
-    let op=t==="add"?"+":t==="sub"?"-":(Math.random()<0.5?"+":"-");
-    if(op==="-"&&a<b)[a,b]=[b,a];
-    return `${a} ${op} ${b}`;
-  },
+ plusminus(){
+  const maxAnswer = +document.getElementById("maxResult").value || Infinity;
+  const t = document.getElementById("pmType")?.value || "both";
+
+  for(let i = 0; i < 100; i++){
+
+    let a = r(+min1.value, +max1.value);
+    let b = r(+min2.value, +max2.value);
+
+    let op = "+";
+if(t === "sub") op = "-";
+else if(t === "both") op = Math.random() < 0.5 ? "+" : "-";
+
+    if(op === "-" && a < b){
+      [a,b] = [b,a];
+    }
+
+    const result = op === "+" ? a + b : a - b;
+
+    if(result <= maxAnswer){
+      return `${a} ${op} ${b}`;
+    }
+  }
+
+  // fallback (если не нашли подходящий вариант)
+  let a = r(+min1.value, +max1.value);
+  let b = r(+min2.value, +max2.value);
+
+  let op;
+  if(t === "add") op = "+";
+  else if(t === "sub") op = "-";
+  else op = Math.random() < 0.5 ? "+" : "-";
+
+  if(op === "-" && a < b){
+    [a,b] = [b,a];
+  }
+
+  const result = op === "+" ? a + b : a - b;
+
+if(result <= maxAnswer){
+  return `${a} ${op} ${b}`;
+}
+},
 
   muldiv(){
     let a=r(+min1.value,+max1.value);
