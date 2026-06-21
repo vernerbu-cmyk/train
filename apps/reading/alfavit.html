@@ -107,7 +107,7 @@ button.pressed {
 </div>
 
 <div class="controls">
-  <input id="speed" type="range" min="0" max="10" value="4">
+  <input id="speed" type="range" min="0" max="13" value="4">
   <button id="start">Старт</button>
   <button id="stop">Стоп</button>
   <button id="rainbow">Радуга</button>
@@ -123,6 +123,8 @@ const l2=document.getElementById("l2");
 const l3=document.getElementById("l3");
 
 const speed=document.getElementById("speed");
+const rainbowBtn = document.getElementById("rainbow");
+const legsBtn = document.getElementById("legs");
 
 const HEADER_HEIGHT = 56;
 
@@ -131,6 +133,8 @@ const alphabet="АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯ".
 
 const group=["Л","П","О"];
 const legsArr=["Л","П"];
+let prevL2 = "";
+let prevL3 = "";
 
 const steps=[
 2000,1750,1500,1250,1000,
@@ -167,13 +171,33 @@ bind(document.getElementById("legs"));
 function rand(a){
   return a[Math.floor(Math.random()*a.length)];
 }
+function randNoRepeat(arr, prev){
+  let x;
+
+  do{
+    x = arr[Math.floor(Math.random()*arr.length)];
+  } while(x === prev);
+
+  return x;
+}
 
 function randPos(){
-  const minY = HEADER_HEIGHT + 20;
-  const maxY = window.innerHeight - 220;
 
-  column.style.left = (Math.random()*(window.innerWidth-100))+"px";
-  column.style.top  = (Math.random()*(maxY-minY)+minY)+"px";
+  const rect = column.getBoundingClientRect();
+
+  const margin = 10;
+
+  const minX = rect.width/2 + margin;
+  const maxX = window.innerWidth - rect.width/2 - margin;
+
+  const minY = HEADER_HEIGHT + margin;
+  const maxY = window.innerHeight - rect.height - 180;
+
+  column.style.left =
+      (Math.random() * (maxX - minX) + minX) + "px";
+
+  column.style.top =
+      (Math.random() * (maxY - minY) + minY) + "px";
 }
 
 /* 🎯 ВАЖНО: теперь меняем ЦВЕТ БУКВ */
@@ -193,10 +217,14 @@ function update(){
   setTimeout(()=>{
 
     l1.textContent=rand(alphabet);
-    l2.textContent=rand(group);
+    const newL2 = randNoRepeat(group, prevL2);
+l2.textContent = newL2;
+prevL2 = newL2;
 
     if(legs){
-      l3.textContent=rand(legsArr);
+      const newL3 = randNoRepeat(legsArr, prevL3);
+l3.textContent = newL3;
+prevL3 = newL3;
       l3.style.display="block";
     } else {
       l3.style.display="none";
@@ -231,12 +259,18 @@ document.getElementById("stop").onclick=()=>{
 
 /* rainbow */
 document.getElementById("rainbow").onclick=()=>{
-  rainbow=!rainbow;
+  rainbow = !rainbow;
+
+  rainbowBtn.style.background =
+      rainbow ? "#FF6A00" : "#1E3F8A";
 };
 
 /* legs */
 document.getElementById("legs").onclick=()=>{
-  legs=!legs;
+  legs = !legs;
+
+  legsBtn.style.background =
+      legs ? "#FF6A00" : "#1E3F8A";
 };
 
 /* speed */
