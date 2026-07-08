@@ -79,11 +79,13 @@ button {
   transition: all 0.12s ease;
 }
 
-button.pressed {
-  transform: translateY(3px);
-  box-shadow: none;
-  filter: brightness(0.9);
+button.active{
+    background:#FF6A00;
+    box-shadow:
+      0 4px 0 #C85000,
+      0 6px 12px rgba(0,0,0,.25);
 }
+
 
 /* AUTHOR */
 .footer {
@@ -92,6 +94,22 @@ button.pressed {
   bottom: 8px;
   font-size: 10px;
   color: rgba(0,0,0,0.25);
+}
+
+@media (max-width:700px){
+
+#l1{font-size:4.5rem;}
+#l2{font-size:3.7rem;}
+#l3{font-size:3rem;}
+
+.controls{
+    bottom:20px;
+}
+
+input[type=range]{
+    width:180px;
+}
+
 }
 </style>
 </head>
@@ -125,6 +143,8 @@ const l3=document.getElementById("l3");
 const speed=document.getElementById("speed");
 const rainbowBtn = document.getElementById("rainbow");
 const legsBtn = document.getElementById("legs");
+const startBtn = document.getElementById("start");
+const stopBtn = document.getElementById("stop");
 
 const HEADER_HEIGHT = 56;
 
@@ -139,7 +159,7 @@ let prevL3 = "";
 const steps=[
 2000,1750,1500,1250,1000,
 900,800,700,600,500,
-400
+400,300,200,100
 ];
 
 /* 🌈 теперь радуга = цвета букв */
@@ -202,12 +222,15 @@ function randPos(){
 
 /* 🎯 ВАЖНО: теперь меняем ЦВЕТ БУКВ */
 function applyRainbowColor(){
-  const color = rainbowColors[colorIndex];
+
+  const color = rainbowColors[
+      Math.floor(Math.random()*rainbowColors.length)
+  ];
+
   l1.style.color = color;
   l2.style.color = color;
   l3.style.color = color;
 
-  colorIndex = (colorIndex + 1) % rainbowColors.length;
 }
 
 function update(){
@@ -246,15 +269,21 @@ prevL3 = newL3;
 }
 
 /* start */
-document.getElementById("start").onclick=()=>{
+startBtn.onclick=()=>{
   clearInterval(timer);
   update();
   timer=setInterval(update,steps[speed.value]);
+
+  startBtn.style.background="#FF6A00";
+  stopBtn.style.background="#1E3F8A";
 };
 
 /* stop */
-document.getElementById("stop").onclick=()=>{
+stopBtn.onclick=()=>{
   clearInterval(timer);
+  timer=null;
+
+  startBtn.style.background="#1E3F8A";
 };
 
 /* rainbow */
