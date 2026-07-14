@@ -261,8 +261,20 @@ localStorage.setItem("levels",JSON.stringify(levels));
 }
 
 /* GENERATOR */
+
 function gen(){
-return levels[level]();
+
+let word;
+
+do{
+    word=levels[level]();
+}
+while(
+    bannedWords.some(b=>word.includes(b))
+);
+
+return word;
+
 }
 
 /* UI LEVELS */
@@ -299,7 +311,16 @@ settingsVisible?"скрыть":"показать";
 };
 
 /* CENZ */
-let userBanned=[];
+let bannedWords=[];
+
+fetch("banned.json")
+.then(response=>response.json())
+.then(data=>{
+    bannedWords=data.banned;
+})
+.catch(()=>{
+    console.log("Файл banned.json не найден");
+});
 
 document.getElementById("cenzToggle").onclick=()=>{
 let b=document.getElementById("cenzBox");
@@ -342,7 +363,11 @@ interval=setInterval(show,speeds[i]);
 }
 
 /* EVENTS */
-document.getElementById("speed").oninput=()=>startAuto();
+document.getElementById("speed").oninput=()=>{
+show();
+show();
+startAuto();
+};
 
 document.getElementById("fontSize").oninput=(e)=>{
 document.getElementById("syllable").style.fontSize=e.target.value+"px";
