@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Доска PRO</title>
+<title>Доска</title>
 
 <style>
 html,body{
@@ -65,6 +65,7 @@ canvas{
 
   <button onclick="exportImage()">Открыть изображение</button>
   <button onclick="toggleFullscreen()">Полный экран</button>
+  <button onclick="clearAll()">Очистить доску</button>
 </div>
 
 <canvas id="c"></canvas>
@@ -203,7 +204,11 @@ c.addEventListener("pointerup",()=>{
 
 /* clear */
 function clearAll(){
+  save();
+
   ctx.clearRect(0,0,c.width,c.height);
+
+  redoStack=[];
 }
 
 /* export (OPEN IMAGE) */
